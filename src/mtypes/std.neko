@@ -1,0 +1,785 @@
+/*
+ *  MTypes standard library
+ *  Copyright (c)2005 Motion-Twin
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License or the LICENSE file for more details.
+ */
+
+version = 0;
+
+// ----------------------------------------------------------------------
+// List
+
+List = $new(null);
+
+List.new = function() {
+	var o = $new(null);
+	$objsetproto(o,@List);
+	o.l = 0;
+	o.h = null;
+	o.q = null;
+	return o;
+};
+
+@List = $new(null);
+
+List.prototype = @List;
+
+@List.get_length = function() {
+	return this.l;
+};
+
+@List.add = function(x) {
+	var a = $array(x,null);
+	if( this.q != null )
+		this.q[1] = a;
+	else
+		this.h = a;
+	this.q = a;
+	this.l = this.l + 1;
+};
+
+@List.push = function(x) {
+	var a = $array(x,this.h);
+	this.h = a;
+	if( this.q == null )
+		this.q = a;
+	this.l = this.l + 1;
+};
+
+@List.remove = function(x) {
+	var cur = this.h;
+	var prev = null;
+	while( cur != null ) {
+		if( cur[0] == x ) {
+			if( prev == null )
+				this.h = cur[1];
+			else
+				prev[1] = cur[1];
+			if( this.q == cur )
+				this.q = prev;
+			this.l = this.l - 1;
+			return true;
+		}
+		prev = cur;
+		cur = cur[1];
+	}
+	return false;
+}
+
+@List.at = function(p) {
+	var cur = this.h;
+	while( cur != null ) {
+		if( $not(p) )
+			return cur[0];
+		p = p - 1;
+		cur = cur[1];
+	}
+	return null;
+}
+
+@List.pop = function() {
+	if( this.h == null )
+		return null;
+	if( this.q == this.h )
+		this.q = null;
+	var x = this.h[0];
+	this.h = this.h[1];
+	this.l = this.l - 1;
+	return x;
+}
+
+@List.first = function() {
+	if( this.h == null )
+		return null;
+	return this.h[0];
+}
+
+@List.last = function() {
+	if( this.q == null )
+		return null;
+	return this.q[0];
+}
+
+@List.iter = function(f) {
+	var p = this.h;
+	while( p != null ) {
+		f(p[0]);
+		p = p[1];
+	}
+}
+
+@List.find = function(f) {
+	var p = this.h;
+	while( p != null ) {
+		var x = f(p[0]);
+		if( x != null )
+			return x;
+		p = p[1];
+	}
+	return null;
+}
+
+@List.exists = function(f) {
+	var p = this.h;
+	while( p != null ) {
+		if( f(p[0]) )
+			return true;
+		p = p[1];
+	}
+	return false;
+}
+
+@List.join = function(sep) {
+	if( $not(this.l) )
+		return String.new("");
+	var b = StringBuf.new();
+	var p = this.h;
+	while( p != null ) {
+		b.add(p[0]);
+		p = p[1];
+		if( p != null )
+			b.add(sep);
+	}
+	return String.new(b.__string());
+}
+
+@List.toArray = function() {
+	var a = $amake(this.l);
+	var p = this.h;
+	var n = 0;
+	while( p != null ) {
+		a[n] = p[0];
+		n = n + 1;
+		p = p[1];
+	}
+	return Array.new1(a);
+}
+
+@List.toString = function() {
+	return String.new(this.__string());
+}
+
+@List.__string = function() {
+	var b = StringBuf.new();
+	var p = this.h;
+	b.add("[");
+	while( p != null ) {
+		b.add(p[0]);
+		p = p[1];
+		if( p != null )
+			b.add(",");
+	}
+	b.add("]");
+	return b.__string();
+}
+
+@List.map = function(f) {
+	var l = List.new();
+	if( this.h != null ) {
+		var cur = this.h;
+		var last = null;
+		l.h = null;
+		while( cur != null ) {
+			if( last == null ) {
+				last = $array(f(cur[0]),null);
+				l.h = last;
+			} else {
+				var tmp = $array(f(cur[0]),null);
+				last[1] = tmp;
+				last = tmp;
+			}
+			cur = cur[1];
+		}
+		l.q = last;
+		l.l = this.l;
+	}
+	return l;
+}
+
+@List.filter = function(f) {
+	var l = List.new();
+	if( this.h != null ) {
+		var cur = this.h;
+		var last = null;
+		var count = 0;
+		l.h = null;
+		while( cur != null ) {
+			if( f(cur[0]) ) {
+				if( last == null ) {
+					last = $array(cur[0],null);
+					l.h = last;
+				} else {
+					var tmp = $array(cur[0],null);
+					last[1] = tmp;
+					last = tmp;
+				}
+				count += 1;
+			}
+			cur = cur[1];
+		}
+		l.q = last;
+		l.l = count;
+	}
+	return l;
+}
+
+@List.__serialize = function() {
+	return $array("List",version);
+}
+
+$exports.List = List;
+
+// ----------------------------------------------------------------------
+// Array
+
+Array = $new(null);
+
+Array.new = function() {
+	var o = $new(null);
+	$objsetproto(o,@Array);
+	o.@a = $array();
+	return o;
+}
+
+Array.new1 = function(a) {
+	var o = $new(null);
+	$objsetproto(o,@Array);
+	o.@a = a;
+	return o;
+}
+
+@Array = $new(null);
+
+Array.prototype = @Array;
+
+@Array.get_length = function() {
+	return $asize(this.@a);
+}
+
+@Array.concat = function(a) {
+	var l = $asize(this.@a);
+	var l2 = $asize(a.@a);
+	var a = $amake(l+l2);
+	$ablit(a,0,this.@a,0,l);
+	$ablit(a,l,a.@a,0,l2);
+	this.@a = a;
+}
+
+@Array.sub = function(s,l) {
+	var a = $asub(this.@a,s,l);
+	if( a == null )
+		return null;
+	return Array.new1(a);
+}
+
+@Array.sort = function(f) {
+	var a = this.@a;
+	var i = 0;
+	var l = $asize(a);
+	while( i < l ) {
+		var swap = false;
+		var j = 0;
+		var max = l - i - 1;
+		while( j < max ) {
+			if( f(a[j],a[j+1]) > 0 ) {
+				var tmp = a[j+1];
+				a[j+1] = a[j];
+				a[j] = tmp;
+				swap = true;
+			}
+			j = j + 1;
+		}
+		if( $not(swap) )
+			break;
+		i = i + 1;
+	}
+}
+
+@Array.iter = function(f) {
+	var i = 0;
+	var a = this.@a;
+	var l = $asize(a);
+	while( i < l ) {
+		f(a[i]);
+		i = i + 1;
+	}
+}
+
+@Array.map = function(f) {
+	var i = 0;
+	var a = this.@a;
+	var l = $asize(a);
+	var a2 = $amake(l);
+	while( i < l ) {
+		a2[i] = f(a[i]);
+		i = i + 1;
+	}
+	return Array.new1(a2);
+}
+
+@Array.join = function(sep) {
+	var i = 0;
+	var a = this.@a;
+	var l = $asize(a);
+	var b = StringBuf.new();
+	while( i < l ) {
+		b.add(a[i]);
+		i = i + 1;
+		if( i != l )
+			b.add(sep);
+	}
+	return b.toString();
+}
+
+@Array.toList = function() {
+	var i = 0;
+	var a = this.@a;
+	var l = $asize(a);
+	var li = List.new();
+	while( i < l ) {
+		li.add(a[i]);
+		i = i + 1;
+	}
+	return li;
+}
+
+@Array.toString = function() {
+	return String.new(this.__string());
+}
+
+@Array.__string = function() {
+	return $string(this.@a);
+}
+
+@Array.set = function(p,v) {
+	var a = this.@a;
+	if( $asize(a) > p )
+		return (a[p] = v);
+	var a2 = $amake(p+1);
+	$ablit(a2,0,a,0,$asize(a));
+	this.@a = a2;
+	return (a2[p] = v);
+}
+
+@Array.__serialize = function() {
+	return $array("Array",version);
+}
+
+$exports.Array = Array;
+
+// ----------------------------------------------------------------------
+// Hash
+
+Hash = $new(null);
+
+Hash.new = function() {
+	var o = $new(null);
+	$objsetproto(o,@Hash);
+	o.@h = $hnew(3);
+	return o;
+}
+
+@Hash = $new(null);
+
+Hash.prototype = @Hash;
+
+@Hash.get = function(k) {
+	return $hget(this.@h,k.@s,null);
+}
+
+@Hash.set = function(k,v) {
+	$hset(this.@h,k.@s,v,null);
+}
+
+@Hash.remove = function(k) {
+	return $hremove(this.@h,k.@s,null);
+}
+
+@Hash.exists = function(k) {
+	return $hmem(this.@h,k.@s,null);
+}
+
+@Hash.iter = function(f) {
+	$hiter(this.@h,function(k,v) { f(String.new(k),v) });
+}
+
+@Hash.toString = function() {
+	return String.new(this.__string());
+}
+
+@Hash.__string = function() {
+	var s = StringBuf.new();
+	var i = 0;
+	var first = true;
+	s.add("#hash[");
+	$hiter(this.@h,function(k,v) {
+		if( first )
+			first = false;
+		else
+			s.add(", ");
+		s.add(k);
+		s.add(" => ");
+		s.add(v);
+	});
+	s.add("]");
+	return s.__string();
+}
+
+@Hash.__serialize = function() {
+	return $array("Hash",version);
+}
+
+$exports.Hash = Hash;
+
+// ----------------------------------------------------------------------
+// String
+
+string_split = $loader.loadprim("std@string_split",2);
+
+String = $new(null);
+
+String.new = function(s) {
+	if( s == null )
+		return null;
+
+	if( $typeof(s) != $tstring )
+		s = $string(s);
+
+	var o = $new(null);
+	$objsetproto(o,@String);
+	o.@s = s;
+	return o;
+}
+
+@String = $new(null);
+
+String.prototype = @String;
+
+@String.get_length = function() {
+	return $ssize(this.@s);
+}
+
+@String.charAt = function(p) {
+	return String.new( $ssub(this.@s,p,1) );
+}
+
+@String.at = function(p) {
+	return $sget(this.@s,p);
+}
+
+@String.sub = function(s,l) {
+	if( l == null )
+		l = $ssize(this.@s) - s;
+	return String.new( $ssub(this.@s,s,l) );
+}
+
+@String.split = function(s) {
+	var a = string_split(this.@s,s.@s);
+	var l = List.new();
+	while( a != null ) {
+		l.add( String.new(a[0]) );
+		a = a[1];
+	}
+	return l;
+}
+
+@String.toString = function() {
+	return this;
+}
+
+@String.__string = function() {
+	return this.@s;
+}
+
+@String.__compare = function(o) {
+	return $compare(this.@s,o.@s);
+}
+
+@String.__add = function(s) {
+	return String.new(this.@s+$string(s));
+}
+
+@String.__radd = function(s) {
+	return String.new($string(s)+this.@s);
+}
+
+@String.__serialize = function() {
+	return $array("String",version);
+}
+
+$exports.String = String;
+
+// ----------------------------------------------------------------------
+// Int32
+
+Int32 = $new(null);
+
+Int32.of_int = $loader.loadprim("std@int32_new",1);
+Int32.to_int = $loader.loadprim("std@int32_to_int",1);
+Int32.add = $loader.loadprim("std@int32_add",2);
+Int32.sub = $loader.loadprim("std@int32_sub",2);
+Int32.mul = $loader.loadprim("std@int32_mul",2);
+Int32.div = $loader.loadprim("std@int32_div",2);
+Int32.mod = $loader.loadprim("std@int32_mod",2);
+Int32.shl = $loader.loadprim("std@int32_shl",2);
+Int32.shr = $loader.loadprim("std@int32_shr",2);
+Int32.ushr = $loader.loadprim("std@int32_ushr",2);
+Int32.and = $loader.loadprim("std@int32_and",2);
+Int32.xor = $loader.loadprim("std@int32_xor",2);
+Int32.or = $loader.loadprim("std@int32_or",2);
+Int32.neg = $loader.loadprim("std@int32_neg",1);
+Int32.complement = $loader.loadprim("std@int32_complement",1);
+Int32.compare = $loader.loadprim("std@int32_compare",2);
+
+$exports.Int32 = Int32;
+
+// ----------------------------------------------------------------------
+// StringBuf
+
+buffer_new = $loader.loadprim("std@buffer_new",0);
+buffer_add = $loader.loadprim("std@buffer_add",2);
+buffer_add_sub = $loader.loadprim("std@buffer_add_sub",4);
+buffer_add_char = $loader.loadprim("std@buffer_add_char",2);
+buffer_string = $loader.loadprim("std@buffer_string",1);
+
+StringBuf = $new(null);
+
+StringBuf.new = function() {
+	var b = $new(null);
+	$objsetproto(b,@StringBuf);
+	b.@b = buffer_new();
+	return b;
+}
+
+@StringBuf = $new(null);
+
+StringBuf.prototype = @StringBuf;
+
+@StringBuf.add = function(s) {
+	buffer_add(this.@b,s);
+}
+
+@StringBuf.addSub = function(s,p,l) {
+	buffer_add_sub(this.@b,s,p,l);
+}
+
+@StringBuf.addChar = function(c) {
+	buffer_add_char(this.@b,c);
+}
+
+@StringBuf.__string = function() {
+	return buffer_string(this.@b);
+}
+
+@StringBuf.toString = function() {
+	return String.new(this.__string());
+}
+
+$exports.StringBuf = StringBuf;
+
+// ----------------------------------------------------------------------
+// Xml
+
+parse_xml = $loader.loadprim("std@parse_xml",2);
+
+fxml = function(name,att) {
+	var o = $new(null);
+	$objsetproto(o,@Xml);
+	var f = $objfields(att);
+
+	var i = 0;
+	var l = $asize(f);
+	while( i < l ) {
+		$objset(att,f[i], String.new($objget(att,f[i])) );
+		i = i + 1;
+	}
+	o.att = att;
+	o.node = String.new(name);
+	o.children = List.new();
+	o.parent = this.cur;
+	this.cur.children.add(o);
+	this.cur = o;
+}
+
+fpcdata = function(text) {
+	var o = $new(null);
+	$objsetproto(o,@Xml);
+	o.text = String.new(text);
+	o.parent = this.cur;
+	o.cdata = false;
+	this.cur.children.add(o);
+}
+
+fcdata = function(text) {
+	var o = $new();
+	$objsetproto(o,@Xml);
+	o.text = String.new(text);
+	o.parent = this.cur;
+	o.cdata = true;
+	this.cur.children.add(o);
+}
+
+fcomment = function(comment) {
+}
+
+fdoctype = function(dtype) {
+}
+
+fdone = function() {
+	this.cur = this.cur.parent;
+}
+
+
+Xml = $new(null);
+
+Xml.new = function(s) {
+	var doc = $new(null);
+	$objsetproto(doc,@Xml);
+	doc.children = List.new();
+	parse_xml(s.@s,{
+		cur => doc,
+		xml => fxml,
+		cdata => fcdata,
+		pcdata => fpcdata,
+		comment => fcomment,
+		doctype => fdoctype,
+		done => fdone
+	});
+	return doc;
+}
+
+@Xml = $new(null);
+
+Xml.prototype = @Xml;
+
+@Xml.get = function(name) {
+	if( this.att == null )
+		$throw(String.new("Xml.get"));
+	return $objget(this.att,$hash(name.@s));
+}
+
+@Xml.set = function(name,val) {
+	if( this.att == null )
+		$throw(String.new("Xml.set"));
+	return $objset(this.att,$hash(name.@s),val);
+}
+
+@Xml.nodes = function() {
+	if( this.children == null )
+		$throw(String.new("Xml.nodes"));
+	var s = this.children.h;
+	var l = List.new();
+	while( s != null ) {
+		var x = s[0];
+		if( x.node != null )
+			l.add(x);
+		s = s[1];
+	}
+	return l;
+}
+
+@Xml.firstChild = function() {
+	if( this.children == null )
+		$throw(String.new("Xml.firstChild"));
+	return this.children.first()
+}
+
+@Xml.firstNode = function() {
+	if( this.children == null )
+		$throw(String.new("Xml.firstNode"));
+	var s = this.children.h;
+	while( s != null ) {
+		if( s[0].node != null )
+			return s[0];
+		s = s[1];
+	}
+	return null;
+}
+
+@Xml.toString = function() {
+	return String.new(this.__string());
+}
+
+xml_string_rec = function(x,b) {
+	if( x.text != null ) {
+		if( x.cdata )
+			buffer_add(b,"<![CDATA[");
+		buffer_add(b,x.text);
+		if( x.cdata )
+			buffer_add(b,"]]>");
+		return;
+	}
+	var s = x.children;
+	if( s == null )
+		return;
+	s = s.h;
+	if( x.node != null ) {
+		buffer_add(b,"<");
+		buffer_add(b,x.node);
+		var a = x.att;
+		var f = $objfields(a);
+		var n = $asize(f);
+		var i = 0;
+		while( i < n ) {
+			buffer_add(b," ");
+			buffer_add(b,$field(f[i]));
+			buffer_add(b,"=\"");
+			buffer_add(b,$objget(a,f[i]));
+			buffer_add(b,"\"");
+			i = i + 1;
+		}
+		if( s == null ) {
+			buffer_add(b,"/>");
+			return;
+		}
+		buffer_add(b,">");
+		while( s != null ) {
+			xml_string_rec(s[0],b);
+			s = s[1];
+		}
+		buffer_add(b,"</");
+		buffer_add(b,x.node);
+		buffer_add(b,">");
+		return;
+	}
+	while( s != null ) {
+		xml_string_rec(s[0],b);
+		s = s[1];
+	}
+}
+
+@Xml.__string = function() {
+	var b = buffer_new();
+	xml_string_rec(this,b);
+	return buffer_string(b);
+}
+
+@Xml.__serialize = function() {
+	return $array("Xml",version);
+}
+
+$exports.Xml = Xml;
+
+$exports.__unserialize = function(v) {
+	if( $typeof(v) != $tarray )
+		$throw("Invalid serialized data");
+	if( v[1] != version )
+		$throw("Invalid version for class "+v[0]);
+	return switch( v[0] ) {
+	"Xml" => @Xml
+	"List" => @List
+	"Array" => @Array
+	"String" => @String
+	"Hash" => @Hash
+	default => $throw("Unknown class "+v[0])
+	}
+}
