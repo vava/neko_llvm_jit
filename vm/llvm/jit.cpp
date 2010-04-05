@@ -71,6 +71,9 @@ void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
 				builder.CreateStore(p, acc);
 			}
 			break;
+		case Push:
+			stack.InsertPush(acc);
+			break;
 		case Last:
 			builder.CreateRetVoid();
 			break;
