@@ -2,3 +2,4 @@ CVS
 *.o
 /src/**/*.n
 /src/*.n
+*.ll
