@@ -1,9 +1,11 @@
 #include "jit.h"
 
-#include <stdio.h>
+#include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/Target/TargetSelect.h"
 
 #include <iostream>
+#include <stdio.h>
 
 //C interface
 extern "C" {
