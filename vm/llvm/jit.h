@@ -7,9 +7,11 @@ extern "C" {
 	void* llvm_close_and_get_code(void *);
 }
 
+#include "common.h"
+#include "stack.h"
+
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
-#include "llvm/Support/IRBuilder.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include <memory>
 
@@ -22,9 +24,10 @@ public:
 private:
 	llvm::LLVMContext & ctx;
 	llvm::Module * llvmModule;
-	llvm::IRBuilder<> builder;
+	Builder builder;
 	llvm::IntegerType const * const intType;
 	llvm::Value * acc;
+	Stack stack;
 	//owns the module which owns all other expressions.
 	//  the only thing that has to be deleted
 	std::auto_ptr<llvm::ExecutionEngine> executionEngine;

@@ -45,7 +45,8 @@ namespace {
 Module::Module(): ctx(llvm::getGlobalContext()),
 				  llvmModule(new llvm::Module("test module", ctx)),
 				  builder(ctx),
-				  intType(llvm::IntegerType::get(ctx, 32)),
+				  intType(llvm::Type::getInt32Ty(ctx)),
+				  stack(ctx),
 				  executionEngine(makeExecutionEngine(llvmModule))
 {
 	//create "main" function
@@ -53,7 +54,8 @@ Module::Module(): ctx(llvm::getGlobalContext()),
 	llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "main", llvmModule);
 	llvm::BasicBlock *BB = llvm::BasicBlock::Create(ctx, "entry", F);
 	builder.SetInsertPoint(BB);
-	acc = builder.CreateAlloca(intType, llvm::ConstantInt::get(intType, 0));
+	acc = builder.CreateAlloca(intType, 0, "acc");
+	stack.InsertInit(&builder);
 }
 
 Module::~Module() {
