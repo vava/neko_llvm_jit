@@ -12,6 +12,13 @@ extern "C" {
 #include "llvm/Module.h"
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/Support/IRBuilder.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/Interpreter.h"
+#include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/Target/TargetData.h"
+#include "llvm/Target/TargetSelect.h"
+#include "llvm/Target/TargetOptions.h"
+#include "llvm/Config/config.h"
 
 class Module {
 public:
@@ -20,6 +27,10 @@ public:
 	void add_new_opcode(OPCODE opcode, int param, int params_count);
 	void * get_code();
 private:
-	llvm::Module * llvmModule;
+	llvm::LLVMContext & ctx;
+	llvm::Module llvmModule;
 	llvm::IRBuilder<> builder;
+	llvm::IntegerType const * const intType;
+	llvm::Value * acc;
+	llvm::ExecutionEngine * TheExecutionEngine;
 };

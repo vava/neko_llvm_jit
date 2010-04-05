@@ -2,7 +2,7 @@
 
 INSTALL_PREFIX = /usr/local
 
-CFLAGS = -Wall -fPIC -O3 -fomit-frame-pointer -I vm -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
+CFLAGS = -Wall -fPIC -O3 -fomit-frame-pointer -I vm -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -DX86TargetMachineModule=1
 EXTFLAGS = -pthread
 MAKESO = ${CC} -shared -WBsymbolic
 LIBNEKO_NAME = libneko.so
@@ -10,9 +10,9 @@ LIBNEKO_LIBS = -ldl -lgc -lm
 NEKOVM_FLAGS = -Lbin -lneko
 STD_NDLL_FLAGS = ${NEKOVM_FLAGS} -lrt
 INSTALL_FLAGS =
-LLVM_LIBS = -L/usr/lib/llvm/lib -lLLVMCore -lLLVMSupport -lLTO -lLLVMJIT
-#  -lLLVMAnnalysis
-
+LLVM_CONFIG = llvm-config
+LLVM_COMPONENTS = core support jit analysis native
+LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs)
 NEKO_EXEC = LD_LIBRARY_PATH=../bin:/usr/lib/llvm/lib:${LD_LIBRARY_PATH} NEKOPATH=../boot:../bin ../bin/neko
 
 # For OSX

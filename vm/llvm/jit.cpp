@@ -1,6 +1,7 @@
 #include "jit.h"
 
 #include <stdio.h>
+#include "llvm/ExecutionEngine/JIT.h"
 
 //C interface
 extern "C" {
@@ -15,24 +16,64 @@ extern "C" {
 	void* llvm_close_and_get_code(void *m) {
 		Module * module = static_cast<Module*>(m);
 		void * code = module->get_code();
-		delete module;
+		//delete module;
 		return code;
 	}
 }
 
-Module::Module(): builder(llvm::getGlobalContext()) {
+Module::Module(): ctx(llvm::getGlobalContext()),
+				  llvmModule("test module", ctx),
+				  builder(ctx),
+				  intType(llvm::IntegerType::get(ctx, 32))
+{
+	llvm::InitializeNativeTarget();
+
+	std::string ErrStr;
+	TheExecutionEngine = llvm::EngineBuilder(&llvmModule).setEngineKind(llvm::EngineKind::JIT).setErrorStr(&ErrStr).create();
+	if (!TheExecutionEngine) {
+		fprintf(stderr, "Could not create ExecutionEngine: %s\n", ErrStr.c_str());
+	}
+
+	//create "main" function
+	llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), std::vector<const llvm::Type *>(), false);
+	llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "main", &llvmModule);
+	llvm::BasicBlock *BB = llvm::BasicBlock::Create(ctx, "entry", F);
+	builder.SetInsertPoint(BB);
+	acc = builder.CreateAlloca(intType, llvm::ConstantInt::get(intType, 0));
 }
 
 Module::~Module() {
+	//delete TheExecutionEngine;
 }
 
 void print_neko_instruction(enum OPCODE op, int p, int params_count);
 
 void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
+	switch( opcode ) {
+		case AccInt:
+			{
+				llvm::Value * p = llvm::ConstantInt::get(intType, param);
+				builder.CreateStore(p, acc);
+			}
+			break;
+		case Last:
+			builder.CreateRetVoid();
+			break;
+	}
 	print_neko_instruction(opcode, param, params_count);
 }
 
 void * Module::get_code() {
+	llvm::Function * main = llvmModule.getFunction("main");
+	llvm::verifyFunction(*main);
+
+	//run main
+	main->dump();
+	if (TheExecutionEngine) {
+		void *FPtr = TheExecutionEngine->getPointerToFunction(main);
+		void (*FP)() = (void (*)())(intptr_t)FPtr;
+		FP();
+	}
 	return 0;
 }
 
