@@ -1,4 +1,5 @@
 #include "jit.h"
+
 #include <stdio.h>
 
 //C interface
@@ -19,7 +20,7 @@ extern "C" {
 	}
 }
 
-Module::Module() {
+Module::Module(): builder(llvm::getGlobalContext()) {
 }
 
 Module::~Module() {
@@ -34,9 +35,6 @@ void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
 void * Module::get_code() {
 	return 0;
 }
-
-// #include "llvm/Support/IRBuilder.h"
-// #include "llvm/Module.h"
 
 void print_neko_instruction(enum OPCODE op, int p, int params_count) {
 	switch( op ) {

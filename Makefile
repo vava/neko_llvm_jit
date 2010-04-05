@@ -10,8 +10,10 @@ LIBNEKO_LIBS = -ldl -lgc -lm
 NEKOVM_FLAGS = -Lbin -lneko
 STD_NDLL_FLAGS = ${NEKOVM_FLAGS} -lrt
 INSTALL_FLAGS =
+LLVM_LIBS = -L/usr/lib/llvm/lib -lLLVMCore -lLLVMSupport -lLTO -lLLVMJIT
+#  -lLLVMAnnalysis
 
-NEKO_EXEC = LD_LIBRARY_PATH=../bin:${LD_LIBRARY_PATH} NEKOPATH=../boot:../bin ../bin/neko
+NEKO_EXEC = LD_LIBRARY_PATH=../bin:/usr/lib/llvm/lib:${LD_LIBRARY_PATH} NEKOPATH=../boot:../bin ../bin/neko
 
 # For OSX
 #
@@ -116,11 +118,11 @@ compiler:
 	(cd src; ${NEKO_EXEC} nekoc -link ../boot/nekoc.n neko/Main)
 	(cd src; ${NEKO_EXEC} nekoc -link ../boot/nekoml.n nekoml/Main)
 
-bin/${LIBNEKO_NAME}: ${LIBNEKO_OBJECTS}
-	${MAKESO} ${EXTFLAGS} -o $@ ${LIBNEKO_OBJECTS} ${LIBNEKO_LIBS}
+bin/${LIBNEKO_NAME}: ${LIBNEKO_OBJECTS} Makefile
+	${MAKESO} ${EXTFLAGS} -o $@ ${LIBNEKO_OBJECTS} ${LIBNEKO_LIBS} ${LLVM_LIBS}
 
-bin/neko: $(VM_OBJECTS)
-	${CXX} ${CFLAGS} ${EXTFLAGS} -o $@ ${VM_OBJECTS} ${NEKOVM_FLAGS}
+bin/neko: $(VM_OBJECTS) Makefile
+	${CXX} ${CFLAGS} ${EXTFLAGS} -o $@ ${VM_OBJECTS} ${NEKOVM_FLAGS} ${LLVM_LIBS}
 	strip bin/neko
 
 bin/std.ndll: ${STD_OBJECTS}

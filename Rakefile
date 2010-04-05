@@ -9,5 +9,5 @@ task :test do
 end
 
 def neko(param)
-	sh "LD_LIBRARY_PATH=bin:${LD_LIBRARY_PATH} NEKOPATH=boot:bin bin/neko #{param}"
+	sh "LD_LIBRARY_PATH=bin:/usr/lib/llvm/lib:${LD_LIBRARY_PATH} NEKOPATH=boot:bin bin/neko #{param}"
 end
