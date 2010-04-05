@@ -19,6 +19,7 @@ extern "C" {
 #include "llvm/Target/TargetSelect.h"
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Config/config.h"
+#include <memory>
 
 class Module {
 public:
@@ -28,9 +29,11 @@ public:
 	void * get_code();
 private:
 	llvm::LLVMContext & ctx;
-	llvm::Module llvmModule;
+	llvm::Module * llvmModule;
 	llvm::IRBuilder<> builder;
 	llvm::IntegerType const * const intType;
 	llvm::Value * acc;
-	llvm::ExecutionEngine * TheExecutionEngine;
+	//owns the module which owns all other expressions.
+	//  the only thing that has to be deleted
+	std::auto_ptr<llvm::ExecutionEngine> executionEngine;
 };

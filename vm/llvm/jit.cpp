@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "llvm/ExecutionEngine/JIT.h"
 
+#include <iostream>
+
 //C interface
 extern "C" {
 	void * llvm_create_new_module() {
@@ -16,34 +18,43 @@ extern "C" {
 	void* llvm_close_and_get_code(void *m) {
 		Module * module = static_cast<Module*>(m);
 		void * code = module->get_code();
-		//delete module;
+		delete module;
 		return code;
 	}
 }
 
-Module::Module(): ctx(llvm::getGlobalContext()),
-				  llvmModule("test module", ctx),
-				  builder(ctx),
-				  intType(llvm::IntegerType::get(ctx, 32))
-{
-	llvm::InitializeNativeTarget();
+namespace {
+	llvm::ExecutionEngine * makeExecutionEngine(llvm::Module * module) {
+		llvm::InitializeNativeTarget();
 
-	std::string ErrStr;
-	TheExecutionEngine = llvm::EngineBuilder(&llvmModule).setEngineKind(llvm::EngineKind::JIT).setErrorStr(&ErrStr).create();
-	if (!TheExecutionEngine) {
-		fprintf(stderr, "Could not create ExecutionEngine: %s\n", ErrStr.c_str());
+		std::string error_string;
+		llvm::ExecutionEngine * ee = llvm::EngineBuilder(module)
+										.setEngineKind(llvm::EngineKind::JIT)
+										.setErrorStr(&error_string)
+										.create();
+		if (!ee) {
+			std::cerr << "Could not create ExecutionEngine: " << error_string << std::endl;
+		}
+
+		return ee;
 	}
+}
 
+Module::Module(): ctx(llvm::getGlobalContext()),
+				  llvmModule(new llvm::Module("test module", ctx)),
+				  builder(ctx),
+				  intType(llvm::IntegerType::get(ctx, 32)),
+				  executionEngine(makeExecutionEngine(llvmModule))
+{
 	//create "main" function
 	llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), std::vector<const llvm::Type *>(), false);
-	llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "main", &llvmModule);
+	llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "main", llvmModule);
 	llvm::BasicBlock *BB = llvm::BasicBlock::Create(ctx, "entry", F);
 	builder.SetInsertPoint(BB);
 	acc = builder.CreateAlloca(intType, llvm::ConstantInt::get(intType, 0));
 }
 
 Module::~Module() {
-	//delete TheExecutionEngine;
 }
 
 void print_neko_instruction(enum OPCODE op, int p, int params_count);
@@ -64,13 +75,13 @@ void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
 }
 
 void * Module::get_code() {
-	llvm::Function * main = llvmModule.getFunction("main");
+	llvm::Function * main = llvmModule->getFunction("main");
 	llvm::verifyFunction(*main);
 
 	//run main
 	main->dump();
-	if (TheExecutionEngine) {
-		void *FPtr = TheExecutionEngine->getPointerToFunction(main);
+	if (executionEngine.get()) {
+		void *FPtr = executionEngine->getPointerToFunction(main);
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
 	}
