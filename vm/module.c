@@ -91,6 +91,7 @@ extern field id_exports;
 extern value *neko_builtins;
 extern value neko_alloc_module_function( void *m, int_val pos, int nargs );
 extern void neko_module_jit( neko_module *m );
+extern void neko_llvm_module_jit( neko_module *m );
 
 EXTERN int neko_is_big_endian() {
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -563,8 +564,13 @@ neko_module *neko_read_module( reader r, readp p, value loader ) {
 	if( vm->fstats ) vm->fstats(vm,"neko_read_module_check",0);
 	// jit ?
 	if( vm->run_jit ) {
+		printf("Hello from run jit\n");
 		if( vm->fstats ) vm->fstats(vm,"neko_read_module_jit",1);
-		neko_module_jit(m);
+		//if (vm->llvm_jit) {
+			neko_llvm_module_jit(m);
+			//} else {
+			//neko_module_jit(m);
+			//}
 		if( vm->fstats ) vm->fstats(vm,"neko_read_module_jit",0);
 	}
 #	ifdef NEKO_DIRECT_THREADED

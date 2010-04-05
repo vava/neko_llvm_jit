@@ -2,9 +2,9 @@
 
 INSTALL_PREFIX = /usr/local
 
-CFLAGS = -Wall -O3 -fPIC -fomit-frame-pointer -I vm -D_GNU_SOURCE
+CFLAGS = -Wall -fPIC -O3 -fomit-frame-pointer -I vm -D_GNU_SOURCE
 EXTFLAGS = -pthread
-MAKESO = $(CC) -shared -WBsymbolic
+MAKESO = ${CC} -shared -WBsymbolic
 LIBNEKO_NAME = libneko.so
 LIBNEKO_LIBS = -ldl -lgc -lm
 NEKOVM_FLAGS = -Lbin -lneko
@@ -39,7 +39,7 @@ NEKO_EXEC = LD_LIBRARY_PATH=../bin:${LD_LIBRARY_PATH} NEKOPATH=../boot:../bin ..
 ifeq (${WIN32}, 1)
 CFLAGS = -g -Wall -O3 -momit-leaf-frame-pointer -I vm -I /usr/local/include
 EXTFLAGS =
-MAKESO = $(CC) -O -shared
+MAKESO = ${CC} -O -shared
 LIBNEKO_NAME = neko.dll
 LIBNEKO_LIBS = -Lbin -lgc
 STD_NDLL_FLAGS = ${NEKOVM_FLAGS} -lws2_32
@@ -83,7 +83,7 @@ endif
 
 VM_OBJECTS = vm/stats.o vm/main.o
 STD_OBJECTS = libs/std/buffer.o libs/std/date.o libs/std/file.o libs/std/init.o libs/std/int32.o libs/std/math.o libs/std/string.o libs/std/random.o libs/std/serialize.o libs/std/socket.o libs/std/sys.o libs/std/xml.o libs/std/module.o libs/std/md5.o libs/std/utf8.o libs/std/memory.o libs/std/misc.o libs/std/thread.o libs/std/process.o
-LIBNEKO_OBJECTS = vm/alloc.o vm/builtins.o vm/callback.o vm/interp.o vm/load.o vm/objtable.o vm/others.o vm/hash.o vm/module.o vm/jit_x86.o vm/threads.o
+LIBNEKO_OBJECTS = vm/alloc.o vm/builtins.o vm/callback.o vm/interp.o vm/load.o vm/objtable.o vm/others.o vm/hash.o vm/module.o vm/jit_x86.o vm/llvm_jit.o vm/threads.o
 
 all: createbin libneko neko std compiler libs
 
@@ -120,7 +120,7 @@ bin/${LIBNEKO_NAME}: ${LIBNEKO_OBJECTS}
 	${MAKESO} ${EXTFLAGS} -o $@ ${LIBNEKO_OBJECTS} ${LIBNEKO_LIBS}
 
 bin/neko: $(VM_OBJECTS)
-	${CC} ${CFLAGS} ${EXTFLAGS} -o $@ ${VM_OBJECTS} ${NEKOVM_FLAGS}
+	${CXX} ${CFLAGS} ${EXTFLAGS} -o $@ ${VM_OBJECTS} ${NEKOVM_FLAGS}
 	strip bin/neko
 
 bin/std.ndll: ${STD_OBJECTS}
@@ -149,6 +149,9 @@ uninstall:
 .SUFFIXES : .c .o
 
 .c.o :
+	${CC} ${CFLAGS} ${EXTFLAGS} -o $@ -c $<
+
+.cpp.o :
 	${CC} ${CFLAGS} ${EXTFLAGS} -o $@ -c $<
 
 .PHONY: all libneko libs neko std compiler clean doc test

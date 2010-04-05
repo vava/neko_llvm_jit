@@ -44,6 +44,7 @@ struct _neko_vm {
 	jmp_buf start;
 	void *c_stack_max;
 	int run_jit;
+	int llvm_jit;
 	value exc_stack;
 	neko_printer print;
 	void *print_param;
