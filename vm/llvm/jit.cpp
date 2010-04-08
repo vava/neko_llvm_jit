@@ -66,6 +66,7 @@ void print_neko_instruction(enum OPCODE op, int p, int params_count);
 void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
 	switch( opcode ) {
 		case AccInt:
+		case AccBuiltin:
 			{
 				builder.CreateStore(h.int_n(param), acc);
 			}
