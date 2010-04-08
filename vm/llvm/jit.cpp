@@ -43,18 +43,18 @@ namespace {
 }
 
 Module::Module(): ctx(llvm::getGlobalContext()),
+				  h(ctx),
 				  llvmModule(new llvm::Module("test module", ctx)),
 				  builder(ctx),
-				  intType(llvm::Type::getInt32Ty(ctx)),
 				  stack(ctx),
 				  executionEngine(makeExecutionEngine(llvmModule))
 {
 	//create "main" function
 	llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), std::vector<const llvm::Type *>(), false);
-	llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "main", llvmModule);
-	llvm::BasicBlock *BB = llvm::BasicBlock::Create(ctx, "entry", F);
+	main = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "main", llvmModule);
+	llvm::BasicBlock *BB = llvm::BasicBlock::Create(ctx, "entry", main);
 	builder.SetInsertPoint(BB);
-	acc = builder.CreateAlloca(intType, 0, "acc");
+	acc = builder.CreateAlloca(h.int_t(), 0, "acc");
 	stack.InsertInit(&builder);
 }
 
@@ -67,12 +67,47 @@ void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
 	switch( opcode ) {
 		case AccInt:
 			{
-				llvm::Value * p = llvm::ConstantInt::get(intType, param);
-				builder.CreateStore(p, acc);
+				builder.CreateStore(h.int_n(param), acc);
+			}
+			break;
+		case AccStack0:
+			builder.CreateStore(stack.Load(acc, 0), acc);
+			break;
+		case AccStack1:
+			builder.CreateStore(stack.Load(acc, 1), acc);
+			break;
+		case Add:
+			{
+				llvm::Value * acc_temp = builder.CreateLoad(acc, "acc_tmp");
+				llvm::Value * stack_temp = stack.Load(acc, 0);
+				llvm::BasicBlock * Then = llvm::BasicBlock::Create(ctx, "then", main);
+				llvm::BasicBlock * Else = llvm::BasicBlock::Create(ctx, "else", main);
+				llvm::BasicBlock * Merge = llvm::BasicBlock::Create(ctx, "merge", main);
+				builder.CreateCondBr(
+					builder.CreateICmpEQ(
+						builder.CreateAnd(
+							h.is_int(builder, acc_temp),
+							h.is_int(builder, stack_temp),
+							"is_int(acc) && is_int(*sp)"),
+						h.int_1()),
+					Then,
+					Else);
+				//empty Else
+				builder.SetInsertPoint(Else);
+				builder.CreateBr(Merge);
+				//Create Then
+				builder.SetInsertPoint(Then);
+				builder.CreateStore(builder.CreateSub(builder.CreateAdd(acc_temp, stack_temp), h.int_1()), acc);
+				stack.InsertPop(1);
+				builder.CreateBr(Merge);
+				builder.SetInsertPoint(Merge);
 			}
 			break;
 		case Push:
 			stack.InsertPush(acc);
+			break;
+		case Pop:
+			stack.InsertPop(param);
 			break;
 		case Last:
 			builder.CreateRetVoid();

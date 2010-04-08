@@ -23,10 +23,11 @@ public:
 	void * get_code();
 private:
 	llvm::LLVMContext & ctx;
+	Helper h;
 	llvm::Module * llvmModule;
 	Builder builder;
-	llvm::IntegerType const * const intType;
 	llvm::Value * acc;
+	llvm::Function * main;
 	Stack stack;
 	//owns the module which owns all other expressions.
 	//  the only thing that has to be deleted
