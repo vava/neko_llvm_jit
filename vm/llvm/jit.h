@@ -28,6 +28,8 @@ private:
 	Builder builder;
 	llvm::Value * acc;
 	llvm::Function * main;
+	llvm::PointerType * vfunction_struct;
+	llvm::PointerType * prim1;
 	Stack stack;
 	//owns the module which owns all other expressions.
 	//  the only thing that has to be deleted

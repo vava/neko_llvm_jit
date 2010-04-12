@@ -12,7 +12,7 @@ void Stack::InsertInit(Builder * builder_) {
 	builder = builder_;
 
 	llvm::ArrayType const * const arrayType = llvm::ArrayType::get(h.int_t(), 0);
-
+	
 	idx = builder->CreateAlloca(h.int_t(), 0, "stack_index");
 	builder->CreateStore(h.int_0(), idx);
 
@@ -34,7 +34,7 @@ void Stack::InsertPop(llvm::Value * how_many_to_skip) {
 		idx);
 }
 
-llvm::Value * Stack::Load(llvm::Value * acc, llvm::Value * index) {
+llvm::Value * Stack::Load(llvm::Value * index) {
 	llvm::Value * idx_value = builder->CreateLoad(idx, "stack_index_tmp");
 	return builder->CreateLoad(
 		h.getArrayIndex(*builder,

@@ -14,8 +14,8 @@ public:
 	void InsertPop(llvm::Value * how_many_to_skip);
 	void InsertPop(int how_many_to_skip) { InsertPop(h.int_n(how_many_to_skip)); }
 	//That's how strange looking stack it is in neko
-	llvm::Value * Load(llvm::Value * acc, llvm::Value * index);
-	llvm::Value * Load(llvm::Value * acc, int index) { return Load(acc, h.int_n(index)); }
+	llvm::Value * Load(llvm::Value * index);
+	llvm::Value * Load(int index) { return Load(h.int_n(index)); }
 	void InsertStore(llvm::Value * acc, llvm::Value * index);
 	void InsertStore(llvm::Value * acc, int index)  { InsertStore(acc, h.int_n(index)); }
 

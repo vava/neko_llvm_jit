@@ -56,6 +56,20 @@ Module::Module(): ctx(llvm::getGlobalContext()),
 	builder.SetInsertPoint(BB);
 	acc = builder.CreateAlloca(h.int_t(), 0, "acc");
 	stack.InsertInit(&builder);
+
+	std::vector<const llvm::Type*> vfunction_struct_types;
+	vfunction_struct_types.push_back(h.int_t());// val_type t
+	vfunction_struct_types.push_back(h.int_t());// int nargs
+	vfunction_struct_types.push_back(h.int_t());// void * addr
+	vfunction_struct_types.push_back(h.int_t());// int32 * env
+	vfunction_struct_types.push_back(h.int_t());// void * module
+
+	vfunction_struct = llvm::StructType::get(ctx, vfunction_struct_types, true)->getPointerTo();
+
+	std::vector<const llvm::Type*> prim1_types;
+	prim1_types.push_back(h.int_t());
+	prim1_types.push_back(h.int_t());
+	prim1 = llvm::FunctionType::get(h.int_t(), prim1_types, false)->getPointerTo();
 }
 
 Module::~Module() {
@@ -72,15 +86,15 @@ void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
 			}
 			break;
 		case AccStack0:
-			builder.CreateStore(stack.Load(acc, 0), acc);
+			builder.CreateStore(stack.Load(0), acc);
 			break;
 		case AccStack1:
-			builder.CreateStore(stack.Load(acc, 1), acc);
+			builder.CreateStore(stack.Load(1), acc);
 			break;
 		case Add:
 			{
 				llvm::Value * acc_temp = builder.CreateLoad(acc, "acc_tmp");
-				llvm::Value * stack_temp = stack.Load(acc, 0);
+				llvm::Value * stack_temp = stack.Load(0);
 				llvm::BasicBlock * Then = llvm::BasicBlock::Create(ctx, "then", main);
 				llvm::BasicBlock * Else = llvm::BasicBlock::Create(ctx, "else", main);
 				llvm::BasicBlock * Merge = llvm::BasicBlock::Create(ctx, "merge", main);
@@ -102,6 +116,24 @@ void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
 				stack.InsertPop(1);
 				builder.CreateBr(Merge);
 				builder.SetInsertPoint(Merge);
+			}
+			break;
+		case Call:
+			{
+				llvm::Value * vfunc_ptr = builder.CreateIntToPtr(builder.CreateLoad(acc), vfunction_struct, "(vfunction *)acc");
+				llvm::Value * val_type = builder.CreateLoad(builder.CreateConstGEP2_32(vfunc_ptr, 0, 0, "val_type"));
+				llvm::Value * addr = builder.CreateIntToPtr(builder.CreateLoad(builder.CreateConstGEP2_32(vfunc_ptr, 0, 2), "addr"), prim1);
+				llvm::Value * param1 = stack.Load(0);
+				stack.InsertPop(1);
+				llvm::Value * returnValue;
+				llvm::Value * arr = builder.CreateAlloca(h.int_t(), h.int_n(param), "arr");
+				builder.CreateStore(param1, builder.CreateConstGEP1_32(arr, 0));
+				switch(param) {
+					case 1:
+						returnValue = builder.CreateCall2(addr, builder.CreatePtrToInt(arr, h.int_t()), h.int_n(param));
+						break;
+				}
+				builder.CreateStore(returnValue, acc);
 			}
 			break;
 		case Push:
