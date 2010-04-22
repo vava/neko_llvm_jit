@@ -3,6 +3,10 @@
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/JIT.h"
 #include "llvm/Target/TargetSelect.h"
+#include "llvm/Target/TargetData.h"
+#include "llvm/PassManager.h"
+#include "llvm/ModuleProvider.h"
+#include "llvm/LinkAllPasses.h"
 
 #include <iostream>
 #include <stdio.h>
@@ -54,8 +58,7 @@ Module::Module(): ctx(llvm::getGlobalContext()),
 	main = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "main", llvmModule);
 	llvm::BasicBlock *BB = llvm::BasicBlock::Create(ctx, "entry", main);
 	builder.SetInsertPoint(BB);
-	acc = builder.CreateAlloca(h.int_t(), 0, "acc");
-	stack.InsertInit(&builder);
+	stack.init(&builder);
 
 	std::vector<const llvm::Type*> vfunction_struct_types;
 	vfunction_struct_types.push_back(h.int_t());// val_type t
@@ -78,31 +81,32 @@ Module::~Module() {
 void print_neko_instruction(enum OPCODE op, int p, int params_count);
 
 void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
+	print_neko_instruction(opcode, param, params_count);
 	switch( opcode ) {
 		case AccInt:
 		case AccBuiltin:
-			{
-				builder.CreateStore(h.int_n(param), acc);
-			}
+			acc = h.int_n(param);
 			break;
 		case AccStack0:
-			builder.CreateStore(stack.Load(0), acc);
+			acc = stack.load(0);
 			break;
 		case AccStack1:
-			builder.CreateStore(stack.Load(1), acc);
+			acc = stack.load(1);
 			break;
 		case Add:
 			{
-				llvm::Value * acc_temp = builder.CreateLoad(acc, "acc_tmp");
-				llvm::Value * stack_temp = stack.Load(0);
+				llvm::Value * left = stack.load(0);
+				llvm::Value * right = acc;
+
 				llvm::BasicBlock * Then = llvm::BasicBlock::Create(ctx, "then", main);
 				llvm::BasicBlock * Else = llvm::BasicBlock::Create(ctx, "else", main);
 				llvm::BasicBlock * Merge = llvm::BasicBlock::Create(ctx, "merge", main);
+
 				builder.CreateCondBr(
 					builder.CreateICmpEQ(
 						builder.CreateAnd(
-							h.is_int(builder, acc_temp),
-							h.is_int(builder, stack_temp),
+							h.is_int(builder, left),
+							h.is_int(builder, right),
 							"is_int(acc) && is_int(*sp)"),
 						h.int_1()),
 					Then,
@@ -112,49 +116,77 @@ void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
 				builder.CreateBr(Merge);
 				//Create Then
 				builder.SetInsertPoint(Then);
-				builder.CreateStore(builder.CreateSub(builder.CreateAdd(acc_temp, stack_temp), h.int_1()), acc);
-				stack.InsertPop(1);
+				acc = builder.CreateSub(builder.CreateAdd(left, right), h.int_1());
 				builder.CreateBr(Merge);
 				builder.SetInsertPoint(Merge);
+
+				llvm::PHINode * phi = builder.CreatePHI(h.int_t());
+				phi->addIncoming(acc, Then);
+				phi->addIncoming(h.int_0(), Else);
+
+				acc = phi;
+
+				stack.pop(1);
 			}
 			break;
 		case Call:
 			{
-				llvm::Value * vfunc_ptr = builder.CreateIntToPtr(builder.CreateLoad(acc), vfunction_struct, "(vfunction *)acc");
+				llvm::Value * vfunc_ptr = builder.CreateIntToPtr(acc, vfunction_struct, "(vfunction *)acc");
 				llvm::Value * val_type = builder.CreateLoad(builder.CreateConstGEP2_32(vfunc_ptr, 0, 0, "val_type"));
 				llvm::Value * addr = builder.CreateIntToPtr(builder.CreateLoad(builder.CreateConstGEP2_32(vfunc_ptr, 0, 2), "addr"), prim1);
-				llvm::Value * param1 = stack.Load(0);
-				stack.InsertPop(1);
+				llvm::Value * param1 = stack.load(0);
 				llvm::Value * returnValue;
 				llvm::Value * arr = builder.CreateAlloca(h.int_t(), h.int_n(param), "arr");
 				builder.CreateStore(param1, builder.CreateConstGEP1_32(arr, 0));
 				switch(param) {
 					case 1:
-						returnValue = builder.CreateCall2(addr, builder.CreatePtrToInt(arr, h.int_t()), h.int_n(param));
+						acc = builder.CreateCall2(addr, builder.CreatePtrToInt(arr, h.int_t()), h.int_n(param));
 						break;
 				}
-				builder.CreateStore(returnValue, acc);
+
+				stack.pop(1);
 			}
 			break;
 		case Push:
-			stack.InsertPush(acc);
+			stack.push(acc);
 			break;
 		case Pop:
-			stack.InsertPop(param);
+			stack.pop(param);
 			break;
 		case Last:
 			builder.CreateRetVoid();
 			break;
 	}
-	print_neko_instruction(opcode, param, params_count);
 }
 
 void * Module::get_code() {
 	llvm::Function * main = llvmModule->getFunction("main");
+	main->dump();
 	llvm::verifyFunction(*main);
 
-	//run main
+	//llvm::ExistingModuleProvider mp(llvmModule);
+
+	llvm::PassManager OurFPM;//(&mp);
+	// Set up the optimizer pipeline.  Start with registering info about how the
+	// target lays out data structures.
+	OurFPM.add(new llvm::TargetData(*executionEngine->getTargetData()));
+	// Promote allocas to registers.
+	OurFPM.add(llvm::createPromoteMemoryToRegisterPass());
+	// Do simple "peephole" optimizations and bit-twiddling optzns.
+	OurFPM.add(llvm::createInstructionCombiningPass());
+	// Reassociate expressions.
+	OurFPM.add(llvm::createReassociatePass());
+	// Eliminate Common SubExpressions.
+	OurFPM.add(llvm::createGVNPass());
+	// Simplify the control flow graph (deleting unreachable blocks, etc).
+	OurFPM.add(llvm::createCFGSimplificationPass());
+
+	//OurFPM.doInitialization();
+	OurFPM.run(*llvmModule);
+
 	main->dump();
+
+	//run main
 	if (executionEngine.get()) {
 		void *FPtr = executionEngine->getPointerToFunction(main);
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
