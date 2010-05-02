@@ -32,35 +32,68 @@
 
 #ifdef JIT_ENABLE
 
-#define PARAMETER_TABLE
-#include "opcodes.h"
+/* #define PARAMETER_TABLE */
+/* #include "opcodes.h" */
 
 extern void neko_module_jit( neko_module *m );
 
-extern void * llvm_create_new_module();
-extern void llvm_add_op(void * m, enum OPCODE opcode, int param, int params_count);
-extern void* llvm_close_and_get_code(void *);
+extern void llvm_cpp_jit( neko_module const * m );
+
+/* extern void * llvm_create_new_module(); */
+/* extern void llvm_add_op(void * m, enum OPCODE opcode, int param, int params_count); */
+/* extern void* llvm_close_and_get_code(void *); */
+
+/* void get_function_addresses(neko_module *m) { */
+/* 	int k = 0; */
+
+/* 	while (true) { */
+/* 		while( k < m->nglobals && !val_is_function(m->globals[k]) ) */
+/* 			k++; */
+/* 		if( k >= m->nglobals ) { */
+/* 			break; */
+/* 		} */
+/* 		func_count++; */
+/* 		k++; */
+/* 	} */
+/* } */
 
 void neko_llvm_module_jit( neko_module *m ) {
-	printf("Hello\n");
-	unsigned int i = 0;
-	int param = 0;
-	int params_count = 0;
-	void * module = llvm_create_new_module();
-	void * code = 0;
+	llvm_cpp_jit(m);
+	/* printf("Hello\n"); */
+	/* unsigned int i = 0; */
+	/* int param = 0; */
+	/* int params_count = 0; */
+	/* void * module = llvm_create_new_module(); */
+	/* void * code = 0; */
+	/* int k = 0; */
+	/* int func_count = 0; */
 
-	while( i <= m->codesize ) {
-		enum OPCODE op = m->code[i];
-		i++;
-		param = (int)m->code[i];
-		params_count = parameter_table[op];
+	/* printf("Found %d globals\n", m->nglobals); */
 
-		llvm_add_op(module, op, param, params_count);
+	/* while (true) { */
+	/* 	while( k < m->nglobals && !val_is_function(m->globals[k]) ) */
+	/* 		k++; */
+	/* 	if( k >= m->nglobals ) { */
+	/* 		break; */
+	/* 	} */
+	/* 	func_count++; */
+	/* 	k++; */
+	/* } */
 
-		i += params_count;
-	}
+	/* printf("Found %d functions\n", func_count); */
 
-	code = llvm_close_and_get_code(module);
+	/* while( i <= m->codesize ) { */
+	/* 	enum OPCODE op = m->code[i]; */
+	/* 	i++; */
+	/* 	param = (int)m->code[i]; */
+	/* 	params_count = parameter_table[op]; */
+
+	/* 	llvm_add_op(module, op, param, params_count); */
+
+	/* 	i += params_count; */
+	/* } */
+
+	/* code = llvm_close_and_get_code(module); */
 
 	//finally, run normal jit for now
 	neko_module_jit( m );
