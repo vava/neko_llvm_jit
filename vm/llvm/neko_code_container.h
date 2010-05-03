@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../opcodes.h"
+//#include "../opcodes.h"
+
+enum OPCODE: int;
 
 #include <map>
 
