@@ -58,6 +58,7 @@ extern void llvm_cpp_jit( neko_module const * m );
 /* } */
 
 void neko_llvm_module_jit( neko_module *m ) {
+	printf("Calling llvm cpp jit\n");
 	llvm_cpp_jit(m);
 	/* printf("Hello\n"); */
 	/* unsigned int i = 0; */

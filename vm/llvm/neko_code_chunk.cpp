@@ -1,29 +1,57 @@
 #include "neko_code_chunk.h"
 
-NekoCodeChunk::NekoCodeChunk(neko_code_container const & code_container_, int from_address_, int to_address_)
+#include "assert.h"
+#include <limits>
+#include "stdio.h"
+#include <iostream>
+#include <algorithm>
+
+extern "C" {
+	#define PARAMETER_TABLE
+	#include "../opcodes.h"
+}
+
+NekoCodeChunk::NekoCodeChunk(neko_code_container const * code_container_, int from_address_, int to_address_)
 	: code_container(code_container_)
 	, from_address(from_address_)
 	, to_address(to_address_)
 {
+	assert(code_container != NULL);
+	std::cout << "new block from " << from_address << " to " << to_address << std::endl;
 }
 
-NekoCodeChunk NekoCodeChunk::getSubChunk(int from, int to) {
+NekoCodeChunk NekoCodeChunk::getSubChunk(int from, int to) const {
+	std::cout << to << " " << from << std::endl;
+	std::cout << to_address << " " << from_address << std::endl;
 	assert(from >= from_address && to <= to_address);
 	return NekoCodeChunk(code_container, from, to);
 }
 
 std::vector<NekoCodeChunk> NekoCodeChunk::splitByAddresses(std::vector<int> const & addresses) const {
-	std::vector<NekoCodeChunk> chunks;
+	std::cout << "split by addresses" << std::endl;
+	std::vector<int> local_addresses(addresses);
+	local_addresses.push_back(from_address);
+	local_addresses.push_back(to_address);
 
-	for (std::vector<int>::const_iterator it = addresses.begin();
-		 it != addresses.end();
+	std::sort(local_addresses.begin(), local_addresses.end());
+	local_addresses.erase(std::unique(local_addresses.begin(), local_addresses.end()), local_addresses.end());
+
+	std::cout << "split by addresses, preparation done" << std::endl;
+
+	std::vector<NekoCodeChunk> chunks;
+	std::vector<int>::const_iterator end = local_addresses.end() - 1;
+	for (std::vector<int>::const_iterator it = local_addresses.begin();
+		 it != end;
 		 ++it)
 		{
 			int from = *it;
-			int to = (it + 1 != addresses.end()) ? *(it + 1) : std::limits<int>::max;
+			int to = *(it + 1);
 
 			chunks.push_back(getSubChunk(from, to));
 		}
+
+	std::cout << "split by addresses, done" << std::endl;
+	return chunks;
 }
 
 namespace {
@@ -105,11 +133,11 @@ namespace {
 #include "opcodes.h"
 
 void NekoCodeChunk::neko_dump(std::string const & indent) const {
-	for (iterator it = begin();
+	for (const_iterator it = begin();
 		 it != end();
 		 ++it)
 		{
 			std::cout << indent;
-			print_neko_instruction(it->second.first, it->second.second, parameter_table[it->second.first]);
+			print_neko_instruction((OPCODE) it->second.first, it->second.second, parameter_table[it->second.first]);
 		}
 }

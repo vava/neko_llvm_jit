@@ -2,14 +2,12 @@
 
 //#include "../opcodes.h"
 
-enum OPCODE: int;
-
 #include <map>
 
 class NekoCodeChunk;
 typedef struct _neko_module neko_module;
 
-typedef std::map<int, std::pair<OPCODE, int> > neko_code_container;
+typedef std::map<int, std::pair<int, int> > neko_code_container;
 
 class NekoCodeContainer {
 public:

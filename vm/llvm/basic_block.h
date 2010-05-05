@@ -1,3 +1,5 @@
+#include "neko_code_chunk.h"
+
 class BasicBlock {
 public:
 	BasicBlock(NekoCodeChunk const & chunk_) : chunk(chunk_) {}
@@ -9,5 +11,5 @@ public:
 
 	void neko_dump(std::string const & indent = "") const;
 private:
-	NekoCodeChunk const & chunk;
+	NekoCodeChunk chunk;
 };

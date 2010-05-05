@@ -1,6 +1,6 @@
 //#include "../opcodes.h"
 
-struct neko_module;
+typedef struct _neko_module neko_module;
 
 //C interface
 extern "C" {

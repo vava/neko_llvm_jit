@@ -3,8 +3,13 @@
 #include <algorithm>
 #include <iostream>
 
+extern "C" {
+	#include "../opcodes.h"
+}
+
 namespace {
 	std::vector<int> get_block_addresses(NekoCodeChunk const & code_chunk) {
+		std::cout << "get block addresses" << std::endl;
 		std::vector<int> block_addresses;
 
 		for (NekoCodeChunk::const_iterator it = code_chunk.begin(); it != code_chunk.end(); ++it) {
@@ -20,21 +25,24 @@ namespace {
 			}
 		}
 
-		std::sort(block_addresses.begin(), block_addresses.end());
-
 		return block_addresses;
 	}
 
+	std::pair<const int, BasicBlock> make_block(NekoCodeChunk const & chunk) {
+		return std::make_pair(chunk.getFromAddress(), BasicBlock(chunk));
+	}
+
 	Function::blocks_container get_blocks(NekoCodeChunk const & chunk) {
+		std::cout << "get blocks" << std::endl;
 		std::vector<int> block_addresses = get_block_addresses(chunk);
+		std::cout << "blocks size: " << block_addresses.size() << std::endl;
 		std::vector<NekoCodeChunk> chunks = chunk.splitByAddresses(block_addresses);
 
 		Function::blocks_container result;
 
-		std::transform(block_addresses.begin(), block_addresses.end(),
-					   chunks.begin(),
+		std::transform(chunks.begin(), chunks.end(),
 					   std::inserter(result, result.begin()),
-					   std::make_pair<const int, BasicBlock>);
+					   std::ptr_fun(make_block));
 
 		return result;
 	}
@@ -44,12 +52,13 @@ Function::Function(NekoCodeChunk const & code_chunk) : blocks(get_blocks(code_ch
 {}
 
 void Function::neko_dump(std::string const & indent) const {
-	std::cout << indent << "{" << std::endl;
+	std::cout << "{" << std::endl;
+	std::cout << indent << "//Number of blocks: " << blocks.size() << std::endl;
 	for (const_iterator it = begin();
 		 it != end();
 		 ++it) {
-		std::cout << it->first << " : ";
-		it->second.neko_dump(indent + "\t");
+		std::cout << indent << it->first << " : ";
+		it->second.neko_dump(indent);
 	}
-	std::cout << indent << "}" << std::endl;
+	std::cout << "}" << std::endl;
 }
