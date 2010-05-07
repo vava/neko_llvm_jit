@@ -5,7 +5,7 @@ class Function {
 public:
 	Function(NekoCodeChunk const & code_chunk);
 
-	typedef std::map<int, BasicBlock> blocks_container;
+	typedef std::map<unsigned int, BasicBlock> blocks_container;
 	typedef blocks_container::iterator iterator;
 	typedef blocks_container::const_iterator const_iterator;
 

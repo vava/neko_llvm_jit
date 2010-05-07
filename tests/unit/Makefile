@@ -95,11 +95,12 @@ gmock_main.a : gmock-all.o gtest-all.o gmock_main.o
 
 # Builds a sample test.
 
-all_test.o : $(TEST_DIR)/all_test.cc $(GMOCK_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/all_test.cc -o $@
+all_test : gmock_main.a $(NEKO_VM_DIR)/llvm/*.o $(patsubst %.cc,%.o,$(wildcard $(TEST_DIR)/*-test.cc)) $(TEST_DIR)/common.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -ldl -lm gmock_main.a $(NEKO_VM_DIR)/llvm/*.o all-test.o $(TEST_DIR)/common.o ${LLVM_LIBS} -o $@
 
-all_test : gmock_main.a $(NEKO_VM_DIR)/llvm/*.o $(TEST_DIR)/all_test.o $(TEST_DIR)/common.o
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -ldl -lm $^ ${LLVM_LIBS} -o $@
-
-.cpp.o :
+.cpp.o : $(TEST_DIR)/*.h $(NEKO_VM_DIR)/llvm/*.h $(NEKO_VM_DIR)/*.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<
+
+%-test.cc.o : $(TEST_DIR)/*.h $(NEKO_VM_DIR)/llvm/*.h $(NEKO_VM_DIR)/*.h
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<
+

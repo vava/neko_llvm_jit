@@ -8,9 +8,8 @@ extern "C" {
 }
 
 namespace {
-	std::vector<int> get_block_addresses(NekoCodeChunk const & code_chunk) {
-		std::cout << "get block addresses" << std::endl;
-		std::vector<int> block_addresses;
+	std::vector<unsigned int> get_block_addresses(NekoCodeChunk const & code_chunk) {
+		std::vector<unsigned int> block_addresses;
 
 		for (NekoCodeChunk::const_iterator it = code_chunk.begin(); it != code_chunk.end(); ++it) {
 			switch (it->second.first) {
@@ -28,14 +27,12 @@ namespace {
 		return block_addresses;
 	}
 
-	std::pair<const int, BasicBlock> make_block(NekoCodeChunk const & chunk) {
+	std::pair<const unsigned int, BasicBlock> make_block(NekoCodeChunk const & chunk) {
 		return std::make_pair(chunk.getFromAddress(), BasicBlock(chunk));
 	}
 
 	Function::blocks_container get_blocks(NekoCodeChunk const & chunk) {
-		std::cout << "get blocks" << std::endl;
-		std::vector<int> block_addresses = get_block_addresses(chunk);
-		std::cout << "blocks size: " << block_addresses.size() << std::endl;
+		std::vector<unsigned int> block_addresses = get_block_addresses(chunk);
 		std::vector<NekoCodeChunk> chunks = chunk.splitByAddresses(block_addresses);
 
 		Function::blocks_container result;

@@ -4,7 +4,7 @@ class ModuleCodeBase {
 public:
 	ModuleCodeBase(neko_module const * m);
 
-	typedef std::map<int, Function> functions_container;
+	typedef std::map<unsigned int, Function> functions_container;
 	typedef functions_container::iterator iterator;
 	typedef functions_container::const_iterator const_iterator;
 

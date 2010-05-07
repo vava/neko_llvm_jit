@@ -5,5 +5,9 @@ extern "C" {
 }
 
 neko_module * makeNekoModule(OPCODE * opcodes, int size) {
-	return 0;
+	neko_module * nm = new neko_module;
+	nm->codesize = size;
+	nm->code = (int_val *)opcodes;
+
+	return nm;
 }

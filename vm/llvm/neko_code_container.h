@@ -7,7 +7,7 @@
 class NekoCodeChunk;
 typedef struct _neko_module neko_module;
 
-typedef std::map<int, std::pair<int, int> > neko_code_container;
+typedef std::map<unsigned int, std::pair<unsigned int, int> > neko_code_container;
 
 class NekoCodeContainer {
 public:
