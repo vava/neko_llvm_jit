@@ -24,17 +24,21 @@ GTEST_DIR = gmock/gtest
 GMOCK_DIR = gmock
 
 # Where to find user code.
-USER_DIR = .
+TEST_DIR = .
+NEKO_VM_DIR = ../../vm
+LLVM_CONFIG = llvm-config
+LLVM_COMPONENTS = core support jit analysis native
+LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs $(LLVM_COMPONENTS))
 
 # Flags passed to the preprocessor.
-CPPFLAGS += -I$(GTEST_DIR)/include -I$(GMOCK_DIR)/include
+CPPFLAGS += -I$(GTEST_DIR)/include -I$(GMOCK_DIR)/include -I$(NEKO_VM_DIR)
 
 # Flags passed to the C++ compiler.
 CXXFLAGS += -g -Wall -Wextra
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = gmock-test
+TESTS = all_test
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -91,8 +95,11 @@ gmock_main.a : gmock-all.o gtest-all.o gmock_main.o
 
 # Builds a sample test.
 
-gmock_test.o : $(USER_DIR)/gmock_test.cc $(GMOCK_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/gmock_test.cc
+all_test.o : $(TEST_DIR)/all_test.cc $(GMOCK_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(TEST_DIR)/all_test.cc -o $@
 
-gmock_test : gmock_test.o gmock_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+all_test : gmock_main.a $(NEKO_VM_DIR)/llvm/*.o $(TEST_DIR)/all_test.o $(TEST_DIR)/common.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -ldl -lm $^ ${LLVM_LIBS} -o $@
+
+.cpp.o :
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<

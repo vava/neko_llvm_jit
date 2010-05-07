@@ -12,7 +12,7 @@ STD_NDLL_FLAGS = ${NEKOVM_FLAGS} -lrt
 INSTALL_FLAGS =
 LLVM_CONFIG = llvm-config
 LLVM_COMPONENTS = core support jit analysis native
-LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs)
+LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs $(LLVM_COMPONENTS))
 NEKO_EXEC = LD_LIBRARY_PATH=../bin:/usr/lib/llvm/lib:${LD_LIBRARY_PATH} NEKOPATH=../boot:../bin ../bin/neko
 
 # For OSX
