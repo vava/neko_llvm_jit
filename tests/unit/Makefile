@@ -36,10 +36,6 @@ CPPFLAGS += -I$(GTEST_DIR)/include -I$(GMOCK_DIR)/include -I$(NEKO_VM_DIR)
 # Flags passed to the C++ compiler.
 CXXFLAGS += -g -Wall -Wextra
 
-# All tests produced by this Makefile.  Remember to add new tests you
-# created to the list.
-TESTS = all_test
-
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
 GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
@@ -54,10 +50,13 @@ GMOCK_HEADERS = $(GMOCK_DIR)/include/gmock/*.h \
 
 # House-keeping build targets.
 
-all : $(TESTS)
+all : all_test
+
+test: all
+	$(TEST_DIR)/all_test
 
 clean :
-	rm -f $(TESTS) gmock.a gmock_main.a *.o
+	rm -f all_test gmock.a gmock_main.a *.o
 
 # Builds gmock.a and gmock_main.a.  These libraries contain both
 # Google Mock and Google Test.  A test should link with either gmock.a
@@ -96,7 +95,7 @@ gmock_main.a : gmock-all.o gtest-all.o gmock_main.o
 # Builds a sample test.
 
 all_test : gmock_main.a $(NEKO_VM_DIR)/llvm/*.o $(patsubst %.cc,%.o,$(wildcard $(TEST_DIR)/*-test.cc)) $(TEST_DIR)/common.o
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -ldl -lm gmock_main.a $(NEKO_VM_DIR)/llvm/*.o all-test.o $(TEST_DIR)/common.o ${LLVM_LIBS} -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -ldl -lm $^ ${LLVM_LIBS} -o $@
 
 .cpp.o : $(TEST_DIR)/*.h $(NEKO_VM_DIR)/llvm/*.h $(NEKO_VM_DIR)/*.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<

@@ -28,4 +28,11 @@ TEST(NekoCodeContainerTest, ExposeAllCode) {
 }
 
 TEST(NekoCodeContainerTest, WorksWithNoCode) {
+	OPCODE opcodes[] = {};
+	std::auto_ptr<neko_module> nm(makeNekoModule(opcodes, sizeof(opcodes) / sizeof(OPCODE)));
+	NekoCodeContainer cont(nm.get());
+	NekoCodeChunk chunk = cont.getNekoCodeChunk();
+
+	EXPECT_THAT(chunk, ElementsAre());
+	EXPECT_TRUE(chunk.begin() == chunk.end()) << "begin() and end() has to have the same value";
 }
