@@ -73,6 +73,11 @@ TEST_F(NekoCodeChunkTest, SubChunk) {
 
 	EXPECT_EQ(10u, ch.getFromAddress());
 	EXPECT_EQ(50u, ch.getToAddress());
+
+	EXPECT_THAT(chunk.getSubChunk(50, 50), AllOf(
+					Property(&NekoCodeChunk::getFromAddress, 50),
+					Property(&NekoCodeChunk::getToAddress, 50),
+					ElementsAre()));
 }
 
 TEST_F(NekoCodeChunkTest, SplitInside) {
@@ -216,6 +221,8 @@ TEST_F(NekoCodeChunkTest, SplitEmpty) {
 									  Pair(30, Pair(Pop, 0)),
 									  Pair(40, Pair(Mult, 0)),
 									  Pair(49, Pair(AccInt, 10))))));
+
+	EXPECT_THAT(chunk.getSubChunk(50, 50).splitByAddresses(empty_interval), ElementsAre());
 }
 
 TEST_F(NekoCodeChunkTest, SubChunkOver) {

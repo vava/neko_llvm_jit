@@ -64,7 +64,7 @@ TEST_F(FunctionTest, WorksWithoutJumps) {
 							 Pair(90, Pair(AccStack, 0))))));
 }
 
-TEST_F(FunctionTest, WorksWithoutEmpty) {
+TEST_F(FunctionTest, WorksWithEmpty) {
 	EXPECT_THAT(Function(main_chunk.getSubChunk(0, 0)),
 				ElementsAre());
 }

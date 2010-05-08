@@ -44,4 +44,6 @@ TEST_F(BasicBlockTest, ExposeAllCode) {
 								Pair(30, Pair(Pop, 0)),
 								Pair(40, Pair(Mult, 0)),
 								Pair(49, Pair(AccInt, 10))));
+
+	EXPECT_THAT(BasicBlock(chunk.getSubChunk(10, 10)), ElementsAre());
 }
