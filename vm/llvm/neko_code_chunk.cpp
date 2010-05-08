@@ -20,8 +20,6 @@ NekoCodeChunk::NekoCodeChunk(neko_code_container const * code_container_, unsign
 }
 
 NekoCodeChunk NekoCodeChunk::getSubChunk(unsigned int from, unsigned int to) const {
-	std::cout << to << " " << from << std::endl;
-	std::cout << to_address << " " << from_address << std::endl;
 	assert(from >= from_address && to <= to_address);
 	return NekoCodeChunk(code_container, from, to);
 }
