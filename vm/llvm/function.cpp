@@ -16,7 +16,7 @@ namespace {
 				case Jump:
 				case JumpIf:
 				case JumpIfNot:
-					block_addresses.push_back(it->first);
+					block_addresses.push_back(it->second.second);
 					break;
 				default:
 					//do nothing
