@@ -13,7 +13,6 @@ extern "C" {
 
 namespace {
 	std::vector<unsigned int> get_function_addresses(neko_module const * m) {
-		std::cout << "get_function_addresses" << std::endl;
 		std::vector<unsigned int> function_addresses;
 
 		for (unsigned int k = 0; k < m->nglobals; k++) {
@@ -39,7 +38,6 @@ namespace {
 	}
 
 	ModuleCodeBase::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
-		std::cout << "get_functions" << std::endl;
 		std::vector<unsigned int> const function_addresses = get_function_addresses(m);
 		std::vector<NekoCodeChunk> const chunks = chunk.splitByAddresses(function_addresses);
 
@@ -64,10 +62,9 @@ namespace {
 	}
 }
 
-ModuleCodeBase::ModuleCodeBase(neko_module const * m) : code_container(m), functions(get_functions(m, code_container.getNekoCodeChunk()))
-{
-	std::cout << "module code base created!" << std::endl;
-}
+ModuleCodeBase::ModuleCodeBase(neko_module const * m) : code_container(m)
+													  , functions(get_functions(m, code_container.getNekoCodeChunk()))
+{}
 
 void ModuleCodeBase::neko_dump(std::string const & indent) const {
 	const_iterator last_func = end(); --last_func; //last func is always main one.
