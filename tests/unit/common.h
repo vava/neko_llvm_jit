@@ -35,12 +35,25 @@ public:
 		, module(make_module())
 	{}
 
+	template<int codesize>
+	NekoModuleWrapper(int (&code_)[codesize], value (&)[0])
+		: code(code_, code_ + codesize)
+		, globals()
+		, module(make_module())
+	{}
+
+	NekoModuleWrapper(int (&)[0], value (&)[0])
+		: code()
+		, globals()
+		, module(make_module())
+	{}
+
 	neko_module * get() {
 		return module.get();
 	}
 private:
-	void patch_jumps(std::vector<int> & code, unsigned int address_base) const;
-	void patch_globals(std::vector<value> & globals, unsigned int address_base, neko_module * nm) const;
+	void patch_jumps(std::vector<int> & code, int * address_base) const;
+	void patch_globals(std::vector<value> & globals, int * address_base, neko_module * nm) const;
 	neko_module * make_module();
 
 	std::vector<int> code;

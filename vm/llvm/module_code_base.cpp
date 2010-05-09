@@ -13,27 +13,22 @@ extern "C" {
 
 namespace {
 	std::vector<unsigned int> get_function_addresses(neko_module const * m) {
-		std::cout << "1" << std::endl;
 		std::vector<unsigned int> function_addresses;
 
-		std::cout << "2" << std::endl;
 		for (unsigned int k = 0; k < m->nglobals; k++) {
 			if (val_is_function(m->globals[k])) {
 				function_addresses.push_back((unsigned int)((vfunction*)m->globals[k])->addr);
 			}
 		}
 
-		std::cout << "3" << std::endl;
 		//check special case for main function
-		if (*m->code == Jump) {
+		if (m->codesize > 0 && *m->code == Jump && !function_addresses.empty()) {
 			function_addresses.push_back(*(m->code + 1));
 		} else {
 			//no jumps in front means main functions have started right away
-			assert(function_addresses.empty()); //maybe we should add additional check though
 			function_addresses.push_back((unsigned int)m->code);
 		}
 
-		std::cout << "4" << std::endl;
 		return function_addresses;
 	}
 

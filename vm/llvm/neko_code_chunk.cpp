@@ -130,7 +130,7 @@ void NekoCodeChunk::neko_dump(std::string const & indent) const {
 		 it != end();
 		 ++it)
 		{
-			std::cout << indent;
+			std::cout << indent << it->first << ": ";
 			print_neko_instruction((OPCODE) it->second.first, it->second.second, parameter_table[it->second.first]);
 		}
 }
