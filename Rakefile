@@ -5,7 +5,9 @@ task :compile do
 end
 
 task :test do
-	neko "../test.n"
+	cd 'tests/unit'
+	sh 'make test'
+#	neko "../test.n"
 end
 
 def neko(param)
