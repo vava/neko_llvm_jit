@@ -2,6 +2,7 @@
 #include "neko_code_chunk.h"
 
 #include <limits>
+#include <iostream>
 
 extern "C" {
 	#include "../neko_mod.h"
