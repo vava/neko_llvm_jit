@@ -1,5 +1,7 @@
 #include <memory>
 #include <vector>
+#include <list>
+#include <string>
 
 extern "C" {
 	#include "opcodes.h"
@@ -14,6 +16,7 @@ public:
 	NekoValueHolder() {}
 	~NekoValueHolder();
 	value makeFunction(void * addr, int nargs, neko_module * nm);
+	value makeString(std::string const & str);
 
 private:
 	template<typename T>
@@ -29,23 +32,23 @@ private:
 class NekoModuleWrapper {
 public:
 	template<int codesize, int nglobals>
-	NekoModuleWrapper(int (&code_)[codesize], value (&globals_)[nglobals])
+	NekoModuleWrapper(value name, int (&code_)[codesize], value (&globals_)[nglobals])
 		: code(code_, code_ + codesize)
 		, globals(globals_, globals_ + nglobals)
-		, module(make_module())
+		, module(make_module(name))
 	{}
 
 	template<int codesize>
-	NekoModuleWrapper(int (&code_)[codesize], value (&)[0])
+	NekoModuleWrapper(value name, int (&code_)[codesize], value (&)[0])
 		: code(code_, code_ + codesize)
 		, globals()
-		, module(make_module())
+		, module(make_module(name))
 	{}
 
-	NekoModuleWrapper(int (&)[0], value (&)[0])
+	NekoModuleWrapper(value name, int (&)[0], value (&)[0])
 		: code()
 		, globals()
-		, module(make_module())
+		, module(make_module(name))
 	{}
 
 	neko_module * get() {
@@ -54,7 +57,7 @@ public:
 private:
 	void patch_jumps(std::vector<int> & code, int * address_base) const;
 	void patch_globals(std::vector<value> & globals, int * address_base, neko_module * nm) const;
-	neko_module * make_module();
+	neko_module * make_module(value name);
 
 	std::vector<int> code;
 	std::vector<value> globals;

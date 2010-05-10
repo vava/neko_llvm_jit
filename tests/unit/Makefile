@@ -34,7 +34,7 @@ LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs $(LLVM_COMPONENTS))
 CPPFLAGS += -I$(GTEST_DIR)/include -I$(GMOCK_DIR)/include -I$(NEKO_VM_DIR)
 
 # Flags passed to the C++ compiler.
-CXXFLAGS += -g -Wall -Wextra
+CXXFLAGS += -g -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -DX86TargetMachineModule=1
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.

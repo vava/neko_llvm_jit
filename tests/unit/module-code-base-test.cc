@@ -15,10 +15,11 @@ using namespace testing;
 
 class ModuleCodeBaseTest : public testing::Test {
 protected:
-	ModuleCodeBaseTest() {
+	ModuleCodeBaseTest(): name(vh.makeString("test module")) {
 	}
 
 	NekoValueHolder vh;
+	value name;
 };
 
 TEST_F(ModuleCodeBaseTest, Constructor) {
@@ -38,7 +39,7 @@ TEST_F(ModuleCodeBaseTest, Constructor) {
 		vh.makeFunction((void *)2, 2, 0)
 	};
 
-	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(code_int, globals_int));
+	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
 	int * code = nm->get()->code;
 
@@ -79,7 +80,7 @@ TEST_F(ModuleCodeBaseTest, ConstructorJustMain) {
 	value globals_int[] = {
 	};
 
-	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(code_int, globals_int));
+	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
 	int * code = nm->get()->code;
 
@@ -110,10 +111,24 @@ TEST_F(ModuleCodeBaseTest, ConstructorEmpty) {
 	value globals_int[] = {
 	};
 
-	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(code_int, globals_int));
+	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
 	EXPECT_THAT(ModuleCodeBase(nm->get()),
 				ElementsAre(Pair(0, ElementsAre(Pair(0, ElementsAre())))));
+}
+
+TEST_F(ModuleCodeBaseTest, ConstructorName) {
+	int code_int[] = {
+	};
+
+	value globals_int[] = {
+	};
+
+	value name_int = vh.makeString("Long module name");
+
+	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name_int, code_int, globals_int));
+
+	EXPECT_EQ("Long module name", ModuleCodeBase(nm->get()).getName());
 }
 
 typedef ModuleCodeBaseTest ModuleCodeBaseDeathTest;
@@ -135,7 +150,7 @@ TEST_F(ModuleCodeBaseDeathTest, IntersectedBlocks) {
 		vh.makeFunction((void *)2, 2, 0)
 	};
 
-	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(code_int, globals_int));
+	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
 	ASSERT_DEATH(ModuleCodeBase(nm->get()), "[Aa]ssertion");
 }
@@ -156,7 +171,7 @@ TEST_F(ModuleCodeBaseDeathTest, NoJumpToMain) {
 		vh.makeFunction((void *)2, 2, 0)
 	};
 
-	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(code_int, globals_int));
+	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
 	ASSERT_DEATH(ModuleCodeBase(nm->get()), "[Aa]ssertion");
 }
@@ -178,7 +193,7 @@ TEST_F(ModuleCodeBaseDeathTest, FirstJumpAdoptedInFunction) {
 		vh.makeFunction((void *)0, 2, 0)
 	};
 
-	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(code_int, globals_int));
+	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
 	ASSERT_DEATH(ModuleCodeBase(nm->get()), "[Aa]ssertion");
 }

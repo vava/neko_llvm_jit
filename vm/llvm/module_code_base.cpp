@@ -1,6 +1,8 @@
 #include "module_code_base.h"
-#include <iostream>
 
+#include "llvm/LLVMContext.h"
+
+#include <iostream>
 #include <assert.h>
 #include <algorithm>
 
@@ -63,6 +65,7 @@ namespace {
 
 ModuleCodeBase::ModuleCodeBase(neko_module const * m) : code_container(m)
 													  , functions(get_functions(m, code_container.getNekoCodeChunk()))
+													  , name(val_string(m->name))
 {}
 
 void ModuleCodeBase::neko_dump(std::string const & indent) const {
@@ -79,4 +82,9 @@ void ModuleCodeBase::neko_dump(std::string const & indent) const {
 		std::cout << "() ";
 		it->second.neko_dump(indent + "\t");
 	}
+}
+
+llvm::Module * ModuleCodeBase::getLLVMModule() {
+	llvm::LLVMContext & ctx = llvm::getGlobalContext();
+	llvm::Module * module = new llvm::Module("module", ctx);
 }

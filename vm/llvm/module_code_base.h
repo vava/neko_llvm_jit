@@ -1,5 +1,7 @@
 #include "function.h"
 
+#include "llvm/Module.h"
+
 class ModuleCodeBase {
 public:
 	ModuleCodeBase(neko_module const * m);
@@ -16,8 +18,13 @@ public:
 	const_iterator end() const { return functions.end(); }
 	size_type size() const { return functions.size(); }
 
+	std::string const & getName() const { return name; }
+
 	void neko_dump(std::string const & indent = "") const;
+
+	llvm::Module * getLLVMModule();
 private:
 	const NekoCodeContainer code_container;
 	functions_container functions;
+	std::string name;
 };

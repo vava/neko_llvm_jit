@@ -1,5 +1,6 @@
 #define PARAMETER_TABLE
 #include "common.h"
+#include <string.h>
 
 extern "C" {
 	#include "neko_mod.h"
@@ -34,6 +35,16 @@ value NekoValueHolder::makeFunction(void * addr, int nargs, neko_module * nm) {
 	return (value)f;
 }
 
+value NekoValueHolder::makeString(std::string const & str) {
+	vstring * s = (vstring *)::operator new(sizeof(vstring) + str.size());
+	values.push_back((value)s);
+
+	s->t = (val_type)(VAL_STRING | (str.size() << 3));
+	memcpy(&s->c, str.c_str(), str.size() + 1);
+
+	return (value)s;
+}
+
 void NekoModuleWrapper::patch_jumps(std::vector<int> & code, int * address_base) const {
 	for (std::vector<int>::iterator pc = code.begin();
 		 pc != code.end();
@@ -63,8 +74,9 @@ void NekoModuleWrapper::patch_globals(std::vector<value> & globals, int * addres
 		}
 }
 
-neko_module * NekoModuleWrapper::make_module() {
+neko_module * NekoModuleWrapper::make_module(value name) {
 	neko_module * module = new neko_module;
+	module->name = name;
 
 	patch_jumps(code, &code[0]);
 	patch_globals(globals, &code[0], module);
