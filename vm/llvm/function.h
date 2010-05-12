@@ -3,7 +3,7 @@
 
 class Function {
 public:
-	Function(NekoCodeChunk const & code_chunk);
+	Function(NekoCodeChunk const & code_chunk, std::string const & name);
 
 	typedef std::map<unsigned int, BasicBlock> blocks_container;
 	typedef blocks_container::iterator iterator;
@@ -18,6 +18,9 @@ public:
 	size_type size() const { return blocks.size(); }
 
  	void neko_dump(std::string const & indent = "") const;
+
+	std::string const & getName() const { return name;}
 private:
 	blocks_container blocks;
+	std::string name;
 };

@@ -37,7 +37,9 @@ protected:
 
 
 TEST_F(FunctionTest, ExposeAllCode) {
-	EXPECT_THAT(Function(main_chunk),
+	EXPECT_EQ("name", Function(main_chunk, "name").getName());
+
+	EXPECT_THAT(Function(main_chunk, "name"),
 				ElementsAre(
 					Pair(0, ElementsAre(
 							 Pair(0, Pair(Jump, 70)),
@@ -56,7 +58,7 @@ TEST_F(FunctionTest, ExposeAllCode) {
 }
 
 TEST_F(FunctionTest, WorksWithoutJumps) {
-	EXPECT_THAT(Function(main_chunk.getSubChunk(70, 100)),
+	EXPECT_THAT(Function(main_chunk.getSubChunk(70, 100), "name"),
 				ElementsAre(
 					Pair(70, ElementsAre(
 							 Pair(70, Pair(AccBuiltin, 100)),
@@ -65,6 +67,6 @@ TEST_F(FunctionTest, WorksWithoutJumps) {
 }
 
 TEST_F(FunctionTest, WorksWithEmpty) {
-	EXPECT_THAT(Function(main_chunk.getSubChunk(0, 0)),
+	EXPECT_THAT(Function(main_chunk.getSubChunk(0, 0), "name"),
 				ElementsAre());
 }

@@ -45,17 +45,19 @@ namespace {
 	}
 }
 
-Function::Function(NekoCodeChunk const & code_chunk) : blocks(get_blocks(code_chunk))
+Function::Function(NekoCodeChunk const & code_chunk, std::string const & name_)
+	: blocks(get_blocks(code_chunk))
+	, name(name_)
 {}
 
 void Function::neko_dump(std::string const & indent) const {
-	std::cout << "{" << std::endl;
-	std::cout << indent << "//Number of blocks: " << blocks.size() << std::endl;
+	std::cout << indent << "def " << name << " {" << std::endl;
+	std::cout << indent << "\t//Number of blocks: " << blocks.size() << std::endl;
 	for (const_iterator it = begin();
 		 it != end();
 		 ++it) {
 		std::cout << indent << it->first << " : ";
 		it->second.neko_dump(indent);
 	}
-	std::cout << "}" << std::endl;
+	std::cout << indent << "}" << std::endl;
 }

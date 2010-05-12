@@ -5,6 +5,8 @@
 #include <iostream>
 #include <assert.h>
 #include <algorithm>
+#include <sstream>
+#include <limits>
 
 //has to be the last include statement
 // because of heavy #define usage
@@ -35,7 +37,14 @@ namespace {
 	}
 
 	std::pair<const unsigned int, Function> make_function(NekoCodeChunk const & chunk) {
-		return std::make_pair(chunk.getFromAddress(), Function(chunk));
+		bool isMain = chunk.getToAddress() == std::numeric_limits<unsigned int>::max();
+		std::stringstream name;
+		if (isMain) {
+			name << "main";
+		} else {
+			name << chunk.getFromAddress();
+		}
+		return std::make_pair(chunk.getFromAddress(), Function(chunk, name.str()));
 	}
 
 	ModuleCodeBase::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
@@ -69,22 +78,16 @@ ModuleCodeBase::ModuleCodeBase(neko_module const * m) : code_container(m)
 {}
 
 void ModuleCodeBase::neko_dump(std::string const & indent) const {
-	const_iterator last_func = end(); --last_func; //last func is always main one.
 	for (const_iterator it = begin();
 		 it != end();
 		 ++it) {
-		std::cout << "def ";
-		if (it == last_func) {
-			std::cout << "main";
-		} else {
-			std::cout << it->first;
-		}
-		std::cout << "() ";
-		it->second.neko_dump(indent + "\t");
+		it->second.neko_dump(indent);
 	}
 }
 
 llvm::Module * ModuleCodeBase::getLLVMModule() {
 	llvm::LLVMContext & ctx = llvm::getGlobalContext();
-	llvm::Module * module = new llvm::Module("module", ctx);
+	llvm::Module * module = new llvm::Module(name, ctx);
+
+	
 }

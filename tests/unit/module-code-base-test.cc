@@ -6,6 +6,7 @@
 #include <gmock/gmock.h>
 
 #include <memory>
+#include <sstream>
 
 extern "C" {
 	#include "neko_mod.h"
@@ -43,7 +44,20 @@ TEST_F(ModuleCodeBaseTest, Constructor) {
 
 	int * code = nm->get()->code;
 
-	EXPECT_THAT(ModuleCodeBase(nm->get()),
+	ModuleCodeBase module(nm->get());
+
+	std::stringstream code2;
+	code2 << (int)(code + 2);
+
+	//check names
+	EXPECT_THAT(module,
+				ElementsAre(Pair((int)(code + 2),
+								 Property(&Function::getName, code2.str())),
+							Pair((int)(code + 6),
+								 Property(&Function::getName, "main"))
+				));
+
+	EXPECT_THAT(module,
 				ElementsAre(Pair((int)(code + 2),
 								 ElementsAre(
 									 Pair((int)(code + 2),
@@ -84,7 +98,12 @@ TEST_F(ModuleCodeBaseTest, ConstructorJustMain) {
 
 	int * code = nm->get()->code;
 
-	EXPECT_THAT(ModuleCodeBase(nm->get()),
+	ModuleCodeBase module(nm->get());
+
+	EXPECT_THAT(module,
+				ElementsAre(Pair((int)(code), Property(&Function::getName, "main"))));
+
+	EXPECT_THAT(module,
 				ElementsAre(Pair((int)(code),
 								 ElementsAre(
 									 Pair((int)(code),
@@ -114,7 +133,9 @@ TEST_F(ModuleCodeBaseTest, ConstructorEmpty) {
 	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
 	EXPECT_THAT(ModuleCodeBase(nm->get()),
-				ElementsAre(Pair(0, ElementsAre(Pair(0, ElementsAre())))));
+				ElementsAre(Pair(0, AllOf(
+									 Property(&Function::getName, "main"),
+									 ElementsAre(Pair(0, ElementsAre()))))));
 }
 
 TEST_F(ModuleCodeBaseTest, ConstructorName) {
