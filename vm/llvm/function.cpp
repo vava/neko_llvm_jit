@@ -27,15 +27,15 @@ namespace {
 		return block_addresses;
 	}
 
-	std::pair<const unsigned int, BasicBlock> make_block(NekoCodeChunk const & chunk) {
-		return std::make_pair(chunk.getFromAddress(), BasicBlock(chunk));
+	std::pair<const unsigned int, neko::BasicBlock> make_block(NekoCodeChunk const & chunk) {
+		return std::make_pair(chunk.getFromAddress(), neko::BasicBlock(chunk));
 	}
 
-	Function::blocks_container get_blocks(NekoCodeChunk const & chunk) {
+	neko::Function::blocks_container get_blocks(NekoCodeChunk const & chunk) {
 		std::vector<unsigned int> block_addresses = get_block_addresses(chunk);
 		std::vector<NekoCodeChunk> chunks = chunk.splitByAddresses(block_addresses);
 
-		Function::blocks_container result;
+		neko::Function::blocks_container result;
 
 		std::transform(chunks.begin(), chunks.end(),
 					   std::inserter(result, result.begin()),
@@ -45,12 +45,12 @@ namespace {
 	}
 }
 
-Function::Function(NekoCodeChunk const & code_chunk, std::string const & name_)
+neko::Function::Function(NekoCodeChunk const & code_chunk, std::string const & name_)
 	: blocks(get_blocks(code_chunk))
 	, name(name_)
 {}
 
-void Function::neko_dump(std::string const & indent) const {
+void neko::Function::neko_dump(std::string const & indent) const {
 	std::cout << indent << "def " << name << " {" << std::endl;
 	std::cout << indent << "\t//Number of blocks: " << blocks.size() << std::endl;
 	for (const_iterator it = begin();

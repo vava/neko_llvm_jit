@@ -8,6 +8,7 @@
 #include <memory>
 
 using namespace testing;
+using namespace neko;
 
 class FunctionTest : public testing::Test {
 	neko_code_container make_code_container() const {

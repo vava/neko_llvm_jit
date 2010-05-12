@@ -18,7 +18,7 @@ extern "C" {
 	void * llvm_cpp_jit(neko_module const * m) {
 		printf("Creating module\n");
 
-		ModuleCodeBase code_base(m);
+		neko::ModuleCodeBase code_base(m);
 
 		printf("Dumping\n");
 		code_base.neko_dump();

@@ -36,7 +36,7 @@ namespace {
 		return function_addresses;
 	}
 
-	std::pair<const unsigned int, Function> make_function(NekoCodeChunk const & chunk) {
+	std::pair<const unsigned int, neko::Function> make_function(NekoCodeChunk const & chunk) {
 		bool isMain = chunk.getToAddress() == std::numeric_limits<unsigned int>::max();
 		std::stringstream name;
 		if (isMain) {
@@ -44,10 +44,10 @@ namespace {
 		} else {
 			name << chunk.getFromAddress();
 		}
-		return std::make_pair(chunk.getFromAddress(), Function(chunk, name.str()));
+		return std::make_pair(chunk.getFromAddress(), neko::Function(chunk, name.str()));
 	}
 
-	ModuleCodeBase::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
+	neko::ModuleCodeBase::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
 		std::vector<unsigned int> const function_addresses = get_function_addresses(m);
 		std::vector<NekoCodeChunk> const chunks = chunk.splitByAddresses(function_addresses);
 
@@ -62,7 +62,7 @@ namespace {
 			++begin;
 		}
 
-		ModuleCodeBase::functions_container result;
+		neko::ModuleCodeBase::functions_container result;
 
 		std::transform(begin, chunks.end(),
 					   std::inserter(result, result.begin()),
@@ -72,22 +72,15 @@ namespace {
 	}
 }
 
-ModuleCodeBase::ModuleCodeBase(neko_module const * m) : code_container(m)
+neko::ModuleCodeBase::ModuleCodeBase(neko_module const * m) : code_container(m)
 													  , functions(get_functions(m, code_container.getNekoCodeChunk()))
 													  , name(val_string(m->name))
 {}
 
-void ModuleCodeBase::neko_dump(std::string const & indent) const {
+void neko::ModuleCodeBase::neko_dump(std::string const & indent) const {
 	for (const_iterator it = begin();
 		 it != end();
 		 ++it) {
 		it->second.neko_dump(indent);
 	}
-}
-
-llvm::Module * ModuleCodeBase::getLLVMModule() {
-	llvm::LLVMContext & ctx = llvm::getGlobalContext();
-	llvm::Module * module = new llvm::Module(name, ctx);
-
-	
 }

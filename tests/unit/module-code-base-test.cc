@@ -13,6 +13,7 @@ extern "C" {
 }
 
 using namespace testing;
+using namespace neko;
 
 class ModuleCodeBaseTest : public testing::Test {
 protected:
