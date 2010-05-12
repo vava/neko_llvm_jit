@@ -1,4 +1,4 @@
-#include "llvm/basic_block.h"
+#include "llvm/neko_basic_block.h"
 
 #include "common.h"
 
@@ -8,6 +8,7 @@
 #include <memory>
 
 using namespace testing;
+using namespace neko;
 
 class BasicBlockTest : public testing::Test {
 	neko_code_container make_code_container() const {

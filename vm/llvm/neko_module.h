@@ -1,11 +1,11 @@
-#include "function.h"
+#include "neko_function.h"
 
 #include "llvm/Module.h"
 
 namespace neko {
-	class ModuleCodeBase {
+	class Module {
 	public:
-		ModuleCodeBase(neko_module const * m);
+		Module(neko_module const * m);
 
 		typedef std::map<unsigned int, Function> functions_container;
 		typedef functions_container::iterator iterator;
@@ -22,8 +22,6 @@ namespace neko {
 		std::string const & getName() const { return name; }
 
 		void neko_dump(std::string const & indent = "") const;
-
-		llvm::Module * getLLVMModule();
 	private:
 		const NekoCodeContainer code_container;
 		functions_container functions;

@@ -1,4 +1,4 @@
-#include "llvm/function.h"
+#include "llvm/neko_function.h"
 
 #include "common.h"
 

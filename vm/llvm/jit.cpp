@@ -8,7 +8,7 @@
 // //#include "llvm/ModuleProvider.h"
 // #include "llvm/LinkAllPasses.h"
 
-#include "module_code_base.h"
+#include "neko_module.h"
 
 #include <iostream>
 #include <stdio.h>
@@ -18,7 +18,7 @@ extern "C" {
 	void * llvm_cpp_jit(neko_module const * m) {
 		printf("Creating module\n");
 
-		neko::ModuleCodeBase code_base(m);
+		neko::Module code_base(m);
 
 		printf("Dumping\n");
 		code_base.neko_dump();

@@ -1,4 +1,4 @@
-#include "module_code_base.h"
+#include "neko_module.h"
 
 #include "llvm/LLVMContext.h"
 
@@ -47,7 +47,7 @@ namespace {
 		return std::make_pair(chunk.getFromAddress(), neko::Function(chunk, name.str()));
 	}
 
-	neko::ModuleCodeBase::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
+	neko::Module::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
 		std::vector<unsigned int> const function_addresses = get_function_addresses(m);
 		std::vector<NekoCodeChunk> const chunks = chunk.splitByAddresses(function_addresses);
 
@@ -62,7 +62,7 @@ namespace {
 			++begin;
 		}
 
-		neko::ModuleCodeBase::functions_container result;
+		neko::Module::functions_container result;
 
 		std::transform(begin, chunks.end(),
 					   std::inserter(result, result.begin()),
@@ -72,12 +72,12 @@ namespace {
 	}
 }
 
-neko::ModuleCodeBase::ModuleCodeBase(neko_module const * m) : code_container(m)
-													  , functions(get_functions(m, code_container.getNekoCodeChunk()))
-													  , name(val_string(m->name))
+neko::Module::Module(neko_module const * m) : code_container(m)
+											, functions(get_functions(m, code_container.getNekoCodeChunk()))
+											, name(val_string(m->name))
 {}
 
-void neko::ModuleCodeBase::neko_dump(std::string const & indent) const {
+void neko::Module::neko_dump(std::string const & indent) const {
 	for (const_iterator it = begin();
 		 it != end();
 		 ++it) {

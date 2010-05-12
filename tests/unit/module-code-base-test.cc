@@ -1,4 +1,4 @@
-#include "llvm/module_code_base.h"
+#include "llvm/neko_module.h"
 
 #include "common.h"
 
@@ -15,16 +15,16 @@ extern "C" {
 using namespace testing;
 using namespace neko;
 
-class ModuleCodeBaseTest : public testing::Test {
+class ModuleTest : public testing::Test {
 protected:
-	ModuleCodeBaseTest(): name(vh.makeString("test module")) {
+	ModuleTest(): name(vh.makeString("test module")) {
 	}
 
 	NekoValueHolder vh;
 	value name;
 };
 
-TEST_F(ModuleCodeBaseTest, Constructor) {
+TEST_F(ModuleTest, Constructor) {
 	int code_int[] = {
 		Jump, 6,
 		Add,
@@ -45,7 +45,7 @@ TEST_F(ModuleCodeBaseTest, Constructor) {
 
 	int * code = nm->get()->code;
 
-	ModuleCodeBase module(nm->get());
+	Module module(nm->get());
 
 	std::stringstream code2;
 	code2 << (int)(code + 2);
@@ -79,7 +79,7 @@ TEST_F(ModuleCodeBaseTest, Constructor) {
 											  Pair((int)(code + 12), Pair(Jump, (int)(code + 7))) )) ))));
 }
 
-TEST_F(ModuleCodeBaseTest, ConstructorJustMain) {
+TEST_F(ModuleTest, ConstructorJustMain) {
 	int code_int[] = {
 		Jump, 6,
 		Add,
@@ -99,7 +99,7 @@ TEST_F(ModuleCodeBaseTest, ConstructorJustMain) {
 
 	int * code = nm->get()->code;
 
-	ModuleCodeBase module(nm->get());
+	Module module(nm->get());
 
 	EXPECT_THAT(module,
 				ElementsAre(Pair((int)(code), Property(&Function::getName, "main"))));
@@ -124,7 +124,7 @@ TEST_F(ModuleCodeBaseTest, ConstructorJustMain) {
 											  Pair((int)(code + 12), Pair(Jump, (int)(code + 7))) )) ))));
 }
 
-TEST_F(ModuleCodeBaseTest, ConstructorEmpty) {
+TEST_F(ModuleTest, ConstructorEmpty) {
 	int code_int[] = {
 	};
 
@@ -133,13 +133,13 @@ TEST_F(ModuleCodeBaseTest, ConstructorEmpty) {
 
 	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
-	EXPECT_THAT(ModuleCodeBase(nm->get()),
+	EXPECT_THAT(Module(nm->get()),
 				ElementsAre(Pair(0, AllOf(
 									 Property(&Function::getName, "main"),
 									 ElementsAre(Pair(0, ElementsAre()))))));
 }
 
-TEST_F(ModuleCodeBaseTest, ConstructorName) {
+TEST_F(ModuleTest, ConstructorName) {
 	int code_int[] = {
 	};
 
@@ -150,12 +150,12 @@ TEST_F(ModuleCodeBaseTest, ConstructorName) {
 
 	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name_int, code_int, globals_int));
 
-	EXPECT_EQ("Long module name", ModuleCodeBase(nm->get()).getName());
+	EXPECT_EQ("Long module name", Module(nm->get()).getName());
 }
 
-typedef ModuleCodeBaseTest ModuleCodeBaseDeathTest;
+typedef ModuleTest ModuleDeathTest;
 
-TEST_F(ModuleCodeBaseDeathTest, IntersectedBlocks) {
+TEST_F(ModuleDeathTest, IntersectedBlocks) {
 	int code_int[] = {
 		Jump, 6,
 		Add,
@@ -174,10 +174,10 @@ TEST_F(ModuleCodeBaseDeathTest, IntersectedBlocks) {
 
 	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
-	ASSERT_DEATH(ModuleCodeBase(nm->get()), "[Aa]ssertion");
+	ASSERT_DEATH(Module(nm->get()), "[Aa]ssertion");
 }
 
-TEST_F(ModuleCodeBaseDeathTest, NoJumpToMain) {
+TEST_F(ModuleDeathTest, NoJumpToMain) {
 	int code_int[] = {
 		Add,
 		Push,
@@ -195,10 +195,10 @@ TEST_F(ModuleCodeBaseDeathTest, NoJumpToMain) {
 
 	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
-	ASSERT_DEATH(ModuleCodeBase(nm->get()), "[Aa]ssertion");
+	ASSERT_DEATH(Module(nm->get()), "[Aa]ssertion");
 }
 
-TEST_F(ModuleCodeBaseDeathTest, FirstJumpAdoptedInFunction) {
+TEST_F(ModuleDeathTest, FirstJumpAdoptedInFunction) {
 	int code_int[] = {
 		Jump, 6,
 		Add,
@@ -217,5 +217,5 @@ TEST_F(ModuleCodeBaseDeathTest, FirstJumpAdoptedInFunction) {
 
 	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
-	ASSERT_DEATH(ModuleCodeBase(nm->get()), "[Aa]ssertion");
+	ASSERT_DEATH(Module(nm->get()), "[Aa]ssertion");
 }
