@@ -1,25 +1,6 @@
 #include "llvm_code_generation.h"
 
-llvm::Module * makeLLVMModule(neko::Module const & neko_module) {
-	llvm::Module * module = new ::llvm::Module(neko_module.getName(), llvm::getGlobalContext());
-
-	for (neko::Module::const_iterator it = neko_module.begin();
-		 it != neko_module.end();
-		 ++it)
-		{
-			makeFunctionDeclaration(it->second, module);
-		}
-
-	for (neko::Module::const_iterator it = neko_module.begin();
-		 it != neko_module.end();
-		 ++it)
-		{
-			module->getOrInsertFunction(it->second.getName(), makeFunction(it->second, module));
-		}
-
-	return module;
-}
-
+namespace {
 llvm::FunctionType * makeFunctionDeclaration(neko::Function const & neko_function, llvm::Module * module) {
     llvm::FunctionType * FT = llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()), std::vector<const llvm::Type *>(), false);
 	llvm::Function * F = llvm::Function::Create(FT,
@@ -60,4 +41,25 @@ llvm::Function * makeFunction(neko::Function const & neko_function, llvm::Module
 
 void makeBasicBlock(neko::BasicBlock const & bb, llvm::BasicBlock * bb, id2block_type const & id2block, llvm::Module * module, Stack & stack) {
 	llvm::IRBuilder<> builder(bb);
+}
+}
+
+llvm::Module * makeLLVMModule(neko::Module const & neko_module) {
+	llvm::Module * module = new ::llvm::Module(neko_module.getName(), llvm::getGlobalContext());
+
+	for (neko::Module::const_iterator it = neko_module.begin();
+		 it != neko_module.end();
+		 ++it)
+		{
+			makeFunctionDeclaration(it->second, module);
+		}
+
+	for (neko::Module::const_iterator it = neko_module.begin();
+		 it != neko_module.end();
+		 ++it)
+		{
+			module->getOrInsertFunction(it->second.getName(), makeFunction(it->second, module));
+		}
+
+	return module;
 }
