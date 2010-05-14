@@ -56,7 +56,6 @@ void neko::Function::neko_dump(std::string const & indent) const {
 	for (const_iterator it = begin();
 		 it != end();
 		 ++it) {
-		std::cout << indent << it->first << " : ";
 		it->second.neko_dump(indent);
 	}
 	std::cout << indent << "}" << std::endl;
