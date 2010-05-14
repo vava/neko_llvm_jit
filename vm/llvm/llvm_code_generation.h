@@ -1,3 +1,6 @@
+#include "neko_module.h"
+
+#include "llvm/Module.h"
 
 llvm::Module * makeLLVMModule(neko::Module const & module);
 // llvm::FunctionType * makeFunctionType(neko::Function const & f);
