@@ -42,29 +42,29 @@ TEST_F(FunctionTest, ExposeAllCode) {
 
 	EXPECT_THAT(Function(main_chunk, "name"),
 				ElementsAre(
-					Pair(0, ElementsAre(
-							 Pair(0, Pair(Jump, 70)),
-							 Pair(10, Pair(Add, 0)),
-							 Pair(20, Pair(Sub, 0)))),
-					Pair(30, ElementsAre(
-							 Pair(30, Pair(JumpIf, 50)),
-							 Pair(40, Pair(Pop, 0)))),
-					Pair(50, ElementsAre(
-							 Pair(50, Pair(Mult, 0)),
-							 Pair(60, Pair(JumpIfNot, 30)))),
-					Pair(70, ElementsAre(
-							 Pair(70, Pair(AccBuiltin, 100)),
-							 Pair(80, Pair(AccNull, 0)),
-							 Pair(90, Pair(AccStack, 0))))));
+					ElementsAre(
+						Pair(0, Pair(Jump, 70)),
+						Pair(10, Pair(Add, 0)),
+						Pair(20, Pair(Sub, 0))),
+					ElementsAre(
+						Pair(30, Pair(JumpIf, 50)),
+						Pair(40, Pair(Pop, 0))),
+					ElementsAre(
+						Pair(50, Pair(Mult, 0)),
+						Pair(60, Pair(JumpIfNot, 30))),
+					ElementsAre(
+						Pair(70, Pair(AccBuiltin, 100)),
+						Pair(80, Pair(AccNull, 0)),
+						Pair(90, Pair(AccStack, 0)))));
 }
 
 TEST_F(FunctionTest, WorksWithoutJumps) {
 	EXPECT_THAT(Function(main_chunk.getSubChunk(70, 100), "name"),
 				ElementsAre(
-					Pair(70, ElementsAre(
-							 Pair(70, Pair(AccBuiltin, 100)),
-							 Pair(80, Pair(AccNull, 0)),
-							 Pair(90, Pair(AccStack, 0))))));
+					ElementsAre(
+						Pair(70, Pair(AccBuiltin, 100)),
+						Pair(80, Pair(AccNull, 0)),
+						Pair(90, Pair(AccStack, 0)))));
 }
 
 TEST_F(FunctionTest, WorksWithEmpty) {

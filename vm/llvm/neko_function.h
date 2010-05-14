@@ -6,7 +6,7 @@ namespace neko {
 	public:
 		Function(NekoCodeChunk const & code_chunk, std::string const & name);
 
-		typedef std::map<unsigned int, BasicBlock> blocks_container;
+		typedef std::vector<BasicBlock> blocks_container;
 		typedef blocks_container::iterator iterator;
 		typedef blocks_container::const_iterator const_iterator;
 		typedef blocks_container::value_type value_type;

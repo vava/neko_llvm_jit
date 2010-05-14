@@ -27,8 +27,8 @@ namespace {
 		return block_addresses;
 	}
 
-	std::pair<const unsigned int, neko::BasicBlock> make_block(NekoCodeChunk const & chunk) {
-		return std::make_pair(chunk.getFromAddress(), neko::BasicBlock(chunk));
+	neko::BasicBlock make_block(NekoCodeChunk const & chunk) {
+		return neko::BasicBlock(chunk);
 	}
 
 	neko::Function::blocks_container get_blocks(NekoCodeChunk const & chunk) {
@@ -36,9 +36,10 @@ namespace {
 		std::vector<NekoCodeChunk> chunks = chunk.splitByAddresses(block_addresses);
 
 		neko::Function::blocks_container result;
+		result.reserve(chunks.size());
 
 		std::transform(chunks.begin(), chunks.end(),
-					   std::inserter(result, result.begin()),
+					   std::back_inserter(result),
 					   std::ptr_fun(make_block));
 
 		return result;
@@ -56,7 +57,7 @@ void neko::Function::neko_dump(std::string const & indent) const {
 	for (const_iterator it = begin();
 		 it != end();
 		 ++it) {
-		it->second.neko_dump(indent);
+		it->neko_dump(indent);
 	}
 	std::cout << indent << "}" << std::endl;
 }
