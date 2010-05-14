@@ -36,7 +36,7 @@ namespace {
 		return function_addresses;
 	}
 
-	std::pair<const unsigned int, neko::Function> make_function(NekoCodeChunk const & chunk) {
+	neko::Function make_function(NekoCodeChunk const & chunk) {
 		bool isMain = chunk.getToAddress() == std::numeric_limits<unsigned int>::max();
 		std::stringstream name;
 		if (isMain) {
@@ -44,7 +44,7 @@ namespace {
 		} else {
 			name << chunk.getFromAddress();
 		}
-		return std::make_pair(chunk.getFromAddress(), neko::Function(chunk, name.str()));
+		return neko::Function(chunk, name.str());
 	}
 
 	neko::Module::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
@@ -63,9 +63,10 @@ namespace {
 		}
 
 		neko::Module::functions_container result;
+		result.reserve(std::distance(begin, chunks.end()));
 
 		std::transform(begin, chunks.end(),
-					   std::inserter(result, result.begin()),
+					   std::back_inserter(result),
 					   std::ptr_fun(make_function));
 
 		return result;
@@ -81,6 +82,6 @@ void neko::Module::neko_dump(std::string const & indent) const {
 	for (const_iterator it = begin();
 		 it != end();
 		 ++it) {
-		it->second.neko_dump(indent);
+		it->neko_dump(indent);
 	}
 }

@@ -52,31 +52,27 @@ TEST_F(ModuleTest, Constructor) {
 
 	//check names
 	EXPECT_THAT(module,
-				ElementsAre(Pair((int)(code + 2),
-								 Property(&Function::getName, code2.str())),
-							Pair((int)(code + 6),
-								 Property(&Function::getName, "main"))
+				ElementsAre(Property(&Function::getName, code2.str()),
+							Property(&Function::getName, "main")
 				));
 
 	EXPECT_THAT(module,
-				ElementsAre(Pair((int)(code + 2),
-								 ElementsAre(
-									 Pair((int)(code + 2),
-										  ElementsAre(
-											  Pair((int)(code + 2), Pair(Add, _)),
-											  Pair((int)(code + 3), Pair(Push, _)),
-											  Pair((int)(code + 4), Pair(Pop, 5)) )) )),
-							Pair((int)(code + 6),
-								 ElementsAre(
-									 Pair((int)(code + 6),
-										  ElementsAre(
-											  Pair((int)(code + 6), Pair(Sub, _)) )),
-									 Pair((int)(code + 7),
-										  ElementsAre(
-											  Pair((int)(code + 7), Pair(Mult, _)),
-											  Pair((int)(code + 8), Pair(AccInt, 10)),
-											  Pair((int)(code + 10), Pair(AccBuiltin, 100)),
-											  Pair((int)(code + 12), Pair(Jump, (int)(code + 7))) )) ))));
+				ElementsAre(ElementsAre(
+								Pair((int)(code + 2),
+									 ElementsAre(
+										 Pair((int)(code + 2), Pair(Add, _)),
+										 Pair((int)(code + 3), Pair(Push, _)),
+										 Pair((int)(code + 4), Pair(Pop, 5)) )) ),
+							ElementsAre(
+								Pair((int)(code + 6),
+									 ElementsAre(
+										 Pair((int)(code + 6), Pair(Sub, _)) )),
+								Pair((int)(code + 7),
+									 ElementsAre(
+										 Pair((int)(code + 7), Pair(Mult, _)),
+										 Pair((int)(code + 8), Pair(AccInt, 10)),
+										 Pair((int)(code + 10), Pair(AccBuiltin, 100)),
+										 Pair((int)(code + 12), Pair(Jump, (int)(code + 7))) )) )));
 }
 
 TEST_F(ModuleTest, ConstructorJustMain) {
@@ -102,26 +98,25 @@ TEST_F(ModuleTest, ConstructorJustMain) {
 	Module module(nm->get());
 
 	EXPECT_THAT(module,
-				ElementsAre(Pair((int)(code), Property(&Function::getName, "main"))));
+				ElementsAre(Property(&Function::getName, "main")));
 
 	EXPECT_THAT(module,
-				ElementsAre(Pair((int)(code),
-								 ElementsAre(
-									 Pair((int)(code),
-										  ElementsAre(
-											  Pair((int)(code), Pair(Jump, (int)(code + 6))),
-											  Pair((int)(code + 2), Pair(Add, _)),
-											  Pair((int)(code + 3), Pair(Push, _)),
-											  Pair((int)(code + 4), Pair(Pop, 5)) )),
-									 Pair((int)(code + 6),
-										  ElementsAre(
-											  Pair((int)(code + 6), Pair(Sub, _)) )),
-									 Pair((int)(code + 7),
-										  ElementsAre(
-											  Pair((int)(code + 7), Pair(Mult, _)),
-											  Pair((int)(code + 8), Pair(AccInt, 10)),
-											  Pair((int)(code + 10), Pair(AccBuiltin, 100)),
-											  Pair((int)(code + 12), Pair(Jump, (int)(code + 7))) )) ))));
+				ElementsAre(ElementsAre(
+								Pair((int)(code),
+									 ElementsAre(
+										 Pair((int)(code), Pair(Jump, (int)(code + 6))),
+										 Pair((int)(code + 2), Pair(Add, _)),
+										 Pair((int)(code + 3), Pair(Push, _)),
+										 Pair((int)(code + 4), Pair(Pop, 5)) )),
+								Pair((int)(code + 6),
+									 ElementsAre(
+										 Pair((int)(code + 6), Pair(Sub, _)) )),
+								Pair((int)(code + 7),
+									 ElementsAre(
+										 Pair((int)(code + 7), Pair(Mult, _)),
+										 Pair((int)(code + 8), Pair(AccInt, 10)),
+										 Pair((int)(code + 10), Pair(AccBuiltin, 100)),
+										 Pair((int)(code + 12), Pair(Jump, (int)(code + 7))) )) )));
 }
 
 TEST_F(ModuleTest, ConstructorEmpty) {
@@ -134,9 +129,9 @@ TEST_F(ModuleTest, ConstructorEmpty) {
 	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
 	EXPECT_THAT(Module(nm->get()),
-				ElementsAre(Pair(0, AllOf(
-									 Property(&Function::getName, "main"),
-									 ElementsAre(Pair(0, ElementsAre()))))));
+				ElementsAre(AllOf(
+								Property(&Function::getName, "main"),
+								ElementsAre(Pair(0, ElementsAre())))));
 }
 
 TEST_F(ModuleTest, ConstructorName) {

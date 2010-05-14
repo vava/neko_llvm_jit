@@ -7,7 +7,7 @@ namespace neko {
 	public:
 		Module(neko_module const * m);
 
-		typedef std::map<unsigned int, Function> functions_container;
+		typedef std::vector<Function> functions_container;
 		typedef functions_container::iterator iterator;
 		typedef functions_container::const_iterator const_iterator;
 		typedef functions_container::value_type value_type;
