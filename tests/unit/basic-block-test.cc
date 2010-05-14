@@ -40,6 +40,8 @@ protected:
 
 
 TEST_F(BasicBlockTest, ExposeAllCode) {
+	EXPECT_EQ(10u, bb.getId());
+
 	EXPECT_THAT(bb, ElementsAre(Pair(10, Pair(Sub, 0)),
 								Pair(12, Pair(Push, 0)),
 								Pair(30, Pair(Pop, 0)),
