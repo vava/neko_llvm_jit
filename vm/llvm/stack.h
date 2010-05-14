@@ -5,25 +5,21 @@
 
 class Stack {
 public:
-	Stack(llvm::LLVMContext & ctx);
+	Stack(llvm::BasicBlock * entryBB);
 	~Stack();
 
-	void init(Builder * builder);
-
-	void push(llvm::Value * value);
+	void push(llvm::IRBuilder<> & builder, llvm::Value * value);
 	void pop(int how_many);
 
-	llvm::Value * load(int index);
-	void store(int index, llvm::Value * value);
+	llvm::Value * load(llvm::IRBuilder<> & builder, int index);
+	void store(llvm::IRBuilder<> & builder, int index, llvm::Value * value);
 
 private:
 	llvm::AllocaInst * get(int index);
 
-	llvm::LLVMContext & ctx;
+	llvm::BasicBlock * entryBB;
+	llvm::IRBuilder<> entryBuilder;
 	Helper h;
 
 	std::vector<llvm::AllocaInst *> stack;
-
-	//This class does not own anything
-	Builder * builder;
 };

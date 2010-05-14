@@ -2,19 +2,19 @@
 
 #include <stdio.h>
 
-Stack::Stack(llvm::LLVMContext & ctx_): ctx(ctx_), h(ctx_) {
+Stack::Stack(llvm::BasicBlock * entryBB_)
+  : entryBB(entryBB_)
+  , entryBuilder(entryBB)
+  , h(entryBB->getContext())
+{
 }
 
 Stack::~Stack() {
 }
 
-void Stack::init(Builder * builder_) {
-	builder = builder_;
-}
-
-void Stack::push(llvm::Value * acc) {
-	stack.push_back(builder->CreateAlloca(h.int_t(), 0));
-	store(0, acc);
+void Stack::push(llvm::IRBuilder<> & builder, llvm::Value * acc) {
+	stack.push_back(entryBuilder.CreateAlloca(h.int_t(), 0));
+	store(builder, 0, acc);
 }
 
 void Stack::pop(int how_many) {
@@ -25,10 +25,10 @@ llvm::AllocaInst * Stack::get(int index) {
 	return *(stack.end() - index - 1);
 }
 
-llvm::Value * Stack::load(int index) {
-	return builder->CreateLoad(get(index));
+llvm::Value * Stack::load(llvm::IRBuilder<> & builder, int index) {
+	return builder.CreateLoad(get(index));
 }
 
-void Stack::store(int index, llvm::Value * value) {
-	builder->CreateStore(value, get(index));
+void Stack::store(llvm::IRBuilder<> & builder, int index, llvm::Value * value) {
+	builder.CreateStore(value, get(index));
 }
