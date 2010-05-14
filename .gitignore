@@ -3,3 +3,4 @@ CVS
 /src/**/*.n
 /src/*.n
 *.ll
+.dir-locals.el
