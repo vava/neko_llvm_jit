@@ -1,5 +1,8 @@
 #include "llvm_code_generation.h"
+
+#include "primitives.h"
 #include "stack.h"
+
 
 #include "llvm/DerivedTypes.h"
 #include "llvm/Function.h"
@@ -12,14 +15,6 @@ extern "C" {
 }
 
 namespace {
-void makeFunctionDeclaration(neko::Function const & neko_function, llvm::Module * module) {
-    llvm::FunctionType * FT = llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()), std::vector<const llvm::Type *>(), false);
-	llvm::Function::Create(FT,
-						   llvm::Function::ExternalLinkage,
-						   neko_function.getName(),
-						   module);
-}
-
 typedef std::map<unsigned int, llvm::BasicBlock *> id2block_type;
 
 class CodeGeneration {
@@ -47,6 +42,31 @@ public:
 			}
 	}
 
+	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive) const {
+		std::vector<llvm::Value *> args;
+		return callPrimitive(builder, primitive, args);
+	}
+	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive, llvm::Value * p1) const {
+		std::vector<llvm::Value *> args;
+		args.push_back(p1);
+		return callPrimitive(builder, primitive, args);
+	}
+	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive, llvm::Value * p1, llvm::Value * p2) const {
+		std::vector<llvm::Value *> args;
+		args.push_back(p1);args.push_back(p2);
+		return callPrimitive(builder, primitive, args);
+	}
+	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive, llvm::Value * p1, llvm::Value * p2, llvm::Value * p3 ) const {
+		std::vector<llvm::Value *> args;
+		args.push_back(p1);args.push_back(p2);args.push_back(p3);
+		return callPrimitive(builder, primitive, args);
+	}
+
+	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive, std::vector<llvm::Value *> const & arguments) const {
+		llvm::Function * P = module->getFunction(primitive);
+		return builder.CreateCall(P, arguments.begin(), arguments.end());
+	}
+
 	void makeOpCode(llvm::IRBuilder<> & builder, OPCODE opcode, int param) {
 		switch(opcode) {
 			case AccInt:
@@ -60,57 +80,18 @@ public:
 				acc = stack.load(builder, 1);
 				break;
 			case Add:
-				{
-					llvm::Value * left = stack.load(builder, 0);
-					llvm::Value * right = acc;
-
-					llvm::BasicBlock * Then = llvm::BasicBlock::Create(function->getContext(), "then", function);
-					llvm::BasicBlock * Else = llvm::BasicBlock::Create(function->getContext(), "else", function);
-					llvm::BasicBlock * Merge = llvm::BasicBlock::Create(function->getContext(), "merge", function);
-
-					builder.CreateCondBr(
-						builder.CreateICmpEQ(
-							builder.CreateAnd(
-								h.is_int(builder, left),
-								h.is_int(builder, right),
-								"is_int(acc) && is_int(*sp)"),
-							h.int_1()),
-						Then,
-						Else);
-					//empty Else
-					builder.SetInsertPoint(Else);
-					builder.CreateBr(Merge);
-					//Create Then
-					builder.SetInsertPoint(Then);
-					acc = builder.CreateSub(builder.CreateAdd(left, right), h.int_1());
-					builder.CreateBr(Merge);
-					builder.SetInsertPoint(Merge);
-
-					llvm::PHINode * phi = builder.CreatePHI(h.int_t());
-					phi->addIncoming(acc, Then);
-					phi->addIncoming(h.int_0(), Else);
-
-					acc = phi;
-
-					stack.pop(1);
-				}
+				acc = callPrimitive(builder, "add", stack.load(builder, 0), acc);
+				stack.pop(1);
 				break;
 			case Call:
 				{
-					// llvm::Value * vfunc_ptr = builder.CreateIntToPtr(acc, vfunction_struct, "(vfunction *)acc");
-					// llvm::Value * val_type = builder.CreateLoad(builder.CreateConstGEP2_32(vfunc_ptr, 0, 0, "val_type"));
-					// llvm::Value * addr = builder.CreateIntToPtr(builder.CreateLoad(builder.CreateConstGEP2_32(vfunc_ptr, 0, 2), "addr"), prim1);
-					// llvm::Value * param1 = stack.load(0);
-					// llvm::Value * returnValue;
-					// llvm::Value * arr = builder.CreateAlloca(h.int_t(), h.int_n(param), "arr");
-					// builder.CreateStore(param1, builder.CreateConstGEP1_32(arr, 0));
-					// switch(param) {
-					// 	case 1:
-					// 		acc = builder.CreateCall2(addr, builder.CreatePtrToInt(arr, h.int_t()), h.int_n(param));
-					// 		break;
-					// }
-
-					// stack.pop(1);
+					std::vector<llvm::Value *> params;
+					params.push_back(acc); params.push_back(h.int_n(param));
+					for (int i = param; i >=0; --i) {
+						params.push_back(stack.load(builder, i));
+					}
+					acc = callPrimitive(builder, "call", params);
+					stack.pop(param);
 				}
 				break;
 			case Push:
@@ -135,50 +116,174 @@ private:
 	Helper h;
 };
 
-void makeFunction(neko::Function const & neko_function, llvm::Module * module) {
-	llvm::Function * function = module->getFunction(neko_function.getName());
-	llvm::BasicBlock::Create(module->getContext(), "entry", function);
+class FunctionGenerator {
+public:
+	FunctionGenerator(llvm::Module * module_)
+		: module(module_)
+		, h(module->getContext())
+	{}
 
-	id2block_type id2block;
+	void makeFunctionDeclaration(neko::Function const & neko_function) {
+		llvm::FunctionType * FT = llvm::FunctionType::get(h.void_t(), std::vector<const llvm::Type *>(), false);
+		llvm::Function::Create(FT,
+							   llvm::Function::ExternalLinkage,
+							   neko_function.getName(),
+							   module);
+	}
 
-	for (neko::Function::const_iterator it = neko_function.begin();
-		 it != neko_function.end();
-		 ++it)
-		{
-			std::stringstream bb_name;
-			bb_name << it->getId();
-			id2block.insert(std::make_pair(it->getId(), llvm::BasicBlock::Create(module->getContext(), bb_name.str(), function)));
-		}
+	void makeFunction(neko::Function const & neko_function) {
+		llvm::Function * function = module->getFunction(neko_function.getName());
+		llvm::BasicBlock::Create(module->getContext(), "entry", function);
 
-	CodeGeneration cd(id2block, function, module);
+		id2block_type id2block;
 
-	for (neko::Function::const_iterator it = neko_function.begin();
-		 it != neko_function.end();
-		 ++it)
-		{
-			//remember stack length
-			cd.makeBasicBlock(*it);
-			//check stack length
-		}
+		for (neko::Function::const_iterator it = neko_function.begin();
+			 it != neko_function.end();
+			 ++it)
+			{
+				std::stringstream bb_name;
+				bb_name << it->getId();
+				id2block.insert(std::make_pair(it->getId(), llvm::BasicBlock::Create(module->getContext(), bb_name.str(), function)));
+			}
+
+		CodeGeneration cd(id2block, function, module);
+
+		for (neko::Function::const_iterator it = neko_function.begin();
+			 it != neko_function.end();
+			 ++it)
+			{
+				//remember stack length
+				cd.makeBasicBlock(*it);
+				//check stack length
+			}
+	}
+private:
+	llvm::Module * module;
+	Helper h;
+};
+
+class PrimitiveRegistrator {
+	typedef std::vector<const llvm::Type *> type_list;
+public:
+	PrimitiveRegistrator(llvm::Module * module_)
+		: module(module_)
+		, h(module->getContext())
+	{}
+
+	void registerPrimitive(std::string const & name, int (*primitive)()) {
+		registerPrimitive(name, type_list(), false);
+	}
+
+	template<typename T>
+	void registerPrimitive(std::string const & name, int (*primitive)(T)) {
+		registerPrimitive(name, makeTypeList<T>(), false);
+	}
+
+	template<typename T1, typename T2>
+	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2)) {
+		registerPrimitive(name, makeTypeList<T1, T2>(), false);
+	}
+
+	template<typename T1, typename T2, typename T3>
+	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2, T3)) {
+		registerPrimitive(name, makeTypeList<T1, T2, T3>(), false);
+	}
+
+	template<typename T1, typename T2, typename T3, typename T4>
+	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2, T3, T4)) {
+		registerPrimitive(name, makeTypeList<T1, T2, T3, T4>(), false);
+	}
+
+	template<typename T>
+	void registerPrimitive(std::string const & name, int (*primitive)(T, ...)) {
+		registerPrimitive(name, makeTypeList<T>(), true);
+	}
+
+	template<typename T1, typename T2>
+	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2, ...)) {
+		registerPrimitive(name, makeTypeList<T1, T2>(), true);
+	}
+
+private:
+	void registerPrimitive(std::string const & name, type_list const & param_types, bool varArgs) {
+		llvm::FunctionType * FT = llvm::FunctionType::get(
+			h.int_t(),
+			param_types,
+			varArgs);
+
+		llvm::Function::Create(FT,
+							   llvm::Function::ExternalLinkage,
+							   name,
+							   module);
+	}
+
+	template<typename T>
+	type_list makeTypeList() {
+		type_list tl;
+		tl.push_back(h.convert<T>());
+		return tl;
+	}
+
+	template<typename T1, typename T2>
+	type_list makeTypeList() {
+		type_list tl;
+		tl.push_back(h.convert<T1>());
+		tl.push_back(h.convert<T2>());
+		return tl;
+	}
+
+	template<typename T1, typename T2, typename T3>
+	type_list makeTypeList() {
+		type_list tl;
+		tl.push_back(h.convert<T1>());
+		tl.push_back(h.convert<T2>());
+		tl.push_back(h.convert<T3>());
+		return tl;
+	}
+
+	template<typename T1, typename T2, typename T3, typename T4>
+	type_list makeTypeList() {
+		type_list tl;
+		tl.push_back(h.convert<T1>());
+		tl.push_back(h.convert<T2>());
+		tl.push_back(h.convert<T3>());
+		tl.push_back(h.convert<T4>());
+		return tl;
+	}
+
+	llvm::Module * module;
+	Helper h;
+};
+
+
+void addPrimitives(llvm::Module * module) {
+	PrimitiveRegistrator registrator(module);
+
+    #define PRIMITIVE(name) registrator.registerPrimitive(#name, name);
+	#include "primitives_list.h"
+	#undef PRIMITIVE
 }
-
 }
 
 llvm::Module * makeLLVMModule(neko::Module const & neko_module) {
 	llvm::Module * module = new ::llvm::Module(neko_module.getName(), llvm::getGlobalContext());
 
+	addPrimitives(module);
+
+	FunctionGenerator fg(module);
+
 	for (neko::Module::const_iterator it = neko_module.begin();
 		 it != neko_module.end();
 		 ++it)
 		{
-			makeFunctionDeclaration(*it, module);
+			fg.makeFunctionDeclaration(*it);
 		}
 
 	for (neko::Module::const_iterator it = neko_module.begin();
 		 it != neko_module.end();
 		 ++it)
 		{
-			makeFunction(*it, module);
+			fg.makeFunction(*it);
 		}
 
 	return module;
