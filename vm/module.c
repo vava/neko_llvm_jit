@@ -564,13 +564,12 @@ neko_module *neko_read_module( reader r, readp p, value loader ) {
 	if( vm->fstats ) vm->fstats(vm,"neko_read_module_check",0);
 	// jit ?
 	if( vm->run_jit ) {
-		printf("Hello from run jit\n");
 		if( vm->fstats ) vm->fstats(vm,"neko_read_module_jit",1);
-		//if (vm->llvm_jit) {
+		if (vm->llvm_jit) {
 			neko_llvm_module_jit(vm, m);
-			//} else {
-			//neko_module_jit(m);
-			//}
+		} else {
+			neko_module_jit(m);
+		}
 		if( vm->fstats ) vm->fstats(vm,"neko_read_module_jit",0);
 	}
 #	ifdef NEKO_DIRECT_THREADED

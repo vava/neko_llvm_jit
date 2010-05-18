@@ -207,11 +207,57 @@ int main( int argc, char *argv[] ) {
 	if( !neko_has_embedded_module(vm) ) {
 		int jit = 1;
 		int stats = 0;
+		int llvm_jit = 0;
+		int llvm_optimizations = 1;
+		int dump_neko = 0;
+		int dump_llvm = 0;
 		while( argc > 1 ) {
-			if( strcmp(argv[1],"-interp") == 0 ) {
+			if( strcmp(argv[1],"-interp") == 0 || strcmp(argv[1],"--no-jit") == 0) {
 				argc--;
 				argv++;
 				jit = 0;
+				continue;
+			}
+			if( strcmp(argv[1],"--jit") == 0 ) {
+				argc--;
+				argv++;
+				jit = 1;
+				continue;
+			}
+			if( strcmp(argv[1],"--llvm-jit") == 0 ) {
+				argc--;
+				argv++;
+				llvm_jit = 1;
+				continue;
+			}
+			if( strcmp(argv[1],"--no-llvm-jit") == 0 ) {
+				argc--;
+				argv++;
+				llvm_jit = 0;
+				continue;
+			}
+			if( strcmp(argv[1],"--llvm-optimizations") == 0 ) {
+				argc--;
+				argv++;
+				llvm_optimizations = 1;
+				continue;
+			}
+			if( strcmp(argv[1],"--no-llvm-optimizations") == 0 ) {
+				argc--;
+				argv++;
+				llvm_optimizations = 0;
+				continue;
+			}
+			if( strcmp(argv[1],"--dump-neko") == 0 ) {
+				argc--;
+				argv++;
+				dump_neko = 1;
+				continue;
+			}
+			if( strcmp(argv[1],"--dump-llvm") == 0 ) {
+				argc--;
+				argv++;
+				dump_llvm = 1;
 				continue;
 			}
 			if( strcmp(argv[1],"-stats") == 0 ) {
@@ -235,6 +281,10 @@ int main( int argc, char *argv[] ) {
 		}
 #		endif
 		neko_vm_jit(vm,jit);
+		neko_vm_llvm_jit(vm, llvm_jit);
+		neko_vm_llvm_optimizations(vm, llvm_optimizations);
+		neko_vm_dump_neko(vm, dump_neko);
+		neko_vm_dump_llvm(vm, dump_llvm);
 		if( argc == 1 ) {
 #			ifdef NEKO_STANDALONE
 			report(vm,alloc_string("No embedded module in this executable"),0);

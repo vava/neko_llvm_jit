@@ -3,10 +3,10 @@
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/JIT.h"
 #include "llvm/Target/TargetSelect.h"
-// #include "llvm/Target/TargetData.h"
-// #include "llvm/PassManager.h"
+#include "llvm/Target/TargetData.h"
+#include "llvm/PassManager.h"
 // //#include "llvm/ModuleProvider.h"
-// #include "llvm/LinkAllPasses.h"
+#include "llvm/LinkAllPasses.h"
 
 #include "primitives.h"
 #include "llvm_code_generation.h"
@@ -31,12 +31,12 @@ extern "C" {
 	void llvm_cpp_jit(neko_vm * vm, neko_module * m) {
 		jit_boot_seq = (char *)&llvm_jit_boot;
 
-		std::cout << "llvm jit" << std::endl;
 		neko::Module code_base(m);
-		std::cout << "llvm jit" << std::endl;
+		if (vm->dump_neko) {
+			code_base.neko_dump();
+		}
 		llvm::Module * module = makeLLVMModule(code_base, vm);
 
-		std::cout << "llvm jit" << std::endl;
 		llvm::InitializeNativeTarget();
 
 		std::string error_string;
@@ -53,13 +53,33 @@ extern "C" {
 		#include "primitives_list.h"
 		#undef PRIMITIVE
 
-		module->dump();
+		if (vm->llvm_optimizations) {
+			llvm::PassManager OurFPM;
+			// Set up the optimizer pipeline.  Start with registering info about how the
+			// target lays out data structures.
+			OurFPM.add(new llvm::TargetData(*ee->getTargetData()));
+			// Promote allocas to registers.
+			OurFPM.add(llvm::createPromoteMemoryToRegisterPass());
+			// Do simple "peephole" optimizations and bit-twiddling optzns.
+			OurFPM.add(llvm::createInstructionCombiningPass());
+			// Reassociate expressions.
+			OurFPM.add(llvm::createReassociatePass());
+			// Eliminate Common SubExpressions.
+			OurFPM.add(llvm::createGVNPass());
+			// Simplify the control flow graph (deleting unreachable blocks, etc).
+			OurFPM.add(llvm::createCFGSimplificationPass());
 
-		std::cout << "llvm jit" << std::endl;
+			//OurFPM.doInitialization();
+			OurFPM.run(*module);
+		}
+
+		if (vm->dump_llvm) {
+			module->dump();
+		}
+
 		llvm::Function * main = module->getFunction("main");
 		llvm::verifyFunction(*main);
 
-		std::cout << "llvm jit" << std::endl;
 		void *FPtr = ee->getPointerToFunction(main);
 
 		m->jit = FPtr;
@@ -69,29 +89,7 @@ extern "C" {
 }
 
 
-// 	//TODO:
-// 	//  Module::function_iterator fit = module.fbegin();
-// 	//  Function::block_iterator bit = function.bbegin();
-// 	//  Block::opcode_iterator oit = block.obegin();
-// 	//    and opcode convertions (+ printing for debugging and testing purposes)
-
-// namespace {
-// 	llvm::ExecutionEngine * makeExecutionEngine(llvm::Module * module) {
-// 		llvm::InitializeNativeTarget();
-
-// 		std::string error_string;
-// 		llvm::ExecutionEngine * ee = llvm::EngineBuilder(module)
-// 										.setEngineKind(llvm::EngineKind::JIT)
-// 										.setErrorStr(&error_string)
-// 										.create();
-// 		if (!ee) {
-// 			std::cerr << "Could not create ExecutionEngine: " << error_string << std::endl;
-// 		}
-
-// 		return ee;
-// 	}
-// }
-
+// below is code that we might need later again
 // 	std::vector<const llvm::Type*> vfunction_struct_types;
 // 	vfunction_struct_types.push_back(h.int_t());// val_type t
 // 	vfunction_struct_types.push_back(h.int_t());// int nargs
@@ -163,39 +161,3 @@ extern "C" {
 // 	// 			stack.pop(1);
 // 	// 		}
 // 	// 		break;
-
-// void * Module::get_code() {
-// 	llvm::Function * main = llvmModule->getFunction("main");
-// 	main->dump();
-// 	llvm::verifyFunction(*main);
-
-// 	//llvm::ExistingModuleProvider mp(llvmModule);
-
-// 	llvm::PassManager OurFPM;//(&mp);
-// 	// Set up the optimizer pipeline.  Start with registering info about how the
-// 	// target lays out data structures.
-// 	OurFPM.add(new llvm::TargetData(*executionEngine->getTargetData()));
-// 	// Promote allocas to registers.
-// 	OurFPM.add(llvm::createPromoteMemoryToRegisterPass());
-// 	// Do simple "peephole" optimizations and bit-twiddling optzns.
-// 	OurFPM.add(llvm::createInstructionCombiningPass());
-// 	// Reassociate expressions.
-// 	OurFPM.add(llvm::createReassociatePass());
-// 	// Eliminate Common SubExpressions.
-// 	OurFPM.add(llvm::createGVNPass());
-// 	// Simplify the control flow graph (deleting unreachable blocks, etc).
-// 	OurFPM.add(llvm::createCFGSimplificationPass());
-
-// 	//OurFPM.doInitialization();
-// 	OurFPM.run(*llvmModule);
-
-// 	main->dump();
-
-// 	//run main
-// 	if (executionEngine.get()) {
-// 		void *FPtr = executionEngine->getPointerToFunction(main);
-// 		void (*FP)() = (void (*)())(intptr_t)FPtr;
-// 		FP();
-// 	}
-// 	return 0;
-// }

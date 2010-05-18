@@ -283,7 +283,6 @@ void addPrimitives(llvm::Module * module) {
 
 llvm::Module * makeLLVMModule(neko::Module const & neko_module,
 							  neko_vm * vm) {
-	neko_module.neko_dump();
 	llvm::Module * module = new ::llvm::Module("neko module", llvm::getGlobalContext());
 
 	addPrimitives(module);

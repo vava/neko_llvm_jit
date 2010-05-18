@@ -137,6 +137,29 @@ EXTERN int neko_vm_jit( neko_vm *vm, int enable_jit ) {
 	return vm->run_jit;
 }
 
+EXTERN int neko_vm_llvm_jit( neko_vm *vm, int enable_llvm_jit ) {
+	if( enable_llvm_jit < 0 )
+		return vm->llvm_jit;
+	vm->llvm_jit = enable_llvm_jit;
+	return vm->llvm_jit;
+}
+
+EXTERN int neko_vm_llvm_optimizations( neko_vm *vm, int enable_llvm_optimizations ) {
+	if( enable_llvm_optimizations < 0 )
+		return vm->llvm_optimizations;
+	vm->llvm_optimizations = enable_llvm_optimizations;
+	return vm->llvm_optimizations;
+}
+
+EXTERN void neko_vm_dump_neko( neko_vm *vm, int dump_neko ) {
+	vm->dump_neko = dump_neko;
+}
+
+EXTERN void neko_vm_dump_llvm( neko_vm *vm, int dump_llvm ) {
+	vm->dump_llvm = dump_llvm;
+}
+
+
 EXTERN int neko_vm_trusted( neko_vm *vm, int t ) {
 	int old = vm->trusted_code;
 	vm->trusted_code = t;
