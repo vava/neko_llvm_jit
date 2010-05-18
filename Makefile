@@ -2,7 +2,7 @@
 
 INSTALL_PREFIX = /usr/local
 
-CFLAGS = -Wall -fPIC -O3 -g -fomit-frame-pointer -I vm -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -DX86TargetMachineModule=1
+CFLAGS = -Wall -fPIC -g -fomit-frame-pointer -I vm -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -DX86TargetMachineModule=1
 EXTFLAGS = -pthread
 MAKESO = ${CC} -shared -WBsymbolic
 LIBNEKO_NAME = libneko.so
@@ -124,7 +124,7 @@ bin/${LIBNEKO_NAME}: ${LIBNEKO_OBJECTS} Makefile
 
 bin/neko: $(VM_OBJECTS) Makefile
 	${CXX} ${CFLAGS} ${EXTFLAGS} -o $@ ${VM_OBJECTS} ${NEKOVM_FLAGS} ${LLVM_LIBS}
-	strip bin/neko
+#	strip bin/neko
 
 bin/std.ndll: ${STD_OBJECTS}
 	${MAKESO} -o $@ ${STD_OBJECTS} ${STD_NDLL_FLAGS}
