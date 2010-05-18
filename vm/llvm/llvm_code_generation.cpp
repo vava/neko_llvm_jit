@@ -21,10 +21,12 @@ class CodeGeneration {
 public:
 	CodeGeneration(id2block_type const & id2block_,
 				   llvm::Function * function_,
-				   llvm::Module * module_)
+				   llvm::Module * module_,
+				   neko_vm * vm_)
 		: id2block(id2block_)
 		, function(function_)
 		, module(module_)
+		, vm(vm_)
 		, stack(&function->getEntryBlock())
 		, h(function->getContext())
 	{}
@@ -40,6 +42,7 @@ public:
 				makeOpCode(builder,
 						   (OPCODE)it->second.first, it->second.second);
 			}
+		builder.CreateRetVoid();
 	}
 
 	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive) const {
@@ -80,14 +83,15 @@ public:
 				acc = stack.load(builder, 1);
 				break;
 			case Add:
-				acc = callPrimitive(builder, "add", stack.load(builder, 0), acc);
+				acc = callPrimitive(builder, "add", h.constant(vm), stack.load(builder, 0), acc);
 				stack.pop(1);
 				break;
 			case Call:
 				{
 					std::vector<llvm::Value *> params;
+					params.push_back(h.constant(vm));
 					params.push_back(acc); params.push_back(h.int_n(param));
-					for (int i = param; i >=0; --i) {
+					for (int i = param - 1; i >=0; --i) {
 						params.push_back(stack.load(builder, i));
 					}
 					acc = callPrimitive(builder, "call", params);
@@ -110,6 +114,7 @@ private:
 	id2block_type const & id2block;
 	llvm::Function * function;
 	llvm::Module * module;
+	neko_vm * vm;
 
 	llvm::Value * acc;
 	Stack stack;
@@ -118,9 +123,11 @@ private:
 
 class FunctionGenerator {
 public:
-	FunctionGenerator(llvm::Module * module_)
+	FunctionGenerator(llvm::Module * module_,
+					  neko_vm * vm_)
 		: module(module_)
 		, h(module->getContext())
+		, vm(vm_)
 	{}
 
 	void makeFunctionDeclaration(neko::Function const & neko_function) {
@@ -146,7 +153,7 @@ public:
 				id2block.insert(std::make_pair(it->getId(), llvm::BasicBlock::Create(module->getContext(), bb_name.str(), function)));
 			}
 
-		CodeGeneration cd(id2block, function, module);
+		CodeGeneration cd(id2block, function, module, vm);
 
 		for (neko::Function::const_iterator it = neko_function.begin();
 			 it != neko_function.end();
@@ -156,10 +163,14 @@ public:
 				cd.makeBasicBlock(*it);
 				//check stack length
 			}
+
+		llvm::IRBuilder<> builder(&function->getEntryBlock());
+		builder.CreateBr(++function->begin());
 	}
 private:
 	llvm::Module * module;
 	Helper h;
+	neko_vm * vm;
 };
 
 class PrimitiveRegistrator {
@@ -202,6 +213,11 @@ public:
 	template<typename T1, typename T2>
 	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2, ...)) {
 		registerPrimitive(name, makeTypeList<T1, T2>(), true);
+	}
+
+	template<typename T1, typename T2, typename T3>
+	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2, T3, ...)) {
+		registerPrimitive(name, makeTypeList<T1, T2, T3>(), true);
 	}
 
 private:
@@ -265,12 +281,14 @@ void addPrimitives(llvm::Module * module) {
 }
 }
 
-llvm::Module * makeLLVMModule(neko::Module const & neko_module) {
-	llvm::Module * module = new ::llvm::Module(neko_module.getName(), llvm::getGlobalContext());
+llvm::Module * makeLLVMModule(neko::Module const & neko_module,
+							  neko_vm * vm) {
+	neko_module.neko_dump();
+	llvm::Module * module = new ::llvm::Module("neko module", llvm::getGlobalContext());
 
 	addPrimitives(module);
 
-	FunctionGenerator fg(module);
+	FunctionGenerator fg(module, vm);
 
 	for (neko::Module::const_iterator it = neko_module.begin();
 		 it != neko_module.end();

@@ -1,12 +1,15 @@
 #include "jit.h"
 
-// #include "llvm/Analysis/Verifier.h"
-// #include "llvm/ExecutionEngine/JIT.h"
-// #include "llvm/Target/TargetSelect.h"
+#include "llvm/Analysis/Verifier.h"
+#include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/Target/TargetSelect.h"
 // #include "llvm/Target/TargetData.h"
 // #include "llvm/PassManager.h"
 // //#include "llvm/ModuleProvider.h"
 // #include "llvm/LinkAllPasses.h"
+
+#include "primitives.h"
+#include "llvm_code_generation.h"
 
 #include "neko_module.h"
 
@@ -15,13 +18,53 @@
 
 //C interface
 extern "C" {
-	void * llvm_cpp_jit(neko_module const * m) {
-		printf("Creating module\n");
+	#include "neko.h"
+	#include "neko_vm.h"
+	#include "vm.h"
+	#include "neko_mod.h"
+	extern char *jit_boot_seq;
 
+	void llvm_jit_boot(neko_vm * vm, int_val * code, value acc, neko_module * m) {
+		((void (*)())code)();
+	}
+
+	void llvm_cpp_jit(neko_vm * vm, neko_module * m) {
+		jit_boot_seq = (char *)&llvm_jit_boot;
+
+		std::cout << "llvm jit" << std::endl;
 		neko::Module code_base(m);
+		std::cout << "llvm jit" << std::endl;
+		llvm::Module * module = makeLLVMModule(code_base, vm);
 
-		printf("Dumping\n");
-		code_base.neko_dump();
+		std::cout << "llvm jit" << std::endl;
+		llvm::InitializeNativeTarget();
+
+		std::string error_string;
+		llvm::ExecutionEngine * ee = llvm::EngineBuilder(module)
+										.setEngineKind(llvm::EngineKind::JIT)
+										.setErrorStr(&error_string)
+										.create();
+		if (!ee) {
+			std::cerr << "Could not create ExecutionEngine: " << error_string << std::endl;
+		}
+
+		//register primitives
+		#define PRIMITIVE(name) ee->addGlobalMapping(ee->FindFunctionNamed(#name), (void *)name);
+		#include "primitives_list.h"
+		#undef PRIMITIVE
+
+		module->dump();
+
+		std::cout << "llvm jit" << std::endl;
+		llvm::Function * main = module->getFunction("main");
+		llvm::verifyFunction(*main);
+
+		std::cout << "llvm jit" << std::endl;
+		void *FPtr = ee->getPointerToFunction(main);
+
+		m->jit = FPtr;
+
+		//TODO: patch globals
 	}
 }
 
@@ -49,20 +92,6 @@ extern "C" {
 // 	}
 // }
 
-// Module::Module(): ctx(llvm::getGlobalContext()),
-// 				  h(ctx),
-// 				  llvmModule(new llvm::Module("test module", ctx)),
-// 				  builder(ctx),
-// 				  stack(ctx),
-// 				  executionEngine(makeExecutionEngine(llvmModule))
-// {
-// 	//create "main" function
-// 	llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), std::vector<const llvm::Type *>(), false);
-// 	main = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "main", llvmModule);
-// 	llvm::BasicBlock *BB = llvm::BasicBlock::Create(ctx, "entry", main);
-// 	builder.SetInsertPoint(BB);
-// 	stack.init(&builder);
-
 // 	std::vector<const llvm::Type*> vfunction_struct_types;
 // 	vfunction_struct_types.push_back(h.int_t());// val_type t
 // 	vfunction_struct_types.push_back(h.int_t());// int nargs
@@ -82,19 +111,6 @@ extern "C" {
 // }
 
 // void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
-// 	// switch( opcode ) {
-// 	// 	case AccInt:
-// 	// 	case AccBuiltin:
-// 	// 		acc = h.int_n(param);
-// 	// 		break;
-// 	// 	case AccStack0:
-// 	// 		acc = stack.load(0);
-// 	// 		break;
-// 	// 	case AccStack1:
-// 	// 		acc = stack.load(1);
-// 	// 		break;
-// 	// 	case Add:
-// 	// 		{
 // 	// 			llvm::Value * left = stack.load(0);
 // 	// 			llvm::Value * right = acc;
 
@@ -147,17 +163,6 @@ extern "C" {
 // 	// 			stack.pop(1);
 // 	// 		}
 // 	// 		break;
-// 	// 	case Push:
-// 	// 		stack.push(acc);
-// 	// 		break;
-// 	// 	case Pop:
-// 	// 		stack.pop(param);
-// 	// 		break;
-// 	// 	case Last:
-// 	// 		builder.CreateRetVoid();
-// 	// 		break;
-// 	// }
-// }
 
 // void * Module::get_code() {
 // 	llvm::Function * main = llvmModule->getFunction("main");

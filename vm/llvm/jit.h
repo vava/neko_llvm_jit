@@ -1,10 +1,12 @@
 //#include "../opcodes.h"
 
-typedef struct _neko_module neko_module;
 
 //C interface
 extern "C" {
-	void * llvm_cpp_jit(neko_module const * m);
+	typedef struct _neko_module neko_module;
+	typedef struct _neko_vm neko_vm;
+
+	void llvm_cpp_jit(neko_vm * vm, neko_module * m);
 	// void llvm_add_op(void * m, enum OPCODE opcode, int param, int params_count);
 	// void* llvm_close_and_get_code(void *);
 }

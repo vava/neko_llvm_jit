@@ -37,7 +37,7 @@
 
 extern void neko_module_jit( neko_module *m );
 
-extern void llvm_cpp_jit( neko_module const * m );
+extern void llvm_cpp_jit( neko_vm * vm, neko_module const * m );
 
 /* extern void * llvm_create_new_module(); */
 /* extern void llvm_add_op(void * m, enum OPCODE opcode, int param, int params_count); */
@@ -57,47 +57,10 @@ extern void llvm_cpp_jit( neko_module const * m );
 /* 	} */
 /* } */
 
-void neko_llvm_module_jit( neko_module *m ) {
-	printf("Calling llvm cpp jit\n");
-	llvm_cpp_jit(m);
-	/* printf("Hello\n"); */
-	/* unsigned int i = 0; */
-	/* int param = 0; */
-	/* int params_count = 0; */
-	/* void * module = llvm_create_new_module(); */
-	/* void * code = 0; */
-	/* int k = 0; */
-	/* int func_count = 0; */
-
-	/* printf("Found %d globals\n", m->nglobals); */
-
-	/* while (true) { */
-	/* 	while( k < m->nglobals && !val_is_function(m->globals[k]) ) */
-	/* 		k++; */
-	/* 	if( k >= m->nglobals ) { */
-	/* 		break; */
-	/* 	} */
-	/* 	func_count++; */
-	/* 	k++; */
-	/* } */
-
-	/* printf("Found %d functions\n", func_count); */
-
-	/* while( i <= m->codesize ) { */
-	/* 	enum OPCODE op = m->code[i]; */
-	/* 	i++; */
-	/* 	param = (int)m->code[i]; */
-	/* 	params_count = parameter_table[op]; */
-
-	/* 	llvm_add_op(module, op, param, params_count); */
-
-	/* 	i += params_count; */
-	/* } */
-
-	/* code = llvm_close_and_get_code(module); */
-
+void neko_llvm_module_jit( neko_vm * vm, neko_module *m ) {
+	llvm_cpp_jit(vm, m);
 	//finally, run normal jit for now
-	neko_module_jit( m );
+	//	neko_module_jit( m );
 }
 
 #endif
