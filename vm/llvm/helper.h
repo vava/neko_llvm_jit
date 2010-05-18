@@ -34,6 +34,11 @@ public:
 	}
 
 	template<typename T>
+	llvm::Constant * constant(T * t) const {
+		return llvm::ConstantExpr::getIntToPtr(int_n((int)t), convert<T *>());
+	}
+
+	template<typename T>
 	llvm::Type const * convert() const {
 		return Convert<T>::from(*this);
 	}
@@ -64,7 +69,7 @@ struct Helper::Convert<void> {
 template<typename T>
 struct Helper::Convert<T *> {
 	static llvm::Type const * from(Helper const & h) {
-		return h.convert<T>()->getPointerTo();
+		return h.convert<int>()->getPointerTo();
 	}
 };
 
