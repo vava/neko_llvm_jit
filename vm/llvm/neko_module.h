@@ -1,3 +1,5 @@
+#pragma once
+
 #include "neko_function.h"
 
 #include "llvm/Module.h"
@@ -19,12 +21,9 @@ namespace neko {
 		const_iterator end() const { return functions.end(); }
 		size_type size() const { return functions.size(); }
 
-		std::string const & getName() const { return name; }
-
 		void neko_dump(std::string const & indent = "") const;
 	private:
 		const NekoCodeContainer code_container;
 		functions_container functions;
-		std::string name;
 	};
 }

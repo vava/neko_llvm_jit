@@ -128,20 +128,6 @@ TEST_F(ModuleTest, ConstructorEmpty) {
 								ElementsAre(ElementsAre()))));
 }
 
-TEST_F(ModuleTest, ConstructorName) {
-	int code_int[] = {
-	};
-
-	value globals_int[] = {
-	};
-
-	value name_int = vh.makeString("Long module name");
-
-	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name_int, code_int, globals_int));
-
-	EXPECT_EQ("Long module name", Module(nm->get()).getName());
-}
-
 typedef ModuleTest ModuleDeathTest;
 
 TEST_F(ModuleDeathTest, IntersectedBlocks) {

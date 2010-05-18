@@ -75,7 +75,6 @@ namespace {
 
 neko::Module::Module(neko_module const * m) : code_container(m)
 											, functions(get_functions(m, code_container.getNekoCodeChunk()))
-											, name(val_string(m->name))
 {}
 
 void neko::Module::neko_dump(std::string const & indent) const {
