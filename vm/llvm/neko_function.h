@@ -1,3 +1,5 @@
+#pragma once
+
 #include "neko_code_chunk.h"
 #include "neko_basic_block.h"
 
