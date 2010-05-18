@@ -1,0 +1,2 @@
+PRIMITIVE(add)
+PRIMITIVE(call)
