@@ -7,7 +7,8 @@ end
 task :test do
 	cd 'tests/unit'
 	sh 'make test'
-#	neko "../test.n"
+	cd '../..'
+	neko "../test.n"
 end
 
 def neko(param)
