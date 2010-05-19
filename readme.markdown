@@ -27,11 +27,11 @@ Prerequisites:
   It can be downloaded from [llvm site](http://llvm.org/) or
   on Debian based systems (like Ubuntu) with
 
-    $ sudo aptitude install llvm-dev
+<pre><code>$ sudo aptitude install llvm-dev</code></pre>
 
 3. ruby/rake, again, on Debian/Ubuntu
 
-    sudo aptitude install rake
+<pre><code>sudo aptitude install rake</code></pre>
 
 4. git, to get sources
 
@@ -43,8 +43,11 @@ That's it. Just do
 
 It'll compile neko and run tests.
 
+Other important questions.
+==========================
+
 Why C++?
-========
+--------
 
 Two reasons.
 
@@ -53,6 +56,6 @@ Two reasons.
 * There's a way to convert from C++ to C (through clang), if you the huge need will arise.
 
 Why rake?
-=========
+---------
 
 It's easy to use but it probably will have to be replaced by Makefiles as project will mature.
