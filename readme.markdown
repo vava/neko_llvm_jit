@@ -23,15 +23,29 @@ Using LLVM on Windows is more pain than we would want to experience right now.
 Prerequisites:
 
 1. gcc/g++ compiler.
-2. LLVM, obviously.
+2. LLVM, 2.7.
    It can be downloaded from [llvm site](http://llvm.org/) or
-   on Debian based systems (like Ubuntu) with
-   `$ sudo aptitude install llvm-dev`
+   on Debian based systems (like Ubuntu) with  
+   `$ sudo aptitude install llvm-dev`  
+   on Fedora you will have to download and build LLVM yourself as the one from repository is too old
 
-3. ruby/rake, again, on Debian/Ubuntu
-   `$ sudo aptitude install rake`
+3. ruby/rake, again, on Debian/Ubuntu  
+   `$ sudo aptitude install rake`  
+   on Fedora (and similar) with  
+   `# yum install rubygem-rake`  
 
-4. git, to get sources
+4. libgc
+5. git, to get sources
+
+To sum up, on Debian based systems you should run
+
+    $ sudo aptitude install gcc llvm-dev rake libgc-dev git
+
+on Fedora and similar
+
+    # yum install gcc rubygem-rake libgc-devel git
+
+and build LLVM from sources.
 
 That's it. Just do
 
@@ -40,6 +54,10 @@ That's it. Just do
     $ rake
 
 It'll compile neko and run tests.
+
+If you want to use neko to run something else, you should run
+
+    $ LD_LIBRARY_PATH=bin:\`llvm-config --libdir\`:${LD_LIBRARY_PATH} NEKOPATH=boot:bin bin/neko --llvm-jit --llvm-optimizations tests/code/hello_world.n
 
 Other important questions.
 ==========================
