@@ -11,9 +11,10 @@ NEKOVM_FLAGS = -Lbin -lneko
 STD_NDLL_FLAGS = ${NEKOVM_FLAGS} -lrt
 INSTALL_FLAGS =
 LLVM_CONFIG = llvm-config
-LLVM_COMPONENTS = core support jit analysis native
+LLVM_COMPONENTS = core support jit analysis native ipo instrumentation
 LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs $(LLVM_COMPONENTS))
-NEKO_EXEC = LD_LIBRARY_PATH=../bin:/usr/lib/llvm/lib:${LD_LIBRARY_PATH} NEKOPATH=../boot:../bin ../bin/neko
+LLVM_LIBS_DIR = $(shell $(LLVM_CONFIG) --libdir)
+NEKO_EXEC = LD_LIBRARY_PATH=../bin:${LLVM_LIBS_DIR}:${LD_LIBRARY_PATH} NEKOPATH=../boot:../bin ../bin/neko
 
 # For OSX
 #
@@ -63,7 +64,6 @@ LIBNEKO_INSTALL = -install_name @executable_path/${LIBNEKO_NAME}
 LIBNEKO_LIBS = -ldl -lgc -lm -dynamiclib -single_module ${LIBNEKO_INSTALL}
 NEKOVM_FLAGS = -L${PWD}/bin -lneko
 STD_NDLL_FLAGS = -bundle -undefined dynamic_lookup ${NEKOVM_FLAGS}
-
 ifeq (${OSX_UNIVERSAL}, 1)
 
 export MACOSX_DEPLOYMENT_TARGET_i386=10.4
