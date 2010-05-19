@@ -114,7 +114,7 @@ int_val call(void * vm_, int_val f, int_val n, ...) {
 		neko_module * m = (neko_module*)func->module;
 		int_val* pc = (int_val*)func->addr;
 		vm->env = func->env;
-		return (int)neko_interp(vm, m, f, pc);
+		return (int_val)neko_interp(vm, m, f, pc);
 	} else if( val_tag(f) == VAL_PRIMITIVE ) {
 		if( n == func->nargs ) {
 			va_list argp;
