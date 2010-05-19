@@ -24,17 +24,14 @@ Prerequisites:
 
 1. gcc/g++ compiler.
 2. LLVM, obviously.
-  It can be downloaded from [llvm site](http://llvm.org/) or with
+  It can be downloaded from [llvm site](http://llvm.org/) or
+  on Debian based systems (like Ubuntu) with
 
-    sudo aptitude install llvm-dev
+    $ sudo aptitude install llvm-dev
 
-  on Debian based systems (like Ubuntu)
-
-3. ruby/rake
+3. ruby/rake, again, on Debian/Ubuntu
 
     sudo aptitude install rake
-
-  again, on Debian/Ubuntu
 
 4. git, to get sources
 
