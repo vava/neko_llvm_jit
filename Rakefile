@@ -58,7 +58,7 @@ task :neko_test => TEST_BINARIES do |t|
 		printf "|%#{column_sizes[0]}s|", File.basename(f)
 		speeds = []
 		results = []
-		columns.each.with_index {|param, i|
+		columns.each_with_index {|param, i|
 			result = one_neko_test(speeds, param, f)
 			printf "%#{column_sizes[i+1]}s|", result
 			results << result
@@ -68,7 +68,7 @@ task :neko_test => TEST_BINARIES do |t|
 
 		#speeds
 		printf "|%#{column_sizes[0]}s|", ""
-		speeds.each.with_index{|s, q|
+		speeds.each_with_index{|s, q|
 			printf "%#{column_sizes[q+1]-2}dms|", (s * 1000).to_i
 		}
 		printf "%#{column_sizes[-1]}s|", ""
