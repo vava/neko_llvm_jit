@@ -4,3 +4,5 @@ CVS
 /src/*.n
 *.ll
 .dir-locals.el
+bin/libneko.so
+tests/unit/all_test
