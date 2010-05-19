@@ -21,20 +21,22 @@ First of all, it can be done only on Linux at this stage.
 Using LLVM on Windows is more pain than we would want to experience right now.
 
 Prerequisites:
-# gcc/g++ compiler.
-# LLVM, obviously.
+
+1. gcc/g++ compiler.
+2. LLVM, obviously.
   It can be downloaded from [llvm site](http://llvm.org/) or with
 
     sudo aptitude install llvm-dev
 
   on Debian based systems (like Ubuntu)
 
-# ruby/rake
+3. ruby/rake
 
     sudo aptitude install rake
 
   again, on Debian/Ubuntu
-# git, to get sources
+
+4. git, to get sources
 
 That's it. Just do
 
