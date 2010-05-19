@@ -57,8 +57,8 @@ namespace {
 			//  this also means that the first opcode in the program was a Jump to main function
 			//  There's no point making a standalone function for that Jump, so we can just remove it.
 			assert(*m->code == Jump);
-			assert((OPCODE *)begin->getToAddress() - (OPCODE *)begin->getFromAddress() == 2
-					 && *(OPCODE *)begin->getFromAddress() == Jump);
+			assert((int_val *)begin->getToAddress() - (int_val *)begin->getFromAddress() == 2
+					 && *(int_val *)begin->getFromAddress() == Jump);
 			++begin;
 		}
 
