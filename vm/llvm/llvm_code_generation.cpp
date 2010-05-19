@@ -76,6 +76,9 @@ public:
 			case AccBuiltin:
 				acc = h.int_n(param);
 				break;
+			case AccGlobal:
+				acc = h.int_n(*(int*)(param));
+				break;
 			case AccStack0:
 				acc = stack.load(builder, 0);
 				break;

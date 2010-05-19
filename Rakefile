@@ -32,10 +32,10 @@ TEST_BINARIES = TEST_SOURCE.ext('n')
 
 def table_header
 	puts <<EOF
-+---------+------+-------+--------+--------+------+
-|test name|interp|x86 jit|llvm jit|llvm jit|status|
-|         |      |       |no opt  |with opt|      |
-+---------+------+-------+--------+--------+------+
++-------------+-------------+-------------+-------------+-------------+------+
+|    test name|       interp|      x86 jit|     llvm jit|     llvm jit|status|
+|             |             |             |       no opt|     with opt|      |
++-------------+-------------+-------------+-------------+-------------+------+
 EOF
 end
 
@@ -51,7 +51,7 @@ end
 
 task :neko_test => TEST_BINARIES do |t|
 	table_header
-	column_sizes = [9, 6, 7, 8, 8, 6]
+	column_sizes = [13, 13, 13, 13, 13, 6]
 	columns = ["--no-jit", "--jit --no-llvm-jit", "--jit --llvm-jit --no-llvm-optimizations", "--jit --llvm-jit --llvm-optimizations"];
 	t.prerequisites.each {|f|
 		#results
@@ -75,6 +75,6 @@ task :neko_test => TEST_BINARIES do |t|
 		print "\n"
 
 		#closing line
-		puts "+---------+------+-------+--------+--------+------+"
+		puts "+-------------+-------------+-------------+-------------+-------------+------+"
 	}
 end
