@@ -14,7 +14,7 @@ public:
 		return int_n(1);
 	}
 
-	llvm::ConstantInt * int_n(int n) const {
+	llvm::ConstantInt * int_n(int_val n) const {
 		return llvm::ConstantInt::get(int_t(), n);
 	}
 
@@ -42,7 +42,7 @@ public:
 
 	template<typename T>
 	llvm::Constant * constant(T * t) const {
-		return llvm::ConstantExpr::getIntToPtr(int_n((int)t), convert<T *>());
+		return llvm::ConstantExpr::getIntToPtr(int_n((int_val)t), convert<T *>());
 	}
 
 	template<typename T>
