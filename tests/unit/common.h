@@ -11,7 +11,7 @@ extern "C" {
 
 typedef struct _value *value;
 
-neko_module * makeNekoModule(OPCODE * opcodes, int_val size);
+neko_module * makeNekoModule(int_val * opcodes, int_val size);
 
 class NekoValueHolder {
 public:

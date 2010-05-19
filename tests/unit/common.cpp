@@ -6,7 +6,7 @@ extern "C" {
 	#include "neko_mod.h"
 }
 
-neko_module * makeNekoModule(OPCODE * opcodes, int_val size) {
+neko_module * makeNekoModule(int_val * opcodes, int_val size) {
 	neko_module * nm = new neko_module;
 	nm->codesize = size;
 	nm->code = (int_val *)opcodes;
