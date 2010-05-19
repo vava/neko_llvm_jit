@@ -30,7 +30,7 @@ static int_val jit_run( neko_vm *vm, vfunction *acc ) {
 	return ((jit_prim)jit_boot_seq)(vm,acc->addr,(value)acc,m);
 }
 
-int add(void * vm_, int a, int b) {
+int_val add(void * vm_, int_val a, int_val b) {
 	neko_vm * vm = (neko_vm *) vm_;
 
 	if( (b & 1) && (a & 1) ) {
@@ -104,7 +104,7 @@ int add(void * vm_, int a, int b) {
 	return 0;
 }
 
-int call(void * vm_, int f, int n, ...) {
+int_val call(void * vm_, int_val f, int_val n, ...) {
 	vfunction* func = (vfunction*)f;
 	neko_vm * vm = (neko_vm *) vm_;
 

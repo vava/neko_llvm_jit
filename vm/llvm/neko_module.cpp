@@ -16,12 +16,12 @@ extern "C" {
 }
 
 namespace {
-	std::vector<unsigned int> get_function_addresses(neko_module const * m) {
-		std::vector<unsigned int> function_addresses;
+	std::vector<ptr_val> get_function_addresses(neko_module const * m) {
+		std::vector<ptr_val> function_addresses;
 
-		for (unsigned int k = 0; k < m->nglobals; k++) {
+		for (ptr_val k = 0; k < m->nglobals; k++) {
 			if (val_is_function(m->globals[k])) {
-				function_addresses.push_back((unsigned int)((vfunction*)m->globals[k])->addr);
+				function_addresses.push_back((ptr_val)((vfunction*)m->globals[k])->addr);
 			}
 		}
 
@@ -30,14 +30,14 @@ namespace {
 			function_addresses.push_back(*(m->code + 1));
 		} else {
 			//no jumps in front means main functions have started right away
-			function_addresses.push_back((unsigned int)m->code);
+			function_addresses.push_back((ptr_val)m->code);
 		}
 
 		return function_addresses;
 	}
 
 	neko::Function make_function(NekoCodeChunk const & chunk) {
-		bool isMain = chunk.getToAddress() == std::numeric_limits<unsigned int>::max();
+		bool isMain = chunk.getToAddress() == std::numeric_limits<ptr_val>::max();
 		std::stringstream name;
 		if (isMain) {
 			name << "main";
@@ -48,7 +48,7 @@ namespace {
 	}
 
 	neko::Module::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
-		std::vector<unsigned int> const function_addresses = get_function_addresses(m);
+		std::vector<ptr_val> const function_addresses = get_function_addresses(m);
 		std::vector<NekoCodeChunk> const chunks = chunk.splitByAddresses(function_addresses);
 
 		std::vector<NekoCodeChunk>::const_iterator begin = chunks.begin();

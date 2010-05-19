@@ -15,7 +15,7 @@ extern "C" {
 }
 
 namespace {
-typedef std::map<unsigned int, llvm::BasicBlock *> id2block_type;
+typedef std::map<ptr_val, llvm::BasicBlock *> id2block_type;
 
 class CodeGeneration {
 public:
@@ -70,14 +70,14 @@ public:
 		return builder.CreateCall(P, arguments.begin(), arguments.end());
 	}
 
-	void makeOpCode(llvm::IRBuilder<> & builder, OPCODE opcode, int param) {
+	void makeOpCode(llvm::IRBuilder<> & builder, OPCODE opcode, int_val param) {
 		switch(opcode) {
 			case AccInt:
 			case AccBuiltin:
 				acc = h.int_n(param);
 				break;
 			case AccGlobal:
-				acc = h.int_n(*(int*)(param));
+				acc = h.int_n(*(int_val*)(param));
 				break;
 			case AccStack0:
 				acc = stack.load(builder, 0);
@@ -94,7 +94,7 @@ public:
 					std::vector<llvm::Value *> params;
 					params.push_back(h.constant(vm));
 					params.push_back(acc); params.push_back(h.int_n(param));
-					for (int i = param - 1; i >=0; --i) {
+					for (int_val i = param - 1; i >=0; --i) {
 						params.push_back(stack.load(builder, i));
 					}
 					acc = callPrimitive(builder, "call", params);
@@ -184,42 +184,42 @@ public:
 		, h(module->getContext())
 	{}
 
-	void registerPrimitive(std::string const & name, int (*primitive)()) {
+	void registerPrimitive(std::string const & name, int_val (*primitive)()) {
 		registerPrimitive(name, type_list(), false);
 	}
 
 	template<typename T>
-	void registerPrimitive(std::string const & name, int (*primitive)(T)) {
+	void registerPrimitive(std::string const & name, int_val (*primitive)(T)) {
 		registerPrimitive(name, makeTypeList<T>(), false);
 	}
 
 	template<typename T1, typename T2>
-	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2)) {
+	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2)) {
 		registerPrimitive(name, makeTypeList<T1, T2>(), false);
 	}
 
 	template<typename T1, typename T2, typename T3>
-	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2, T3)) {
+	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2, T3)) {
 		registerPrimitive(name, makeTypeList<T1, T2, T3>(), false);
 	}
 
 	template<typename T1, typename T2, typename T3, typename T4>
-	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2, T3, T4)) {
+	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2, T3, T4)) {
 		registerPrimitive(name, makeTypeList<T1, T2, T3, T4>(), false);
 	}
 
 	template<typename T>
-	void registerPrimitive(std::string const & name, int (*primitive)(T, ...)) {
+	void registerPrimitive(std::string const & name, int_val (*primitive)(T, ...)) {
 		registerPrimitive(name, makeTypeList<T>(), true);
 	}
 
 	template<typename T1, typename T2>
-	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2, ...)) {
+	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2, ...)) {
 		registerPrimitive(name, makeTypeList<T1, T2>(), true);
 	}
 
 	template<typename T1, typename T2, typename T3>
-	void registerPrimitive(std::string const & name, int (*primitive)(T1, T2, T3, ...)) {
+	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2, T3, ...)) {
 		registerPrimitive(name, makeTypeList<T1, T2, T3>(), true);
 	}
 

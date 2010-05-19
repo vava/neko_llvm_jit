@@ -14,16 +14,16 @@ class FunctionTest : public testing::Test {
 	neko_code_container make_code_container() const {
 		neko_code_container result;
 
-		result.insert(std::make_pair(0, std::make_pair((unsigned int)Jump, 70)));
-		result.insert(std::make_pair(10, std::make_pair((unsigned int)Add, 0)));
-		result.insert(std::make_pair(20, std::make_pair((unsigned int)Sub, 0)));
-		result.insert(std::make_pair(30, std::make_pair((unsigned int)JumpIf, 50)));
-		result.insert(std::make_pair(40, std::make_pair((unsigned int)Pop, 0)));
-		result.insert(std::make_pair(50, std::make_pair((unsigned int)Mult, 0)));
-		result.insert(std::make_pair(60, std::make_pair((unsigned int)JumpIfNot, 30)));
-		result.insert(std::make_pair(70, std::make_pair((unsigned int)AccBuiltin, 100)));
-		result.insert(std::make_pair(80, std::make_pair((unsigned int)AccNull, 0)));
-		result.insert(std::make_pair(90, std::make_pair((unsigned int)AccStack, 0)));
+		result.insert(std::make_pair(0, std::make_pair((ptr_val)Jump, 70)));
+		result.insert(std::make_pair(10, std::make_pair((ptr_val)Add, 0)));
+		result.insert(std::make_pair(20, std::make_pair((ptr_val)Sub, 0)));
+		result.insert(std::make_pair(30, std::make_pair((ptr_val)JumpIf, 50)));
+		result.insert(std::make_pair(40, std::make_pair((ptr_val)Pop, 0)));
+		result.insert(std::make_pair(50, std::make_pair((ptr_val)Mult, 0)));
+		result.insert(std::make_pair(60, std::make_pair((ptr_val)JumpIfNot, 30)));
+		result.insert(std::make_pair(70, std::make_pair((ptr_val)AccBuiltin, 100)));
+		result.insert(std::make_pair(80, std::make_pair((ptr_val)AccNull, 0)));
+		result.insert(std::make_pair(90, std::make_pair((ptr_val)AccStack, 0)));
 
 		return result;
 	}

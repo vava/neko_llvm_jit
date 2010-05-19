@@ -1,3 +1,6 @@
+#include "llvm/Constants.h"
+#include "llvm/Type.h"
+#include "llvm/DerivedTypes.h"
 
 class Helper {
 public:
@@ -15,18 +18,22 @@ public:
 		return llvm::ConstantInt::get(int_t(), n);
 	}
 
-	llvm::Value * getArrayIndex(Builder & builder, llvm::Value * array, llvm::Value * idx, std::string const & array_name = "array") const {
-		llvm::Value * indexies[2] = {idx, int_0()};
-		return builder.CreateGEP(array, indexies, indexies + 2, array_name + "[idx]");
-	}
+	// llvm::Value * getArrayIndex(Builder & builder, llvm::Value * array, llvm::Value * idx, std::string const & array_name = "array") const {
+	// 	llvm::Value * indexies[2] = {idx, int_0()};
+	// 	return builder.CreateGEP(array, indexies, indexies + 2, array_name + "[idx]");
+	// }
 
 	//return 1 if value represents neko int and 0 otherwise
-	llvm::Value * is_int(Builder & builder, llvm::Value * v) const {
-		return builder.CreateAnd(v, int_1());
-	}
+	// llvm::Value * is_int(Builder & builder, llvm::Value * v) const {
+	// 	return builder.CreateAnd(v, int_1());
+	// }
 
 	llvm::IntegerType const * int_t() const {
-		return llvm::Type::getInt32Ty(ctx);
+		if (sizeof(void *) == 4) {
+			return llvm::Type::getInt32Ty(ctx);
+		} else {
+			return llvm::Type::getInt64Ty(ctx);
+		}
 	}
 
 	llvm::Type const * void_t() const {
@@ -53,7 +60,7 @@ private:
 };
 
 template<>
-struct Helper::Convert<int> {
+struct Helper::Convert<int_val> {
 	static llvm::Type const * from(Helper const & h) {
 		return h.int_t();
 	}
@@ -69,7 +76,7 @@ struct Helper::Convert<void> {
 template<typename T>
 struct Helper::Convert<T *> {
 	static llvm::Type const * from(Helper const & h) {
-		return h.convert<int>()->getPointerTo();
+		return h.convert<int_val>()->getPointerTo();
 	}
 };
 

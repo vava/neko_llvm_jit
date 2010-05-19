@@ -15,7 +15,7 @@ namespace neko {
 		const_iterator end() const { return chunk.end(); }
 		size_type size() const { return std::distance(begin(), end()); }
 
-		unsigned int getId() const { return chunk.getFromAddress(); }
+		ptr_val getId() const { return chunk.getFromAddress(); }
 
 		void neko_dump(std::string const & indent = "") const;
 	private:

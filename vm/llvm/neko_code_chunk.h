@@ -8,13 +8,13 @@
 
 class NekoCodeChunk {
 public:
-	NekoCodeChunk(neko_code_container const * code_container, unsigned int from_address, unsigned int to_address);
+	NekoCodeChunk(neko_code_container const * code_container, ptr_val from_address, ptr_val to_address);
 
-	unsigned int getFromAddress() const { return from_address; }
-	unsigned int getToAddress() const { return to_address; }
+	ptr_val getFromAddress() const { return from_address; }
+	ptr_val getToAddress() const { return to_address; }
 
-	NekoCodeChunk getSubChunk(unsigned int to, unsigned int from) const;
-	std::vector<NekoCodeChunk> splitByAddresses(std::vector<unsigned int> const & addresses) const;
+	NekoCodeChunk getSubChunk(ptr_val to, ptr_val from) const;
+	std::vector<NekoCodeChunk> splitByAddresses(std::vector<ptr_val> const & addresses) const;
 
 	typedef neko_code_container::const_iterator const_iterator;
 	typedef neko_code_container::value_type value_type;
@@ -29,7 +29,7 @@ public:
 private:
 	neko_code_container const * code_container;
 
-	unsigned int from_address;
-	unsigned int to_address;
+	ptr_val from_address;
+	ptr_val to_address;
 };
 

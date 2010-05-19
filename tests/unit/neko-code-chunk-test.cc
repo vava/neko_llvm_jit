@@ -13,16 +13,16 @@ class NekoCodeChunkTest : public testing::Test {
 	neko_code_container make_code_container() const {
 		neko_code_container result;
 
-		result.insert(std::make_pair(0, std::make_pair((unsigned int)Jump, 100)));
-		result.insert(std::make_pair(9, std::make_pair((unsigned int)Add, 0)));
-		result.insert(std::make_pair(10, std::make_pair((unsigned int)Sub, 0)));
-		result.insert(std::make_pair(12, std::make_pair((unsigned int)Push, 0)));
-		result.insert(std::make_pair(30, std::make_pair((unsigned int)Pop, 0)));
-		result.insert(std::make_pair(40, std::make_pair((unsigned int)Mult, 0)));
-		result.insert(std::make_pair(49, std::make_pair((unsigned int)AccInt, 10)));
-		result.insert(std::make_pair(50, std::make_pair((unsigned int)AccBuiltin, 100)));
-		result.insert(std::make_pair(51, std::make_pair((unsigned int)AccNull, 0)));
-		result.insert(std::make_pair(60, std::make_pair((unsigned int)AccStack, 0)));
+		result.insert(std::make_pair(0, std::make_pair((ptr_val)Jump, 100)));
+		result.insert(std::make_pair(9, std::make_pair((ptr_val)Add, 0)));
+		result.insert(std::make_pair(10, std::make_pair((ptr_val)Sub, 0)));
+		result.insert(std::make_pair(12, std::make_pair((ptr_val)Push, 0)));
+		result.insert(std::make_pair(30, std::make_pair((ptr_val)Pop, 0)));
+		result.insert(std::make_pair(40, std::make_pair((ptr_val)Mult, 0)));
+		result.insert(std::make_pair(49, std::make_pair((ptr_val)AccInt, 10)));
+		result.insert(std::make_pair(50, std::make_pair((ptr_val)AccBuiltin, 100)));
+		result.insert(std::make_pair(51, std::make_pair((ptr_val)AccNull, 0)));
+		result.insert(std::make_pair(60, std::make_pair((ptr_val)AccStack, 0)));
 
 		return result;
 	}
@@ -81,8 +81,8 @@ TEST_F(NekoCodeChunkTest, SubChunk) {
 }
 
 TEST_F(NekoCodeChunkTest, SplitInside) {
-	unsigned int inside_int[] = {11, 20, 30};
-	std::vector<unsigned int> inside(inside_int, inside_int + sizeof(inside_int)/sizeof(int));
+	ptr_val inside_int[] = {11, 20, 30};
+	std::vector<ptr_val> inside(inside_int, inside_int + sizeof(inside_int)/sizeof(inside_int[0]));
 
 	EXPECT_THAT(chunk.splitByAddresses(inside), ElementsAre(
 					AllOf(Property(&NekoCodeChunk::getFromAddress, 10),
@@ -102,8 +102,8 @@ TEST_F(NekoCodeChunkTest, SplitInside) {
 }
 
 TEST_F(NekoCodeChunkTest, SplitUnsorted) {
-	unsigned int unsorted_int[] = {20, 11, 30};
-	std::vector<unsigned int> unsorted(unsorted_int, unsorted_int + sizeof(unsorted_int)/sizeof(int));
+	ptr_val unsorted_int[] = {20, 11, 30};
+	std::vector<ptr_val> unsorted(unsorted_int, unsorted_int + sizeof(unsorted_int)/sizeof(unsorted_int[0]));
 
 	EXPECT_THAT(chunk.splitByAddresses(unsorted), ElementsAre(
 					AllOf(Property(&NekoCodeChunk::getFromAddress, 10),
@@ -123,8 +123,8 @@ TEST_F(NekoCodeChunkTest, SplitUnsorted) {
 }
 
 TEST_F(NekoCodeChunkTest, SplitDuplicated) {
-	unsigned int unsorted_int[] = {20, 11, 20, 30};
-	std::vector<unsigned int> unsorted(unsorted_int, unsorted_int + sizeof(unsorted_int)/sizeof(int));
+	ptr_val unsorted_int[] = {20, 11, 20, 30};
+	std::vector<ptr_val> unsorted(unsorted_int, unsorted_int + sizeof(unsorted_int)/sizeof(unsorted_int[0]));
 
 	EXPECT_THAT(chunk.splitByAddresses(unsorted), ElementsAre(
 					AllOf(Property(&NekoCodeChunk::getFromAddress, 10),
@@ -144,8 +144,8 @@ TEST_F(NekoCodeChunkTest, SplitDuplicated) {
 }
 
 TEST_F(NekoCodeChunkTest, SplitOneBorder1) {
-	unsigned int one_border_int[] = {10, 20, 30};
-	std::vector<unsigned int> one_border(one_border_int, one_border_int + sizeof(one_border_int)/sizeof(int));
+	ptr_val one_border_int[] = {10, 20, 30};
+	std::vector<ptr_val> one_border(one_border_int, one_border_int + sizeof(one_border_int)/sizeof(one_border_int[0]));
 
 	EXPECT_THAT(chunk.splitByAddresses(one_border), ElementsAre(
 					AllOf(Property(&NekoCodeChunk::getFromAddress, 10),
@@ -163,8 +163,8 @@ TEST_F(NekoCodeChunkTest, SplitOneBorder1) {
 }
 
 TEST_F(NekoCodeChunkTest, SplitOneBorder2) {
-	unsigned int one_border_int[] = {11, 20, 50};
-	std::vector<unsigned int> one_border(one_border_int, one_border_int + sizeof(one_border_int)/sizeof(int));
+	ptr_val one_border_int[] = {11, 20, 50};
+	std::vector<ptr_val> one_border(one_border_int, one_border_int + sizeof(one_border_int)/sizeof(one_border_int[0]));
 
 	EXPECT_THAT(chunk.splitByAddresses(one_border), ElementsAre(
 					AllOf(Property(&NekoCodeChunk::getFromAddress, 10),
@@ -181,8 +181,8 @@ TEST_F(NekoCodeChunkTest, SplitOneBorder2) {
 }
 
 TEST_F(NekoCodeChunkTest, SplitTwoBorders) {
-	unsigned int two_borders_int[] = {10, 20, 50};
-	std::vector<unsigned int> two_borders(two_borders_int, two_borders_int + sizeof(two_borders_int)/sizeof(int));
+	ptr_val two_borders_int[] = {10, 20, 50};
+	std::vector<ptr_val> two_borders(two_borders_int, two_borders_int + sizeof(two_borders_int)/sizeof(two_borders_int[0]));
 
 	EXPECT_THAT(chunk.splitByAddresses(two_borders), ElementsAre(
 					AllOf(Property(&NekoCodeChunk::getFromAddress, 10),
@@ -197,8 +197,8 @@ TEST_F(NekoCodeChunkTest, SplitTwoBorders) {
 }
 
 TEST_F(NekoCodeChunkTest, SplitWholeInterval) {
-	unsigned int whole_interval_int[] = {10, 50};
-	std::vector<unsigned int> whole_interval(whole_interval_int, whole_interval_int + sizeof(whole_interval_int)/sizeof(int));
+	ptr_val whole_interval_int[] = {10, 50};
+	std::vector<ptr_val> whole_interval(whole_interval_int, whole_interval_int + sizeof(whole_interval_int)/sizeof(whole_interval_int[0]));
 
 	EXPECT_THAT(chunk.splitByAddresses(whole_interval), ElementsAre(
 					AllOf(Property(&NekoCodeChunk::getFromAddress, 10),
@@ -211,7 +211,7 @@ TEST_F(NekoCodeChunkTest, SplitWholeInterval) {
 }
 
 TEST_F(NekoCodeChunkTest, SplitEmpty) {
-	std::vector<unsigned int> empty_interval;
+	std::vector<ptr_val> empty_interval;
 
 	EXPECT_THAT(chunk.splitByAddresses(empty_interval), ElementsAre(
 					AllOf(Property(&NekoCodeChunk::getFromAddress, 10),

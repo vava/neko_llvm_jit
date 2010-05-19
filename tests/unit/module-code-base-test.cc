@@ -25,7 +25,7 @@ protected:
 };
 
 TEST_F(ModuleTest, Constructor) {
-	int code_int[] = {
+	int_val code_int[] = {
 		Jump, 6,
 		Add,
 		Push,
@@ -43,12 +43,12 @@ TEST_F(ModuleTest, Constructor) {
 
 	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
-	int * code = nm->get()->code;
+	int_val * code = nm->get()->code;
 
 	Module module(nm->get());
 
 	std::stringstream code2;
-	code2 << (int)(code + 2);
+	code2 << (ptr_val)(code + 2);
 
 	//check names
 	EXPECT_THAT(module,
@@ -59,21 +59,21 @@ TEST_F(ModuleTest, Constructor) {
 	EXPECT_THAT(module,
 				ElementsAre(ElementsAre(
 								ElementsAre(
-									Pair((int)(code + 2), Pair(Add, _)),
-									Pair((int)(code + 3), Pair(Push, _)),
-									Pair((int)(code + 4), Pair(Pop, 5)) )),
+									Pair((ptr_val)(code + 2), Pair(Add, _)),
+									Pair((ptr_val)(code + 3), Pair(Push, _)),
+									Pair((ptr_val)(code + 4), Pair(Pop, 5)) )),
 							ElementsAre(
 								ElementsAre(
-									Pair((int)(code + 6), Pair(Sub, _)) ),
+									Pair((ptr_val)(code + 6), Pair(Sub, _)) ),
 								ElementsAre(
-									Pair((int)(code + 7), Pair(Mult, _)),
-									Pair((int)(code + 8), Pair(AccInt, 10)),
-									Pair((int)(code + 10), Pair(AccBuiltin, 100)),
-									Pair((int)(code + 12), Pair(Jump, (int)(code + 7))) )) ));
+									Pair((ptr_val)(code + 7), Pair(Mult, _)),
+									Pair((ptr_val)(code + 8), Pair(AccInt, 10)),
+									Pair((ptr_val)(code + 10), Pair(AccBuiltin, 100)),
+									Pair((ptr_val)(code + 12), Pair(Jump, (ptr_val)(code + 7))) )) ));
 }
 
 TEST_F(ModuleTest, ConstructorJustMain) {
-	int code_int[] = {
+	int_val code_int[] = {
 		Jump, 6,
 		Add,
 		Push,
@@ -90,7 +90,7 @@ TEST_F(ModuleTest, ConstructorJustMain) {
 
 	std::auto_ptr<NekoModuleWrapper> nm(new NekoModuleWrapper(name, code_int, globals_int));
 
-	int * code = nm->get()->code;
+	int_val * code = nm->get()->code;
 
 	Module module(nm->get());
 
@@ -100,21 +100,21 @@ TEST_F(ModuleTest, ConstructorJustMain) {
 	EXPECT_THAT(module,
 				ElementsAre(ElementsAre(
 								ElementsAre(
-									Pair((int)(code), Pair(Jump, (int)(code + 6))),
-									Pair((int)(code + 2), Pair(Add, _)),
-									Pair((int)(code + 3), Pair(Push, _)),
-									Pair((int)(code + 4), Pair(Pop, 5)) ),
+									Pair((ptr_val)(code), Pair(Jump, (ptr_val)(code + 6))),
+									Pair((ptr_val)(code + 2), Pair(Add, _)),
+									Pair((ptr_val)(code + 3), Pair(Push, _)),
+									Pair((ptr_val)(code + 4), Pair(Pop, 5)) ),
 								ElementsAre(
-									Pair((int)(code + 6), Pair(Sub, _)) ),
+									Pair((ptr_val)(code + 6), Pair(Sub, _)) ),
 								ElementsAre(
-									Pair((int)(code + 7), Pair(Mult, _)),
-									Pair((int)(code + 8), Pair(AccInt, 10)),
-									Pair((int)(code + 10), Pair(AccBuiltin, 100)),
-									Pair((int)(code + 12), Pair(Jump, (int)(code + 7))) )) ));
+									Pair((ptr_val)(code + 7), Pair(Mult, _)),
+									Pair((ptr_val)(code + 8), Pair(AccInt, 10)),
+									Pair((ptr_val)(code + 10), Pair(AccBuiltin, 100)),
+									Pair((ptr_val)(code + 12), Pair(Jump, (ptr_val)(code + 7))) )) ));
 }
 
 TEST_F(ModuleTest, ConstructorEmpty) {
-	int code_int[] = {
+	int_val code_int[] = {
 	};
 
 	value globals_int[] = {
@@ -131,7 +131,7 @@ TEST_F(ModuleTest, ConstructorEmpty) {
 typedef ModuleTest ModuleDeathTest;
 
 TEST_F(ModuleDeathTest, IntersectedBlocks) {
-	int code_int[] = {
+	int_val code_int[] = {
 		Jump, 6,
 		Add,
 		Push,
@@ -153,7 +153,7 @@ TEST_F(ModuleDeathTest, IntersectedBlocks) {
 }
 
 TEST_F(ModuleDeathTest, NoJumpToMain) {
-	int code_int[] = {
+	int_val code_int[] = {
 		Add,
 		Push,
 		Pop, 5,
@@ -174,7 +174,7 @@ TEST_F(ModuleDeathTest, NoJumpToMain) {
 }
 
 TEST_F(ModuleDeathTest, FirstJumpAdoptedInFunction) {
-	int code_int[] = {
+	int_val code_int[] = {
 		Jump, 6,
 		Add,
 		Push,

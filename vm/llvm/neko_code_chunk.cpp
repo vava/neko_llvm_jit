@@ -11,7 +11,7 @@ extern "C" {
 	#include "../opcodes.h"
 }
 
-NekoCodeChunk::NekoCodeChunk(neko_code_container const * code_container_, unsigned int from_address_, unsigned int to_address_)
+NekoCodeChunk::NekoCodeChunk(neko_code_container const * code_container_, ptr_val from_address_, ptr_val to_address_)
 	: code_container(code_container_)
 	, from_address(from_address_)
 	, to_address(to_address_)
@@ -19,13 +19,13 @@ NekoCodeChunk::NekoCodeChunk(neko_code_container const * code_container_, unsign
 	assert(code_container != NULL);
 }
 
-NekoCodeChunk NekoCodeChunk::getSubChunk(unsigned int from, unsigned int to) const {
+NekoCodeChunk NekoCodeChunk::getSubChunk(ptr_val from, ptr_val to) const {
 	assert(from >= from_address && to <= to_address);
 	return NekoCodeChunk(code_container, from, to);
 }
 
-std::vector<NekoCodeChunk> NekoCodeChunk::splitByAddresses(std::vector<unsigned int> const & addresses) const {
-	std::vector<unsigned int> local_addresses(addresses);
+std::vector<NekoCodeChunk> NekoCodeChunk::splitByAddresses(std::vector<ptr_val> const & addresses) const {
+	std::vector<ptr_val> local_addresses(addresses);
 	local_addresses.push_back(from_address);
 	local_addresses.push_back(to_address);
 
@@ -33,13 +33,13 @@ std::vector<NekoCodeChunk> NekoCodeChunk::splitByAddresses(std::vector<unsigned 
 	local_addresses.erase(std::unique(local_addresses.begin(), local_addresses.end()), local_addresses.end());
 
 	std::vector<NekoCodeChunk> chunks;
-	std::vector<unsigned int>::const_iterator end = local_addresses.end() - 1;
-	for (std::vector<unsigned int>::const_iterator it = local_addresses.begin();
+	std::vector<ptr_val>::const_iterator end = local_addresses.end() - 1;
+	for (std::vector<ptr_val>::const_iterator it = local_addresses.begin();
 		 it != end;
 		 ++it)
 		{
-			unsigned int from = *it;
-			unsigned int to = *(it + 1);
+			ptr_val from = *it;
+			ptr_val to = *(it + 1);
 
 			chunks.push_back(getSubChunk(from, to));
 		}
@@ -48,7 +48,7 @@ std::vector<NekoCodeChunk> NekoCodeChunk::splitByAddresses(std::vector<unsigned 
 }
 
 namespace {
-	void print_neko_instruction(enum OPCODE op, int p, unsigned int params_count) {
+	void print_neko_instruction(enum OPCODE op, int_val p, ptr_val params_count) {
 		switch( op ) {
 			case AccNull: printf("AccNull"); if (params_count == 1) {printf("(%d)", p);}; printf("\n"); break;
 			case AccTrue: printf("AccTrue"); if (params_count == 1) {printf("(%d)", p);}; printf("\n"); break;

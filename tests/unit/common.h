@@ -6,16 +6,18 @@
 extern "C" {
 	#include "opcodes.h"
 }
-typedef struct _neko_module neko_module;
+
+#include "llvm/common.h"
+
 typedef struct _value *value;
 
-neko_module * makeNekoModule(OPCODE * opcodes, int size);
+neko_module * makeNekoModule(OPCODE * opcodes, int_val size);
 
 class NekoValueHolder {
 public:
 	NekoValueHolder() {}
 	~NekoValueHolder();
-	value makeFunction(void * addr, int nargs, neko_module * nm);
+	value makeFunction(void * addr, int_val nargs, neko_module * nm);
 	value makeString(std::string const & str);
 
 private:
@@ -31,21 +33,21 @@ private:
 
 class NekoModuleWrapper {
 public:
-	template<int codesize, int nglobals>
-	NekoModuleWrapper(value name, int (&code_)[codesize], value (&globals_)[nglobals])
+	template<int_val codesize, int_val nglobals>
+	NekoModuleWrapper(value name, int_val (&code_)[codesize], value (&globals_)[nglobals])
 		: code(code_, code_ + codesize)
 		, globals(globals_, globals_ + nglobals)
 		, module(make_module(name))
 	{}
 
-	template<int codesize>
-	NekoModuleWrapper(value name, int (&code_)[codesize], value (&)[0])
+	template<int_val codesize>
+	NekoModuleWrapper(value name, int_val (&code_)[codesize], value (&)[0])
 		: code(code_, code_ + codesize)
 		, globals()
 		, module(make_module(name))
 	{}
 
-	NekoModuleWrapper(value name, int (&)[0], value (&)[0])
+	NekoModuleWrapper(value name, int_val (&)[0], value (&)[0])
 		: code()
 		, globals()
 		, module(make_module(name))
@@ -55,11 +57,11 @@ public:
 		return module.get();
 	}
 private:
-	void patch_jumps(std::vector<int> & code, int * address_base) const;
-	void patch_globals(std::vector<value> & globals, int * address_base, neko_module * nm) const;
+	void patch_jumps(std::vector<int_val> & code, int_val * address_base) const;
+	void patch_globals(std::vector<value> & globals, int_val * address_base, neko_module * nm) const;
 	neko_module * make_module(value name);
 
-	std::vector<int> code;
+	std::vector<int_val> code;
 	std::vector<value> globals;
 	std::auto_ptr<neko_module> module;
 };

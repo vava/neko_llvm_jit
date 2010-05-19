@@ -1,13 +1,12 @@
 #pragma once
 
-//#include "../opcodes.h"
+#include "common.h"
 
 #include <map>
 
 class NekoCodeChunk;
-typedef struct _neko_module neko_module;
 
-typedef std::map<unsigned int, std::pair<unsigned int, int> > neko_code_container;
+typedef std::map<ptr_val, std::pair<ptr_val, int_val> > neko_code_container;
 
 class NekoCodeContainer {
 public:

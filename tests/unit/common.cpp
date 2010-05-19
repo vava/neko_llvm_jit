@@ -6,7 +6,7 @@ extern "C" {
 	#include "neko_mod.h"
 }
 
-neko_module * makeNekoModule(OPCODE * opcodes, int size) {
+neko_module * makeNekoModule(OPCODE * opcodes, int_val size) {
 	neko_module * nm = new neko_module;
 	nm->codesize = size;
 	nm->code = (int_val *)opcodes;
@@ -23,7 +23,7 @@ NekoValueHolder::~NekoValueHolder() {
 		}
 }
 
-value NekoValueHolder::makeFunction(void * addr, int nargs, neko_module * nm) {
+value NekoValueHolder::makeFunction(void * addr, int_val nargs, neko_module * nm) {
 	vfunction * f = makeValue<vfunction>();
 
 	f->t = VAL_FUNCTION;
@@ -45,8 +45,8 @@ value NekoValueHolder::makeString(std::string const & str) {
 	return (value)s;
 }
 
-void NekoModuleWrapper::patch_jumps(std::vector<int> & code, int * address_base) const {
-	for (std::vector<int>::iterator pc = code.begin();
+void NekoModuleWrapper::patch_jumps(std::vector<int_val> & code, int_val * address_base) const {
+	for (std::vector<int_val>::iterator pc = code.begin();
 		 pc != code.end();
 		 ++pc)
 		{
@@ -54,14 +54,14 @@ void NekoModuleWrapper::patch_jumps(std::vector<int> & code, int * address_base)
 				case Jump:
 				case JumpIf:
 				case JumpIfNot:
-					*(pc + 1) = (int)(address_base + *(pc + 1));
+					*(pc + 1) = (int_val)(address_base + *(pc + 1));
 			}
 
 			pc += parameter_table[*pc];
 		}
 }
 
-void NekoModuleWrapper::patch_globals(std::vector<value> & globals, int * address_base, neko_module * nm) const {
+void NekoModuleWrapper::patch_globals(std::vector<value> & globals, int_val * address_base, neko_module * nm) const {
 	for (std::vector<value>::iterator pc = globals.begin();
 		 pc != globals.end();
 		 ++pc)
@@ -69,7 +69,7 @@ void NekoModuleWrapper::patch_globals(std::vector<value> & globals, int * addres
 			if (val_is_function(*pc)) {
 				vfunction * f = (vfunction *)*pc;
 				f->module = nm;
-				f->addr = address_base + (int)f->addr;
+				f->addr = address_base + (int_val)f->addr;
 			}
 		}
 }
