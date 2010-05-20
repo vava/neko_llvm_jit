@@ -50,6 +50,8 @@ def one_neko_test(speeds, param, file)
 end
 
 task :neko_test => TEST_BINARIES do |t|
+	result = 0
+
 	table_header
 	column_sizes = [13, 13, 13, 13, 13, 6]
 	columns = ["--no-jit", "--jit --no-llvm-jit", "--jit --llvm-jit --no-llvm-optimizations", "--jit --llvm-jit --llvm-optimizations"];
@@ -64,6 +66,7 @@ task :neko_test => TEST_BINARIES do |t|
 			results << result
 		}
 		printf "%#{column_sizes[-1]}s|", (results.uniq.length == 1) ? "OK" : "Error"
+		result ||= (results.uniq.length == 1)
 		print "\n"
 
 		#speeds
@@ -77,4 +80,6 @@ task :neko_test => TEST_BINARIES do |t|
 		#closing line
 		puts "+-------------+-------------+-------------+-------------+-------------+------+"
 	}
+
+	raise "Some tests has failed" if result
 end
