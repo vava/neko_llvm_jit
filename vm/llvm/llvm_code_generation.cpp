@@ -77,7 +77,12 @@ public:
 				acc = h.int_n(param);
 				break;
 			case AccGlobal:
-				acc = h.int_n(*(int_val*)(param));
+				acc = builder.CreateLoad(
+					builder.CreateIntToPtr(
+						h.int_n(param),
+						h.convert<int_val *>()
+					)
+				);
 				break;
 			case AccStack0:
 				acc = stack.load(builder, 0);
