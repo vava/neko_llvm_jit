@@ -83,6 +83,8 @@ public:
 						h.convert<int_val *>()
 					)
 				);
+				// TODO: make sure globals DO move in memory, otherwise just use the following
+				// acc = h.int_n(*(int_val*)(param));
 				break;
 			case AccStack0:
 				acc = stack.load(builder, 0);
