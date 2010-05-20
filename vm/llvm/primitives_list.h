@@ -1,4 +1,5 @@
 PRIMITIVE(add)
 PRIMITIVE(sub)
 PRIMITIVE(mult)
+PRIMITIVE(div)
 PRIMITIVE(call)

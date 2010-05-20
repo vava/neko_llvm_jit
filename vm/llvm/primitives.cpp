@@ -30,7 +30,7 @@ static int_val jit_run( neko_vm *vm, vfunction *acc ) {
 	return ((jit_prim)jit_boot_seq)(vm,acc->addr,(value)acc,m);
 }
 
-int_val add(void * vm_, int_val a, int_val b) {
+int_val p_add(void * vm_, int_val a, int_val b) {
 	neko_vm * vm = (neko_vm *) vm_;
 
 	if( (b & 1) && (a & 1) ) {
@@ -104,7 +104,7 @@ int_val add(void * vm_, int_val a, int_val b) {
 	return 0;
 }
 
-int_val sub(int_val a, int_val b) {
+int_val p_sub(int_val a, int_val b) {
 	if( (b & 1) && (a & 1) ) {
 		return (int_val)alloc_int(val_int(a) - val_int(b));
 	} else if( b & 1 ) {
@@ -162,9 +162,10 @@ int_val sub(int_val a, int_val b) {
 
 		val_throw(alloc_string("-"));
 	}
+	return 0;
 }
 
-int_val mult(int_val a, int_val b) {
+int_val p_mult(int_val a, int_val b) {
 	if( (b & 1) && (a & 1) ) {
 		return (int_val)alloc_int(val_int(a) * val_int(b));
 	} else if( b & 1 ) {
@@ -222,9 +223,40 @@ int_val mult(int_val a, int_val b) {
 
 		val_throw(alloc_string("*"));
 	}
+	return 0;
 }
 
-int_val call(void * vm_, int_val f, int_val n, ...) {
+
+int_val p_div(int_val a, int_val b) {
+	if( val_is_number(b) && val_is_number(a) ) {
+		return (int_val)alloc_float( ((tfloat)val_number(a)) / val_number(b) );
+	} else {
+		if( val_is_object(a) ) {
+			value _o = (value)a;
+			value _arg = (value)b;
+			value _f = val_field(_o,id_div);
+			if( _f != val_null ) {
+				return (int_val)val_callEx(_o,_f,&_arg,1,NULL);
+			}
+		}
+
+		if( val_is_object(b) ) {
+			value _o = (value)b;
+			value _arg = (value)a;
+			value _f = val_field(_o,id_rdiv);
+			if( _f == val_null ) {
+				val_throw(alloc_string("Unsupported operation"));
+			} else {
+				return (int_val)val_callEx(_o,_f,&_arg,1,NULL);
+			}
+		}
+
+		val_throw(alloc_string("/"));
+	}
+	return 0;
+}
+
+int_val p_call(void * vm_, int_val f, int_val n, ...) {
 	vfunction* func = (vfunction*)f;
 	neko_vm * vm = (neko_vm *) vm_;
 

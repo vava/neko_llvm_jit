@@ -49,7 +49,7 @@ extern "C" {
 		}
 
 		//register primitives
-		#define PRIMITIVE(name) ee->addGlobalMapping(ee->FindFunctionNamed(#name), (void *)name);
+		#define PRIMITIVE(name) ee->addGlobalMapping(ee->FindFunctionNamed(#name), (void *)p_##name);
 		#include "primitives_list.h"
 		#undef PRIMITIVE
 

@@ -136,6 +136,10 @@ public:
 				set_acc(builder, callPrimitive(builder, "mult", stack.load(builder, 0), get_acc(builder)));
 				stack.pop(1);
 				break;
+			case Div:
+				set_acc(builder, callPrimitive(builder, "div", stack.load(builder, 0), get_acc(builder)));
+				stack.pop(1);
+				break;
 			case Call:
 				{
 					std::vector<llvm::Value *> params;
@@ -327,7 +331,7 @@ private:
 void addPrimitives(llvm::Module * module) {
 	PrimitiveRegistrator registrator(module);
 
-    #define PRIMITIVE(name) registrator.registerPrimitive(#name, name);
+    #define PRIMITIVE(name) registrator.registerPrimitive(#name, p_##name);
 	#include "primitives_list.h"
 	#undef PRIMITIVE
 }
