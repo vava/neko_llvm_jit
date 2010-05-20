@@ -8,3 +8,4 @@ bin/libneko.so
 tests/unit/all_test
 bin/neko
 tests/unit/gmock_main.a
+/tests/code/*.n
