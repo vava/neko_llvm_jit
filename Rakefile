@@ -51,7 +51,7 @@ def one_neko_test(speeds, param, file)
 end
 
 task :neko_test => TEST_BINARIES do |t|
-	result = 0
+	all_test_passed = true
 
 	table_header
 	column_sizes = [13, 13, 13, 13, 13, 6]
@@ -67,7 +67,7 @@ task :neko_test => TEST_BINARIES do |t|
 			results << result
 		}
 		printf "%#{column_sizes[-1]}s|", (results.uniq.length == 1) ? "OK" : "Error"
-		result ||= (results.uniq.length == 1)
+		all_test_passed = all_test_passed && (results.uniq.length == 1)
 		print "\n"
 
 		#speeds
@@ -82,5 +82,5 @@ task :neko_test => TEST_BINARIES do |t|
 		puts "+-------------+-------------+-------------+-------------+-------------+------+"
 	}
 
-	raise "Some tests has failed" if result
+	raise "Some tests has failed" if !all_test_passed
 end
