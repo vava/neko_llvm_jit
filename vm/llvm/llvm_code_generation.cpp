@@ -107,6 +107,15 @@ public:
 			case SetStack:
 				stack.store(builder, param, acc);
 				break;
+			case SetGlobal:
+				builder.CreateStore(
+					acc,
+					builder.CreateIntToPtr(
+						h.int_n(param),
+						h.convert<int_val *>()
+					)
+				);
+				break;
 			case Add:
 				acc = callPrimitive(builder, "add", h.constant(vm), stack.load(builder, 0), acc);
 				stack.pop(1);
