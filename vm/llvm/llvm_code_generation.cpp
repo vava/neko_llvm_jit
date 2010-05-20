@@ -85,6 +85,15 @@ public:
 			case AccBuiltin:
 				acc = h.int_n(param);
 				break;
+			case AccStack0:
+				acc = stack.load(builder, 0);
+				break;
+			case AccStack1:
+				acc = stack.load(builder, 1);
+				break;
+			case AccStack:
+				acc = stack.load(builder, param);
+				break;
 			case AccGlobal:
 				acc = builder.CreateLoad(
 					builder.CreateIntToPtr(
@@ -94,12 +103,6 @@ public:
 				);
 				// TODO: make sure globals DO move in memory, otherwise just use the following
 				// acc = h.int_n(*(int_val*)(param));
-				break;
-			case AccStack0:
-				acc = stack.load(builder, 0);
-				break;
-			case AccStack1:
-				acc = stack.load(builder, 1);
 				break;
 			case Add:
 				acc = callPrimitive(builder, "add", h.constant(vm), stack.load(builder, 0), acc);
