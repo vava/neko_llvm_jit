@@ -1,6 +1,7 @@
 #include "primitives.h"
 
 #include <stdarg.h>
+#include <math.h>
 
 extern "C" {
 	#include "neko.h"
@@ -226,7 +227,6 @@ int_val p_mult(int_val a, int_val b) {
 	return 0;
 }
 
-
 int_val p_div(int_val a, int_val b) {
 	if( val_is_number(b) && val_is_number(a) ) {
 		return (int_val)alloc_float( ((tfloat)val_number(a)) / val_number(b) );
@@ -252,6 +252,69 @@ int_val p_div(int_val a, int_val b) {
 		}
 
 		val_throw(alloc_string("/"));
+	}
+	return 0;
+}
+
+int_val p_mod(int_val a, int_val b) {
+	if( b == 1 && val_is_int(a) ) {
+		val_throw(alloc_string("%"));
+	} else if( (b & 1) && (a & 1) ) {
+		return (int_val)alloc_int(val_int(a) % val_int(b));
+	} else if( b & 1 ) {
+		if( val_tag(a) == VAL_FLOAT ) {
+			return (int_val)alloc_float(fmod(val_float(a), val_int(b)));
+		} else if( val_tag(a) == VAL_OBJECT ) {
+			value _o = (value)a;
+			value _arg = (value)b;
+			value _f = val_field(_o,id_mod);
+			if( _f == val_null ) {
+				val_throw(alloc_string("Unsupported operation"));
+			} else {
+				return (int_val)val_callEx(_o,_f,&_arg,1,NULL);
+			}
+		} else {
+			val_throw(alloc_string("%"));
+		}
+	} else if( a & 1 ) {
+		if( val_tag(b) == VAL_FLOAT ) {
+			return (int_val)alloc_float(fmod(val_int(a), val_float(b)));
+		} else if( val_tag(b) == VAL_OBJECT ) {
+			value _o = (value)b;
+			value _arg = (value)a;
+			value _f = val_field(_o,id_rmod);
+			if( _f == val_null ) {
+				val_throw(alloc_string("Unsupported operation"));
+			} else {
+				return (int_val)val_callEx(_o,_f,&_arg,1,NULL);
+			}
+		} else {
+			val_throw(alloc_string("%"));
+		}
+	} else if( val_tag(b) == VAL_FLOAT && val_tag(a) == VAL_FLOAT ) {
+		return (int_val)alloc_float(fmod(val_float(a), val_float(b)));
+	} else {
+		if( val_tag(a) == VAL_OBJECT ) {
+			value _o = (value)a;
+			value _arg = (value)b;
+			value _f = val_field(_o,id_mod);
+			if( _f != val_null ) {
+				return (int_val)val_callEx(_o,_f,&_arg,1,NULL);
+			}
+		}
+
+		if( val_tag(b) == VAL_OBJECT ) {
+			value _o = (value)b;
+			value _arg = (value)a;
+			value _f = val_field(_o,id_rmod);
+			if( _f == val_null ) {
+				val_throw(alloc_string("Unsupported operation"));
+			} else {
+				return (int_val)val_callEx(_o,_f,&_arg,1,NULL);
+			}
+		}
+
+		val_throw(alloc_string("%"));
 	}
 	return 0;
 }

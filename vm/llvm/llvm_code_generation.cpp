@@ -140,6 +140,10 @@ public:
 				set_acc(builder, callPrimitive(builder, "div", stack.load(builder, 0), get_acc(builder)));
 				stack.pop(1);
 				break;
+			case Mod:
+				set_acc(builder, callPrimitive(builder, "mod", stack.load(builder, 0), get_acc(builder)));
+				stack.pop(1);
+				break;
 			case Call:
 				{
 					std::vector<llvm::Value *> params;
