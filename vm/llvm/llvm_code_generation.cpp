@@ -20,10 +20,12 @@ typedef std::map<ptr_val, llvm::BasicBlock *> id2block_type;
 class CodeGeneration {
 public:
 	CodeGeneration(id2block_type const & id2block_,
+				   llvm::AllocaInst * acc_,
 				   llvm::Function * function_,
 				   llvm::Module * module_,
 				   neko_vm * vm_)
 		: id2block(id2block_)
+		, acc(acc_)
 		, function(function_)
 		, module(module_)
 		, vm(vm_)
@@ -70,46 +72,52 @@ public:
 		return builder.CreateCall(P, arguments.begin(), arguments.end());
 	}
 
+	void set_acc(llvm::IRBuilder<> & builder, llvm::Value * acc_val) {
+		builder.CreateStore(acc_val, acc);
+	}
+
+	llvm::Value * get_acc(llvm::IRBuilder<> & builder) {
+		return builder.CreateLoad(acc);
+	}
+	
 	void makeOpCode(llvm::IRBuilder<> & builder, OPCODE opcode, int_val param) {
 		switch(opcode) {
 			case AccNull:
-				acc = h.int_n((int_val)val_null);
+				set_acc(builder, h.int_n((int_val)val_null));
 				break;
 			case AccTrue:
-				acc = h.int_n((int_val)val_true);
+				set_acc(builder, h.int_n((int_val)val_true));
 				break;
 			case AccFalse:
-				acc = h.int_n((int_val)val_false);
+				set_acc(builder, h.int_n((int_val)val_false));
 				break;
 			case AccInt:
 			case AccBuiltin:
-				acc = h.int_n(param);
+				set_acc(builder, h.int_n(param));
 				break;
 			case AccStack0:
-				acc = stack.load(builder, 0);
+				set_acc(builder, stack.load(builder, 0));
 				break;
 			case AccStack1:
-				acc = stack.load(builder, 1);
+				set_acc(builder, stack.load(builder, 1));
 				break;
 			case AccStack:
-				acc = stack.load(builder, param);
+				set_acc(builder, stack.load(builder, param));
 				break;
 			case AccGlobal:
-				acc = builder.CreateLoad(
-					builder.CreateIntToPtr(
-						h.int_n(param),
-						h.convert<int_val *>()
-					)
-				);
-				// TODO: make sure globals DO move in memory, otherwise just use the following
-				// acc = h.int_n(*(int_val*)(param));
+				set_acc(builder, builder.CreateLoad(
+							builder.CreateIntToPtr(
+								h.int_n(param),
+								h.convert<int_val *>()
+							)
+						));
 				break;
 			case SetStack:
-				stack.store(builder, param, acc);
+				stack.store(builder, param, get_acc(builder));
 				break;
 			case SetGlobal:
 				builder.CreateStore(
-					acc,
+					get_acc(builder),
 					builder.CreateIntToPtr(
 						h.int_n(param),
 						h.convert<int_val *>()
@@ -117,23 +125,23 @@ public:
 				);
 				break;
 			case Add:
-				acc = callPrimitive(builder, "add", h.constant(vm), stack.load(builder, 0), acc);
+				set_acc(builder, callPrimitive(builder, "add", h.constant(vm), stack.load(builder, 0)));
 				stack.pop(1);
 				break;
 			case Call:
 				{
 					std::vector<llvm::Value *> params;
 					params.push_back(h.constant(vm));
-					params.push_back(acc); params.push_back(h.int_n(param));
+					params.push_back(get_acc(builder)); params.push_back(h.int_n(param));
 					for (int_val i = param - 1; i >=0; --i) {
 						params.push_back(stack.load(builder, i));
 					}
-					acc = callPrimitive(builder, "call", params);
+					set_acc(builder, callPrimitive(builder, "call", params));
 					stack.pop(param);
 				}
 				break;
 			case Push:
-				stack.push(builder, acc);
+				stack.push(builder, get_acc(builder));
 				break;
 			case Pop:
 				stack.pop(param);
@@ -146,11 +154,11 @@ public:
 
 private:
 	id2block_type const & id2block;
+	llvm::AllocaInst * acc;
 	llvm::Function * function;
 	llvm::Module * module;
 	neko_vm * vm;
 
-	llvm::Value * acc;
 	Stack stack;
 	Helper h;
 };
@@ -176,6 +184,9 @@ public:
 		llvm::Function * function = module->getFunction(neko_function.getName());
 		llvm::BasicBlock::Create(module->getContext(), "entry", function);
 
+		llvm::IRBuilder<> builder(&function->getEntryBlock());
+		llvm::AllocaInst * acc = builder.CreateAlloca(h.int_t(), 0);
+
 		id2block_type id2block;
 
 		for (neko::Function::const_iterator it = neko_function.begin();
@@ -187,7 +198,7 @@ public:
 				id2block.insert(std::make_pair(it->getId(), llvm::BasicBlock::Create(module->getContext(), bb_name.str(), function)));
 			}
 
-		CodeGeneration cd(id2block, function, module, vm);
+		CodeGeneration cd(id2block, acc, function, module, vm);
 
 		for (neko::Function::const_iterator it = neko_function.begin();
 			 it != neko_function.end();
@@ -198,7 +209,6 @@ public:
 				//check stack length
 			}
 
-		llvm::IRBuilder<> builder(&function->getEntryBlock());
 		builder.CreateBr(++function->begin());
 	}
 private:
