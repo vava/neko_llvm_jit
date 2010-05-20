@@ -132,6 +132,10 @@ public:
 				set_acc(builder, callPrimitive(builder, "sub", stack.load(builder, 0), get_acc(builder)));
 				stack.pop(1);
 				break;
+			case Mult:
+				set_acc(builder, callPrimitive(builder, "mult", stack.load(builder, 0), get_acc(builder)));
+				stack.pop(1);
+				break;
 			case Call:
 				{
 					std::vector<llvm::Value *> params;
