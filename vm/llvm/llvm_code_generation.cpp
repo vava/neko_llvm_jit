@@ -72,6 +72,15 @@ public:
 
 	void makeOpCode(llvm::IRBuilder<> & builder, OPCODE opcode, int_val param) {
 		switch(opcode) {
+			case AccNull:
+				acc = h.int_n(val_null);
+				break;
+			case AccTrue:
+				acc = h.int_n(val_true);
+				break;
+			case AccFalse:
+				acc = h.int_n(val_false);
+				break;
 			case AccInt:
 			case AccBuiltin:
 				acc = h.int_n(param);
