@@ -1,2 +1,3 @@
 PRIMITIVE(add)
+PRIMITIVE(sub)
 PRIMITIVE(call)

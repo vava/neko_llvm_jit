@@ -125,7 +125,11 @@ public:
 				);
 				break;
 			case Add:
-				set_acc(builder, callPrimitive(builder, "add", h.constant(vm), stack.load(builder, 0)));
+				set_acc(builder, callPrimitive(builder, "add", h.constant(vm), stack.load(builder, 0), get_acc(builder)));
+				stack.pop(1);
+				break;
+			case Sub:
+				set_acc(builder, callPrimitive(builder, "sub", stack.load(builder, 0), get_acc(builder)));
 				stack.pop(1);
 				break;
 			case Call:
