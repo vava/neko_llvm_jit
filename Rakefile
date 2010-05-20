@@ -1,3 +1,4 @@
+require 'rake'
 require 'open3'
 require 'benchmark'
 
@@ -19,8 +20,8 @@ def neko_command(param)
 	"LD_LIBRARY_PATH=bin:/usr/lib/llvm/lib:${LD_LIBRARY_PATH} NEKOPATH=boot:bin bin/neko #{param}"
 end
 
-def neko(param)
-	sh neko_command(param)
+task :neko, [:param] => [:compile] do |t, args|
+	sh neko_command(args.param)
 end
 
 rule '.n' => '.neko' do |t|
