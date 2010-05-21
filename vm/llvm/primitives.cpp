@@ -328,8 +328,17 @@ int_val p_call(void * vm_, int_val f, int_val n, ...) {
 	} else if( val_tag(f) == VAL_FUNCTION && n == func->nargs ) {
 		neko_module * m = (neko_module*)func->module;
 		int_val* pc = (int_val*)func->addr;
+
+		value env_backup = vm->env;
+		value vthis_backup = vm->vthis;
+
 		vm->env = func->env;
-		return (int_val)neko_interp(vm, m, f, pc);
+		int_val result = (int_val)neko_interp(vm, m, f, pc);
+
+		vm->env = env_backup;
+		vm->vthis = vthis_backup;
+
+		return result;
 	} else if( val_tag(f) == VAL_PRIMITIVE ) {
 		if( n == func->nargs ) {
 			va_list argp;
@@ -368,13 +377,29 @@ int_val p_call(void * vm_, int_val f, int_val n, ...) {
 			}
 			va_end(argp);
 
-			return ((c_primN)func->addr)((value*)(void*)args, n);
+			value env_backup = vm->env;
+			value vthis_backup = vm->vthis;
+
+			int_val result = ((c_primN)func->addr)((value*)(void*)args, n);
+
+			vm->env = env_backup;
+			vm->vthis = vthis_backup;
+
+			return result;
 		} else {
 			val_throw(alloc_string("Invalid call"));
 		}
 	} else if( val_tag(f) == VAL_JITFUN ) {
 		if( n == func->nargs ) {
-			return jit_run(vm,func);
+			value env_backup = vm->env;
+			value vthis_backup = vm->vthis;
+
+			int_val result = jit_run(vm,func);
+
+			vm->env = env_backup;
+			vm->vthis = vthis_backup;
+
+			return result;
 		} else {
 			val_throw(alloc_string("Invalid call"));
 		}
