@@ -4,6 +4,11 @@ require 'benchmark'
 
 task :default => [:compile, :test]
 
+task :clean do
+	sh 'make clean'
+	sh 'make -C tests/unit clean'
+end
+
 task :compile do
 	sh 'make libneko neko'
 end
@@ -11,9 +16,7 @@ end
 task :test => [:unit_test, :neko_test]
 
 task :unit_test do
-	cd 'tests/unit'
-	sh 'make test'
-	cd '../..'
+	sh 'make -C tests/unit test'
 end
 
 def neko_command(param)
