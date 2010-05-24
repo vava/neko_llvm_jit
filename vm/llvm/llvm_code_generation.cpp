@@ -51,7 +51,7 @@ public:
 						   (OPCODE)it->second.first, it->second.second);
 			}
 		//make sure block ends with terminate expression
-		if (curr_bb->getTerminator() == 0) {
+		if (builder.GetInsertBlock()->getTerminator() == 0) {
 			builder.CreateBr(next_bb);
 		}
 	}
@@ -177,6 +177,38 @@ public:
 					}
 					set_acc(builder, callPrimitive(builder, "call", params));
 					stack.pop(param);
+				}
+				break;
+			case Lt:
+				{
+					set_acc(builder, callPrimitive(builder,
+												   "val_compare",
+												   builder.CreateIntToPtr(
+													   stack.load(builder, 0),
+													   h.convert<int_val *>()),
+												   builder.CreateIntToPtr(
+													   get_acc(builder),
+													   h.convert<int_val *>())));
+					stack.pop(1);
+
+					llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
+					llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
+					llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
+
+					builder.CreateCondBr(builder.CreateAnd(builder.CreateICmpSLT(get_acc(builder), h.int_0()),
+														   builder.CreateICmpNE(get_acc(builder), h.int_n(invalid_comparison))),
+										 bb_true,
+										 bb_false);
+
+					builder.SetInsertPoint(bb_true);
+					set_acc(builder, get_true());
+					builder.CreateBr(bb_cont);
+
+					builder.SetInsertPoint(bb_false);
+					set_acc(builder, get_false());
+					builder.CreateBr(bb_cont);
+
+					builder.SetInsertPoint(bb_cont);
 				}
 				break;
 			case Jump:
