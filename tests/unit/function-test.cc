@@ -47,7 +47,8 @@ TEST_F(FunctionTest, ExposeAllCode) {
 						Pair(10, Pair(Add, 0)),
 						Pair(20, Pair(Sub, 0))),
 					ElementsAre(
-						Pair(30, Pair(JumpIf, 50)),
+						Pair(30, Pair(JumpIf, 50))),
+					ElementsAre(
 						Pair(40, Pair(Pop, 0))),
 					ElementsAre(
 						Pair(50, Pair(Mult, 0)),

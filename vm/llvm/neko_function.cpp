@@ -14,9 +14,18 @@ namespace {
 		for (NekoCodeChunk::const_iterator it = code_chunk.begin(); it != code_chunk.end(); ++it) {
 			switch (it->second.first) {
 				case Jump:
+					block_addresses.push_back(it->second.second);
+					break;
 				case JumpIf:
 				case JumpIfNot:
-					block_addresses.push_back(it->second.second);
+					{
+						block_addresses.push_back(it->second.second);
+						//in llvm jump always have 'then' and 'else' parts
+						NekoCodeChunk::const_iterator next = it; ++next;
+						if (next != code_chunk.end()) {
+							block_addresses.push_back(next->first);
+						}
+					}
 					break;
 				default:
 					//do nothing
