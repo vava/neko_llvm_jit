@@ -101,6 +101,26 @@ public:
 		return h.int_n((int_val)val_true);
 	}
 
+	void makeAccBoolBranching(llvm::IRBuilder<> & builder, llvm::Value * condition, bool straight_forward_order = true) {
+		llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
+		llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
+		llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
+
+		builder.CreateCondBr(condition,
+							 (straight_forward_order) ? bb_true : bb_false,
+							 (straight_forward_order) ? bb_false : bb_true);
+
+		builder.SetInsertPoint(bb_true);
+		set_acc(builder, get_true());
+		builder.CreateBr(bb_cont);
+
+		builder.SetInsertPoint(bb_false);
+		set_acc(builder, get_false());
+		builder.CreateBr(bb_cont);
+
+		builder.SetInsertPoint(bb_cont);
+	}
+
 	void makeCompare(llvm::IRBuilder<> & builder, llvm::Value* (llvm::IRBuilder<>::*f_cmp)(llvm::Value *, llvm::Value *, const llvm::Twine &)) {
 		set_acc(builder, callPrimitive(builder,
 									   "val_compare",
@@ -112,24 +132,8 @@ public:
 										   h.convert<int_val *>())));
 		stack.pop(1);
 
-		llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
-		llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
-		llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
-
-		builder.CreateCondBr(builder.CreateAnd((builder.*f_cmp)(get_acc(builder), h.int_0(), ""),
-											   builder.CreateICmpNE(get_acc(builder), h.int_n(invalid_comparison))),
-							 bb_true,
-							 bb_false);
-
-		builder.SetInsertPoint(bb_true);
-		set_acc(builder, get_true());
-		builder.CreateBr(bb_cont);
-
-		builder.SetInsertPoint(bb_false);
-		set_acc(builder, get_false());
-		builder.CreateBr(bb_cont);
-
-		builder.SetInsertPoint(bb_cont);
+		makeAccBoolBranching(builder, builder.CreateAnd((builder.*f_cmp)(get_acc(builder), h.int_0(), ""),
+														builder.CreateICmpNE(get_acc(builder), h.int_n(invalid_comparison))));
 	}
 
 	void makeOpCode(llvm::IRBuilder<> & builder, llvm::BasicBlock * next_bb, OPCODE opcode, int_val param) {
@@ -237,23 +241,7 @@ public:
 													   h.convert<int_val *>())));
 					stack.pop(1);
 
-					llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
-					llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
-					llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
-
-					builder.CreateCondBr(builder.CreateICmpEQ(get_acc(builder), h.int_0()),
-										 bb_false,
-										 bb_true);
-
-					builder.SetInsertPoint(bb_true);
-					set_acc(builder, get_true());
-					builder.CreateBr(bb_cont);
-
-					builder.SetInsertPoint(bb_false);
-					set_acc(builder, get_false());
-					builder.CreateBr(bb_cont);
-
-					builder.SetInsertPoint(bb_cont);
+					makeAccBoolBranching(builder, builder.CreateICmpEQ(get_acc(builder), h.int_0()), false);
 				}
 				break;
 			case Jump:
