@@ -225,6 +225,37 @@ public:
 			case Gte:
 				makeCompare(builder, &llvm::IRBuilder<>::CreateICmpSGE);
 				break;
+			case Neq:
+				{
+					set_acc(builder, callPrimitive(builder,
+												   "val_compare",
+												   builder.CreateIntToPtr(
+													   stack.load(builder, 0),
+													   h.convert<int_val *>()),
+												   builder.CreateIntToPtr(
+													   get_acc(builder),
+													   h.convert<int_val *>())));
+					stack.pop(1);
+
+					llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
+					llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
+					llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
+
+					builder.CreateCondBr(builder.CreateICmpEQ(get_acc(builder), h.int_0()),
+										 bb_false,
+										 bb_true);
+
+					builder.SetInsertPoint(bb_true);
+					set_acc(builder, get_true());
+					builder.CreateBr(bb_cont);
+
+					builder.SetInsertPoint(bb_false);
+					set_acc(builder, get_false());
+					builder.CreateBr(bb_cont);
+
+					builder.SetInsertPoint(bb_cont);
+				}
+				break;
 			case Jump:
 				builder.CreateBr(getBasicBlock(param));
 				break;
