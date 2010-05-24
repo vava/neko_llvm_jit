@@ -9,13 +9,15 @@
 #include "llvm/BasicBlock.h"
 
 #include <sstream>
+#include <stdio.h>
+
 
 extern "C" {
 	#include "../opcodes.h"
 }
 
 namespace {
-typedef std::map<ptr_val, llvm::BasicBlock *> id2block_type;
+typedef std::map<ptr_val, std::pair<neko::BasicBlock const *, llvm::BasicBlock *> > id2block_type;
 
 class CodeGeneration {
 public:
@@ -33,18 +35,25 @@ public:
 		, h(function->getContext())
 	{}
 
-	void makeBasicBlock(neko::BasicBlock const & neko_bb) {
-		llvm::BasicBlock * bb = id2block.find(neko_bb.getId())->second;
-		llvm::IRBuilder<> builder(bb);
+	llvm::BasicBlock * getBasicBlock(int param) {
+		return id2block.find(param)->second.second;
+	}
+
+	void makeBasicBlock(neko::BasicBlock const & neko_bb, llvm::BasicBlock * curr_bb, llvm::BasicBlock * next_bb) {
+		llvm::IRBuilder<> builder(curr_bb);
 
 		for (neko::BasicBlock::const_iterator it = neko_bb.begin();
 			 it != neko_bb.end();
 			 ++it)
 			{
 				makeOpCode(builder,
+						   next_bb,
 						   (OPCODE)it->second.first, it->second.second);
 			}
-		builder.CreateRetVoid();
+		//make sure block ends with terminate expression
+		if (curr_bb->getTerminator() == 0) {
+			builder.CreateBr(next_bb);
+		}
 	}
 
 	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive) const {
@@ -76,22 +85,36 @@ public:
 		builder.CreateStore(acc_val, acc);
 	}
 
-	llvm::Value * get_acc(llvm::IRBuilder<> & builder) {
+	llvm::Value * get_acc(llvm::IRBuilder<> & builder) const {
 		return builder.CreateLoad(acc);
 	}
-	
-	void makeOpCode(llvm::IRBuilder<> & builder, OPCODE opcode, int_val param) {
+
+	llvm::Value * get_null() const {
+		return h.int_n((int_val)val_null);
+	}
+
+	llvm::Value * get_false() const {
+		return h.int_n((int_val)val_false);
+	}
+
+	llvm::Value * get_true() const {
+		return h.int_n((int_val)val_true);
+	}
+
+	void makeOpCode(llvm::IRBuilder<> & builder, llvm::BasicBlock * next_bb, OPCODE opcode, int_val param) {
 		switch(opcode) {
 			case AccNull:
-				set_acc(builder, h.int_n((int_val)val_null));
+				set_acc(builder, get_null());
 				break;
 			case AccTrue:
-				set_acc(builder, h.int_n((int_val)val_true));
+				set_acc(builder, get_true());
 				break;
 			case AccFalse:
-				set_acc(builder, h.int_n((int_val)val_false));
+				set_acc(builder, get_false());
 				break;
 			case AccInt:
+				set_acc(builder, h.int_n(param));
+				break;
 			case AccBuiltin:
 				set_acc(builder, h.int_n(param));
 				break;
@@ -156,6 +179,16 @@ public:
 					stack.pop(param);
 				}
 				break;
+			case Jump:
+				builder.CreateBr(getBasicBlock(param));
+				break;
+			case JumpIf:
+				builder.CreateCondBr(builder.CreateICmpEQ(get_acc(builder), get_true()), getBasicBlock(param), next_bb);
+				break;
+			case JumpIfNot:
+				//callPrimitive(builder, "debug_print", get_acc(builder));
+				builder.CreateCondBr(builder.CreateICmpNE(get_acc(builder), get_true()), getBasicBlock(param), next_bb);
+				break;
 			case Push:
 				stack.push(builder, get_acc(builder));
 				break;
@@ -189,7 +222,7 @@ public:
 	{}
 
 	void makeFunctionDeclaration(neko::Function const & neko_function) {
-		llvm::FunctionType * FT = llvm::FunctionType::get(h.void_t(), std::vector<const llvm::Type *>(), false);
+		llvm::FunctionType * FT = llvm::FunctionType::get(h.int_t(), std::vector<const llvm::Type *>(), false);
 		llvm::Function::Create(FT,
 							   llvm::Function::ExternalLinkage,
 							   neko_function.getName(),
@@ -201,7 +234,13 @@ public:
 		llvm::BasicBlock::Create(module->getContext(), "entry", function);
 
 		llvm::IRBuilder<> builder(&function->getEntryBlock());
-		llvm::AllocaInst * acc = builder.CreateAlloca(h.int_t(), 0);
+		llvm::AllocaInst * acc = builder.CreateAlloca(h.int_t(), 0, "acc");
+
+		llvm::BasicBlock * returnBlock = llvm::BasicBlock::Create(module->getContext(), "return", function);
+		{
+			llvm::IRBuilder<> ret_builder(returnBlock);
+			ret_builder.CreateRet(ret_builder.CreateLoad(acc));
+		}
 
 		id2block_type id2block;
 
@@ -211,21 +250,22 @@ public:
 			{
 				std::stringstream bb_name;
 				bb_name << it->getId();
-				id2block.insert(std::make_pair(it->getId(), llvm::BasicBlock::Create(module->getContext(), bb_name.str(), function)));
+				llvm::BasicBlock * bb = llvm::BasicBlock::Create(module->getContext(), bb_name.str(), function);
+		 		id2block.insert(std::make_pair(it->getId(), std::make_pair(&(*it), bb)));
 			}
 
 		CodeGeneration cd(id2block, acc, function, module, vm);
 
-		for (neko::Function::const_iterator it = neko_function.begin();
-			 it != neko_function.end();
-			 ++it)
-			{
-				//remember stack length
-				cd.makeBasicBlock(*it);
-				//check stack length
-			}
+		for (id2block_type::const_iterator it = id2block.begin(); it != id2block.end(); ++it) {
+			id2block_type::const_iterator next = it; ++next;
+			llvm::BasicBlock * next_bb = (next == id2block.end()) ? returnBlock : next->second.second;
+			llvm::BasicBlock * curr_bb = it->second.second;
+			neko::BasicBlock const * curr_nekobb = it->second.first;
+			cd.makeBasicBlock(*curr_nekobb, curr_bb, next_bb);
+		}
 
-		builder.CreateBr(++function->begin());
+		//add jump from entry block to first block in function
+		builder.CreateBr(id2block.begin()->second.second);
 	}
 private:
 	llvm::Module * module;
