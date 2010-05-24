@@ -244,6 +244,30 @@ public:
 					makeAccBoolBranching(builder, builder.CreateICmpEQ(get_acc(builder), h.int_0()), false);
 				}
 				break;
+			case Bool:
+				makeAccBoolBranching(builder,
+									 builder.CreateOr(
+										 builder.CreateOr(
+											 builder.CreateICmpEQ(get_acc(builder), get_false()),
+											 builder.CreateICmpEQ(get_acc(builder), get_null())),
+										 builder.CreateICmpEQ(get_acc(builder), h.int_1())), false);
+				break;
+			case Not:
+				makeAccBoolBranching(builder,
+									 builder.CreateOr(
+										 builder.CreateOr(
+											 builder.CreateICmpEQ(get_acc(builder), get_false()),
+											 builder.CreateICmpEQ(get_acc(builder), get_null())),
+										 builder.CreateICmpEQ(get_acc(builder), h.int_1())));
+				break;
+			case IsNull:
+				makeAccBoolBranching(builder,
+									 builder.CreateICmpEQ(get_acc(builder), get_null()));
+				break;
+			case IsNotNull:
+				makeAccBoolBranching(builder,
+									 builder.CreateICmpEQ(get_acc(builder), get_null()), false);
+				break;
 			case Jump:
 				builder.CreateBr(getBasicBlock(param));
 				break;

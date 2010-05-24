@@ -1,0 +1,11 @@
+if ($not(0) && $istrue(1) && $not($istrue(null))) {
+   $print("OK");
+} else {
+   $print("Not OK");
+}
+
+if ($istrue(0) && $not(1) && $istrue($not(null))) {
+   $print("Not OK");
+} else {
+   $print("OK");
+}
