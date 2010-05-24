@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <math.h>
+#include <stdio.h>
 
 extern "C" {
 	#include "neko.h"
@@ -410,3 +411,7 @@ int_val p_call(void * vm_, int_val f, int_val n, ...) {
 	return 0;
 }
 
+int_val p_debug_print(int_val v) {
+	printf("%d", v);
+	return v;
+}
