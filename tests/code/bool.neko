@@ -9,3 +9,7 @@ if ($istrue(0) && $not(1) && $istrue($not(null))) {
 } else {
    $print("OK");
 }
+
+if (null == null && 0 != null) {
+   $print("OK");
+}
