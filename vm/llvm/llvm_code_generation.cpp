@@ -138,7 +138,7 @@ public:
 							 get_true(), get_false());
 	}
 
-	llvm::Value * makeAllocInt(llvm::IRBuilder<> &builder, int_val value) const {
+	llvm::Value * makeAllocInt(int_val value) const {
 		return h.int_n((int_val)((((int)(value)) << 1) | 1));
 	}
 
@@ -307,10 +307,29 @@ public:
 										 get_null(), makeAllocInt(builder, get_acc(builder)));
 				}
 				break;
-	// Instr(PhysCompare)
-	// 	acc = (int_val)(( *sp > acc )?alloc_int(1):(( *sp < acc )?alloc_int(-1):alloc_int(0)));
-	// 	*sp++ = ERASE;
-	// 	Next;
+			case PhysCompare:
+				{
+					llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
+					llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
+					llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
+
+					builder.CreateCondBr(builder.CreateICmpSGT(stack.load(builder, 0), get_acc(builder)),
+										 bb_true,
+										 bb_false);
+
+					builder.SetInsertPoint(bb_true);
+					set_acc(builder, makeAllocInt(1));
+					builder.CreateBr(bb_cont);
+
+					builder.SetInsertPoint(bb_false);
+					makeAccBoolBranching(builder, builder.CreateICmpSLT(stack.load(builder, 0), get_acc(builder)),
+										 makeAllocInt(-1), makeAllocInt(0));
+					builder.CreateBr(bb_cont);
+
+					builder.SetInsertPoint(bb_cont);
+					stack.pop(1);
+				}
+				break;
 			case Jump:
 				builder.CreateBr(getBasicBlock(param));
 				break;

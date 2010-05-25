@@ -1,0 +1,2 @@
+$print($compare(1, 2));
+$print($pcompare(1, 2));
