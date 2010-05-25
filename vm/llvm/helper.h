@@ -31,7 +31,12 @@ public:
 	// }
 
 	llvm::IntegerType const * int_t() const {
-		if (sizeof(void *) == 4) {
+		return templ_int_t<int_val>();
+	}
+
+	template<typename T>
+	llvm::IntegerType const * templ_int_t() const {
+		if (sizeof(T) == 4) {
 			return llvm::Type::getInt32Ty(ctx);
 		} else {
 			return llvm::Type::getInt64Ty(ctx);
@@ -62,16 +67,25 @@ private:
 };
 
 template<>
-struct Helper::Convert<int_val> {
-	static llvm::Type const * from(Helper const & h) {
-		return h.int_t();
-	}
-};
-
-template<>
 struct Helper::Convert<void> {
 	static llvm::Type const * from(Helper const & h) {
 		return h.void_t();
+	}
+};
+
+#if INTPTR_MAX != INT32_MAX
+template<>
+struct Helper::Convert<int> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.templ_int_t<int>();
+	}
+};
+#endif
+
+template<>
+struct Helper::Convert<int_val> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.int_t();
 	}
 };
 
