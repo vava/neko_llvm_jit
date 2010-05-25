@@ -1,6 +1,6 @@
 var i = 0;
 var n = 0;
-while (i < 100000) {
+while (i < 500000) {
       i = i + 1;
       if (i % 2 == 0) {
             n = n + i;
