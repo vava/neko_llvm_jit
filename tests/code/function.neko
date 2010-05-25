@@ -1,0 +1,11 @@
+
+f = function(s) {
+  $print(s);
+}
+
+g = function (s) {
+  return "Hello " + s;
+}
+
+
+f(g("world"));
