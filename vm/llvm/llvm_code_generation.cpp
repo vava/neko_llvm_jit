@@ -370,49 +370,50 @@ public:
 		, h(module->getContext())
 	{}
 
-	void registerPrimitive(std::string const & name, int_val (*primitive)()) {
-		registerPrimitive(name, type_list(), false);
+	template<typename R>
+	void registerPrimitive(std::string const & name, R (*primitive)()) {
+		registerPrimitive(name, h.convert<R>(), type_list(), false);
 	}
 
-	template<typename T>
-	void registerPrimitive(std::string const & name, int_val (*primitive)(T)) {
-		registerPrimitive(name, makeTypeList<T>(), false);
+	template<typename R, typename T>
+	void registerPrimitive(std::string const & name, R (*primitive)(T)) {
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T>(), false);
 	}
 
-	template<typename T1, typename T2>
-	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2)) {
-		registerPrimitive(name, makeTypeList<T1, T2>(), false);
+	template<typename R, typename T1, typename T2>
+	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2)) {
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2>(), false);
 	}
 
-	template<typename T1, typename T2, typename T3>
-	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2, T3)) {
-		registerPrimitive(name, makeTypeList<T1, T2, T3>(), false);
+	template<typename R, typename T1, typename T2, typename T3>
+	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, T3)) {
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3>(), false);
 	}
 
-	template<typename T1, typename T2, typename T3, typename T4>
-	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2, T3, T4)) {
-		registerPrimitive(name, makeTypeList<T1, T2, T3, T4>(), false);
+	template<typename R, typename T1, typename T2, typename T3, typename T4>
+	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, T3, T4)) {
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3, T4>(), false);
 	}
 
-	template<typename T>
-	void registerPrimitive(std::string const & name, int_val (*primitive)(T, ...)) {
-		registerPrimitive(name, makeTypeList<T>(), true);
+	template<typename R, typename T>
+	void registerPrimitive(std::string const & name, R (*primitive)(T, ...)) {
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T>(), true);
 	}
 
-	template<typename T1, typename T2>
-	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2, ...)) {
-		registerPrimitive(name, makeTypeList<T1, T2>(), true);
+	template<typename R, typename T1, typename T2>
+	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, ...)) {
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2>(), true);
 	}
 
-	template<typename T1, typename T2, typename T3>
-	void registerPrimitive(std::string const & name, int_val (*primitive)(T1, T2, T3, ...)) {
-		registerPrimitive(name, makeTypeList<T1, T2, T3>(), true);
+	template<typename R, typename T1, typename T2, typename T3>
+	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, T3, ...)) {
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3>(), true);
 	}
 
 private:
-	void registerPrimitive(std::string const & name, type_list const & param_types, bool varArgs) {
+	void registerPrimitive(std::string const & name, llvm::Type const * resultType, type_list const & param_types, bool varArgs) {
 		llvm::FunctionType * FT = llvm::FunctionType::get(
-			h.int_t(),
+			resultType,
 			param_types,
 			varArgs);
 

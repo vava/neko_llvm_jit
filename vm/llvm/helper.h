@@ -2,6 +2,8 @@
 #include "llvm/Type.h"
 #include "llvm/DerivedTypes.h"
 
+#include "common.h"
+
 class Helper {
 public:
 	Helper(llvm::LLVMContext & ctx_): ctx(ctx_) {}
@@ -73,10 +75,24 @@ struct Helper::Convert<void> {
 	}
 };
 
+template<>
+struct Helper::Convert<neko_vm *> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.convert<int_val>()->getPointerTo();
+	}
+};
+
+template<>
+struct Helper::Convert<value> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.convert<int_val>()->getPointerTo();
+	}
+};
+
 template<typename T>
 struct Helper::Convert<T *> {
 	static llvm::Type const * from(Helper const & h) {
-		return h.convert<int_val>()->getPointerTo();
+		return h.convert<T>()->getPointerTo();
 	}
 };
 
