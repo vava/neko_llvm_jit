@@ -101,21 +101,21 @@ public:
 		return h.int_n((int_val)val_true);
 	}
 
-	void makeAccBoolBranching(llvm::IRBuilder<> & builder, llvm::Value * condition, bool straight_forward_order = true) {
+	void makeAccBoolBranching(llvm::IRBuilder<> & builder, llvm::Value * condition, llvm::Value * true_, llvm::Value * false_) {
 		llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
 		llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
 		llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
 
 		builder.CreateCondBr(condition,
-							 (straight_forward_order) ? bb_true : bb_false,
-							 (straight_forward_order) ? bb_false : bb_true);
+							 bb_true,
+							 bb_false);
 
 		builder.SetInsertPoint(bb_true);
-		set_acc(builder, get_true());
+		set_acc(builder, true_);
 		builder.CreateBr(bb_cont);
 
 		builder.SetInsertPoint(bb_false);
-		set_acc(builder, get_false());
+		set_acc(builder, false_);
 		builder.CreateBr(bb_cont);
 
 		builder.SetInsertPoint(bb_cont);
@@ -134,7 +134,21 @@ public:
 		stack.pop(1);
 
 		makeAccBoolBranching(builder, builder.CreateAnd((builder.*f_cmp)(get_acc(builder), h.int_0(), ""),
-														builder.CreateICmpNE(get_acc(builder), h.int_n(invalid_comparison))));
+														builder.CreateICmpNE(get_acc(builder), h.int_n(invalid_comparison))),
+							 get_true(), get_false());
+	}
+
+	llvm::Value * makeAllocInt(llvm::IRBuilder<> &builder, int_val value) const {
+		return h.int_n((int_val)((((int)(value)) << 1) | 1));
+	}
+
+	llvm::Value * makeAllocInt(llvm::IRBuilder<> &builder, llvm::Value * value) const {
+		return builder.CreateSExt(
+			builder.CreateOr(
+				builder.CreateShl(
+					builder.CreateTrunc(value, h.convert<int>()), 1),
+				h.int_1()),
+			h.convert<int_val>());
 	}
 
 	void makeOpCode(llvm::IRBuilder<> & builder, llvm::BasicBlock * next_bb, OPCODE opcode, int_val param) {
@@ -244,7 +258,7 @@ public:
 								h.convert<int_val>()));
 					stack.pop(1);
 
-					makeAccBoolBranching(builder, builder.CreateICmpEQ(get_acc(builder), h.int_0()), false);
+					makeAccBoolBranching(builder, builder.CreateICmpEQ(get_acc(builder), h.int_0()), get_false(), get_true());
 				}
 				break;
 			case Bool:
@@ -253,7 +267,8 @@ public:
 										 builder.CreateOr(
 											 builder.CreateICmpEQ(get_acc(builder), get_false()),
 											 builder.CreateICmpEQ(get_acc(builder), get_null())),
-										 builder.CreateICmpEQ(get_acc(builder), h.int_1())), false);
+										 builder.CreateICmpEQ(get_acc(builder), h.int_1())),
+									 get_false(), get_true());
 				break;
 			case Not:
 				makeAccBoolBranching(builder,
@@ -261,16 +276,41 @@ public:
 										 builder.CreateOr(
 											 builder.CreateICmpEQ(get_acc(builder), get_false()),
 											 builder.CreateICmpEQ(get_acc(builder), get_null())),
-										 builder.CreateICmpEQ(get_acc(builder), h.int_1())));
+										 builder.CreateICmpEQ(get_acc(builder), h.int_1())),
+									 get_true(), get_false());
 				break;
 			case IsNull:
 				makeAccBoolBranching(builder,
-									 builder.CreateICmpEQ(get_acc(builder), get_null()));
+									 builder.CreateICmpEQ(get_acc(builder), get_null()),
+									 get_true(), get_false());
 				break;
 			case IsNotNull:
 				makeAccBoolBranching(builder,
-									 builder.CreateICmpEQ(get_acc(builder), get_null()), false);
+									 builder.CreateICmpEQ(get_acc(builder), get_null()),
+									 get_false(), get_true());
 				break;
+			case Compare:
+				{
+					set_acc(builder, builder.CreateSExt(
+								callPrimitive(builder,
+											  "val_compare",
+											  builder.CreateIntToPtr(
+												  stack.load(builder, 0),
+												  h.convert<int_val *>()),
+											  builder.CreateIntToPtr(
+												  get_acc(builder),
+												  h.convert<int_val *>())),
+								h.convert<int_val>()));
+					stack.pop(1);
+
+					makeAccBoolBranching(builder, builder.CreateICmpEQ(get_acc(builder), h.int_n(invalid_comparison)),
+										 get_null(), makeAllocInt(builder, get_acc(builder)));
+				}
+				break;
+	// Instr(PhysCompare)
+	// 	acc = (int_val)(( *sp > acc )?alloc_int(1):(( *sp < acc )?alloc_int(-1):alloc_int(0)));
+	// 	*sp++ = ERASE;
+	// 	Next;
 			case Jump:
 				builder.CreateBr(getBasicBlock(param));
 				break;
