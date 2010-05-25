@@ -1,0 +1,5 @@
+f = function(s) {
+  $print(s);
+}
+
+f("hello");
