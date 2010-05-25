@@ -36,10 +36,11 @@ public:
 
 	template<typename T>
 	llvm::IntegerType const * templ_int_t() const {
-		if (sizeof(T) == 4) {
-			return llvm::Type::getInt32Ty(ctx);
-		} else {
-			return llvm::Type::getInt64Ty(ctx);
+		switch(sizeof(T)) {
+			case 1: return llvm::Type::getInt8Ty(ctx);
+			case 2: return llvm::Type::getInt16Ty(ctx);
+			case 4: return llvm::Type::getInt32Ty(ctx);
+			default: return llvm::Type::getInt64Ty(ctx);
 		}
 	}
 
@@ -83,6 +84,13 @@ struct Helper::Convert<int> {
 #endif
 
 template<>
+struct Helper::Convert<char> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.templ_int_t<char>();
+	}
+};
+
+template<>
 struct Helper::Convert<int_val> {
 	static llvm::Type const * from(Helper const & h) {
 		return h.int_t();
@@ -100,6 +108,13 @@ template<>
 struct Helper::Convert<value> {
 	static llvm::Type const * from(Helper const & h) {
 		return h.convert<int_val>()->getPointerTo();
+	}
+};
+
+template<typename T>
+struct Helper::Convert<const T> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.convert<T>();
 	}
 };
 

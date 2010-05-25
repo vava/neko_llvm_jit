@@ -151,6 +151,50 @@ public:
 			h.convert<int_val>());
 	}
 
+	void makeIntOp(llvm::IRBuilder<> & builder,
+				   llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value *, llvm::Value *, const llvm::Twine &),
+				   std::string const & op) {
+		llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
+		llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
+		llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
+
+		builder.CreateCondBr(
+			builder.CreateICmpNE(
+				builder.CreateAnd(
+					builder.CreateAnd(get_acc(builder), h.int_n(1)),
+					builder.CreateAnd(stack.load(builder, 0), h.int_n(1))
+				),
+				h.int_0()),
+			bb_true,
+			bb_false);
+
+		builder.SetInsertPoint(bb_true);
+		set_acc(builder,
+				makeAllocInt(builder,
+					(builder.*f)(
+						builder.CreateAShr(
+							builder.CreateTrunc(stack.load(builder, 0), h.convert<int>()),
+							h.int_1()
+						),
+						builder.CreateAShr(
+							builder.CreateTrunc(get_acc(builder), h.convert<int>()),
+							h.int_1()
+						),
+						""
+					)
+				)
+		);
+		builder.CreateBr(bb_cont);
+
+		builder.SetInsertPoint(bb_false);
+		callPrimitive(builder, "val_throw", callPrimitive(builder, "alloc_string", builder.CreateGlobalStringPtr(op.c_str())));
+		builder.CreateBr(bb_cont);
+
+		builder.SetInsertPoint(bb_cont);
+
+		stack.pop(1);
+	}
+
 	void makeOpCode(llvm::IRBuilder<> & builder, llvm::BasicBlock * next_bb, OPCODE opcode, int_val param) {
 		switch(opcode) {
 			case AccNull:
@@ -216,6 +260,24 @@ public:
 			case Mod:
 				set_acc(builder, callPrimitive(builder, "mod", stack.load(builder, 0), get_acc(builder)));
 				stack.pop(1);
+				break;
+			case Shl:
+				makeIntOp(builder, &llvm::IRBuilder<>::CreateShl, "<<");
+				break;
+			case Shr:
+				makeIntOp(builder, &llvm::IRBuilder<>::CreateAShr, ">>");
+				break;
+			case UShr:
+				makeIntOp(builder, &llvm::IRBuilder<>::CreateLShr, ">>>");
+				break;
+			case Or:
+				makeIntOp(builder, &llvm::IRBuilder<>::CreateOr, "|");
+				break;
+			case And:
+				makeIntOp(builder, &llvm::IRBuilder<>::CreateAnd, "&");
+				break;
+			case Xor:
+				makeIntOp(builder, &llvm::IRBuilder<>::CreateXor, "^");
 				break;
 			case Call:
 				{
