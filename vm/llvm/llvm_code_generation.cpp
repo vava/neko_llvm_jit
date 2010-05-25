@@ -122,14 +122,15 @@ public:
 	}
 
 	void makeCompare(llvm::IRBuilder<> & builder, llvm::Value* (llvm::IRBuilder<>::*f_cmp)(llvm::Value *, llvm::Value *, const llvm::Twine &)) {
-		set_acc(builder, callPrimitive(builder,
-									   "val_compare",
-									   builder.CreateIntToPtr(
-										   stack.load(builder, 0),
-										   h.convert<int_val *>()),
-									   builder.CreateIntToPtr(
-										   get_acc(builder),
-										   h.convert<int_val *>())));
+		set_acc(builder, builder.CreateZExt(callPrimitive(builder,
+														  "val_compare",
+														  builder.CreateIntToPtr(
+															  stack.load(builder, 0),
+															  h.convert<int_val *>()),
+														  builder.CreateIntToPtr(
+															  get_acc(builder),
+															  h.convert<int_val *>())),
+											h.convert<int_val>()));
 		stack.pop(1);
 
 		makeAccBoolBranching(builder, builder.CreateAnd((builder.*f_cmp)(get_acc(builder), h.int_0(), ""),
@@ -231,14 +232,16 @@ public:
 				break;
 			case Neq:
 				{
-					set_acc(builder, callPrimitive(builder,
-												   "val_compare",
-												   builder.CreateIntToPtr(
-													   stack.load(builder, 0),
-													   h.convert<int_val *>()),
-												   builder.CreateIntToPtr(
-													   get_acc(builder),
-													   h.convert<int_val *>())));
+					set_acc(builder, builder.CreateZExt(
+								callPrimitive(builder,
+											  "val_compare",
+											  builder.CreateIntToPtr(
+												  stack.load(builder, 0),
+												  h.convert<int_val *>()),
+											  builder.CreateIntToPtr(
+												  get_acc(builder),
+												  h.convert<int_val *>())),
+								h.convert<int_val>()));
 					stack.pop(1);
 
 					makeAccBoolBranching(builder, builder.CreateICmpEQ(get_acc(builder), h.int_0()), false);
