@@ -122,7 +122,7 @@ public:
 	}
 
 	void makeCompare(llvm::IRBuilder<> & builder, llvm::Value* (llvm::IRBuilder<>::*f_cmp)(llvm::Value *, llvm::Value *, const llvm::Twine &)) {
-		set_acc(builder, builder.CreateZExt(callPrimitive(builder,
+		set_acc(builder, builder.CreateSExt(callPrimitive(builder,
 														  "val_compare",
 														  builder.CreateIntToPtr(
 															  stack.load(builder, 0),
@@ -232,7 +232,7 @@ public:
 				break;
 			case Neq:
 				{
-					set_acc(builder, builder.CreateZExt(
+					set_acc(builder, builder.CreateSExt(
 								callPrimitive(builder,
 											  "val_compare",
 											  builder.CreateIntToPtr(
