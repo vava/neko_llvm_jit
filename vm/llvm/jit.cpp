@@ -58,18 +58,31 @@ extern "C" {
 			// Set up the optimizer pipeline.  Start with registering info about how the
 			// target lays out data structures.
 			OurFPM.add(new llvm::TargetData(*ee->getTargetData()));
+
 			// Promote allocas to registers.
 			OurFPM.add(llvm::createPromoteMemoryToRegisterPass());
-			// Do simple "peephole" optimizations and bit-twiddling optzns.
-			OurFPM.add(llvm::createInstructionCombiningPass());
 			// Reassociate expressions.
 			OurFPM.add(llvm::createReassociatePass());
-			// Eliminate Common SubExpressions.
-			OurFPM.add(llvm::createGVNPass());
-			// Simplify the control flow graph (deleting unreachable blocks, etc).
-			OurFPM.add(llvm::createCFGSimplificationPass());
 
-			//OurFPM.doInitialization();
+			//selected passes from brainfuck jit compiler
+			//  http://www.remcobloemen.nl/2010/02/brainfuck-using-llvm/
+			//seems to be working good for us but we need more research on optimizations
+			OurFPM.add(llvm::createInstructionCombiningPass()); // Cleanup for scalarrepl.
+			OurFPM.add(llvm::createLICMPass());                 // Hoist loop invariants
+			OurFPM.add(llvm::createIndVarSimplifyPass());       // Canonicalize indvars
+			OurFPM.add(llvm::createLoopDeletionPass());         // Delete dead loops
+
+			// Simplify code
+			for(int repeat=0; repeat < 3; repeat++)	{
+				OurFPM.add(llvm::createGVNPass());                  // Remove redundancies
+				OurFPM.add(llvm::createSCCPPass());                 // Constant prop with SCCP
+				OurFPM.add(llvm::createCFGSimplificationPass());    // Merge & remove BBs
+				OurFPM.add(llvm::createInstructionCombiningPass());
+				OurFPM.add(llvm::createAggressiveDCEPass());        // Delete dead instructions
+				OurFPM.add(llvm::createCFGSimplificationPass());    // Merge & remove BBs
+				OurFPM.add(llvm::createDeadStoreEliminationPass()); // Delete dead stores
+			}
+
 			OurFPM.run(*module);
 		}
 
