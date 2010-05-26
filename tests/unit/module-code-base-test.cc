@@ -52,8 +52,10 @@ TEST_F(ModuleTest, Constructor) {
 
 	//check names
 	EXPECT_THAT(module,
-				ElementsAre(Property(&Function::getName, code2.str()),
-							Property(&Function::getName, "main")
+				ElementsAre(AllOf(Property(&Function::getName, code2.str()),
+								  Property(&Function::getArgumentsCount, 2)),
+							AllOf(Property(&Function::getName, "main"),
+								  Property(&Function::getArgumentsCount, 0))
 				));
 
 	EXPECT_THAT(module,

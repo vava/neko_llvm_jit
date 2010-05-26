@@ -138,7 +138,7 @@ typedef struct _vobject {
 	struct _vobject *proto;
 } vobject;
 
-typedef struct {
+typedef struct _vfunction {
 	val_type t;
 	int nargs;
 	void *addr;

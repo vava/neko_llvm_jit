@@ -5,6 +5,7 @@
 
 extern "C" {
 	#include "../opcodes.h"
+	#include "../neko.h"
 }
 
 namespace {
@@ -55,9 +56,16 @@ namespace {
 	}
 }
 
+neko::Function::Function(NekoCodeChunk const & code_chunk, std::string const & name_, vfunction const * f)
+	: blocks(get_blocks(code_chunk))
+	, name(name_)
+	, nargs(f->nargs)
+{}
+
 neko::Function::Function(NekoCodeChunk const & code_chunk, std::string const & name_)
 	: blocks(get_blocks(code_chunk))
 	, name(name_)
+	, nargs(0)
 {}
 
 void neko::Function::neko_dump(std::string const & indent) const {

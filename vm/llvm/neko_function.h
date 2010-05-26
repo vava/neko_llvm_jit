@@ -3,9 +3,12 @@
 #include "neko_code_chunk.h"
 #include "neko_basic_block.h"
 
+typedef struct _vfunction vfunction;
+
 namespace neko {
 	class Function {
 	public:
+		Function(NekoCodeChunk const & code_chunk, std::string const & name, vfunction const * f);
 		Function(NekoCodeChunk const & code_chunk, std::string const & name);
 
 		typedef std::vector<BasicBlock> blocks_container;
@@ -23,8 +26,10 @@ namespace neko {
 		void neko_dump(std::string const & indent = "") const;
 
 		std::string const & getName() const { return name;}
+		int getArgumentsCount() const { return nargs; }
 	private:
 		blocks_container blocks;
 		std::string name;
+		int nargs;
 	};
 }
