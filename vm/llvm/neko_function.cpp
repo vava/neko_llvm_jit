@@ -69,7 +69,14 @@ neko::Function::Function(NekoCodeChunk const & code_chunk, std::string const & n
 {}
 
 void neko::Function::neko_dump(std::string const & indent) const {
-	std::cout << indent << "def " << name << " {" << std::endl;
+	std::cout << indent << "def " << name << "(";
+	for (int i = 0; i < nargs; i++) {
+		if (i != 0) {
+			std::cout << ", ";
+		}
+		std::cout << "int";
+	}
+	std::cout << ") {" << std::endl;
 	std::cout << indent << "\t//Number of blocks: " << blocks.size() << std::endl;
 	for (const_iterator it = begin();
 		 it != end();
