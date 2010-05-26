@@ -34,6 +34,13 @@ end
 TEST_SOURCE = FileList['tests/code/*.neko']
 TEST_BINARIES = TEST_SOURCE.ext('n')
 
+#make tasks for running tests
+TEST_SOURCE.each { |f|
+	Rake::Task.define_task("run_" + File.basename(f, '.neko') => [:compile, f.ext('n')]) do |t|
+		sh neko_command('--jit --llvm-jit --no-llvm-optimizations --dump-neko --dump-llvm ' + f.ext('n'))
+	end
+}
+
 def table_header
 	puts <<EOF
 +-------------+-------------+-------------+-------------+-------------+------+
