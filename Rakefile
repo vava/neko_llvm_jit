@@ -19,8 +19,12 @@ task :unit_test do
 	sh 'make -C tests/unit test'
 end
 
+def neko_environment
+	"LD_LIBRARY_PATH=bin:/usr/lib/llvm/lib:${LD_LIBRARY_PATH} NEKOPATH=boot:bin"
+end
+
 def neko_command(param)
-	"LD_LIBRARY_PATH=bin:/usr/lib/llvm/lib:${LD_LIBRARY_PATH} NEKOPATH=boot:bin bin/neko #{param}"
+	"#{neko_environment} bin/neko #{param}"
 end
 
 task :neko, [:param] => [:compile] do |t, args|
@@ -38,6 +42,10 @@ TEST_BINARIES = TEST_SOURCE.ext('n')
 TEST_SOURCE.each { |f|
 	Rake::Task.define_task("run_" + File.basename(f, '.neko') => [:compile, f.ext('n')]) do |t|
 		sh neko_command('--jit --llvm-jit --no-llvm-optimizations --dump-neko --dump-llvm ' + f.ext('n'))
+	end
+
+	Rake::Task.define_task("trace_" + File.basename(f, '.neko') => [:compile, f.ext('n')]) do |t|
+		sh "#{neko_environment} gdb --batch --eval-command 'run' --eval-command 'bt' --args bin/neko --jit --llvm-jit --no-llvm-optimizations --dump-neko --dump-llvm #{f.ext('n')}"
 	end
 }
 
