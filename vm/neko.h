@@ -97,6 +97,7 @@ typedef enum {
 	VAL_ABSTRACT	= 7,
 	VAL_PRIMITIVE	= 6 | 8,
 	VAL_JITFUN		= 6 | 16,
+	VAL_LLVMJITFUN	= 6 | 32,
 	VAL_32_BITS		= 0xFFFFFFFF
 } val_type;
 

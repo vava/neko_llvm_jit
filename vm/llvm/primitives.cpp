@@ -4,6 +4,9 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "repeat.h"
+#include "repeat_macro.h"
+
 extern "C" {
 	#include "neko.h"
 	#include "neko_vm.h"
@@ -24,6 +27,10 @@ typedef int_val (*c_prim4)(int_val,int_val,int_val,int_val);
 typedef int_val (*c_prim5)(int_val,int_val,int_val,int_val,int_val);
 typedef int_val (*c_primN)(value*,int);
 typedef int_val (*jit_prim)( neko_vm *, void *, value , neko_module *m );
+
+#define LLVM_JIT_TYPEDEF(n) typedef int_val (*c_llvmjit##n)(REPEAT_##n(int_val));
+REPEAT_MACRO_30(LLVM_JIT_TYPEDEF)
+#undef LLVM_JIT_TYPEDEF
 
 extern char *jit_boot_seq;
 
@@ -320,9 +327,8 @@ int_val p_mod(int_val a, int_val b) {
 	return 0;
 }
 
-int_val p_call(neko_vm * vm_, int_val f, int_val n, ...) {
+int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 	vfunction* func = (vfunction*)f;
-	neko_vm * vm = (neko_vm *) vm_;
 
 	if( f & 1 ) {
 		val_throw(alloc_string("Invalid call"));
@@ -340,7 +346,7 @@ int_val p_call(neko_vm * vm_, int_val f, int_val n, ...) {
 		vm->vthis = vthis_backup;
 
 		return result;
-	} else if( val_tag(f) == VAL_PRIMITIVE ) {
+	} else if( val_tag(f) == VAL_PRIMITIVE) {
 		if( n == func->nargs ) {
 			va_list argp;
 			va_start(argp, n);
@@ -386,6 +392,22 @@ int_val p_call(neko_vm * vm_, int_val f, int_val n, ...) {
 			vm->env = env_backup;
 			vm->vthis = vthis_backup;
 
+			return result;
+		} else {
+			val_throw(alloc_string("Invalid call"));
+		}
+	} else if( val_tag(f) == VAL_LLVMJITFUN) {
+			if( n == func->nargs ) {
+			va_list argp;
+			va_start(argp, n);
+
+			int_val result = 0;
+			switch( n ) {
+				#define CASE(x) case x: result = ((c_llvmjit##x)func->addr)(REPEAT_##x(va_arg(argp, int_val))); break;
+				REPEAT_MACRO_30(CASE)
+				#undef CASE
+			}
+			va_end(argp);
 			return result;
 		} else {
 			val_throw(alloc_string("Invalid call"));

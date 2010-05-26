@@ -469,7 +469,7 @@ public:
 													llvm::Function::ExternalLinkage,
 													neko_function.getName(),
 													module);
-		F->setCallingConv(llvm::CallingConv::Fast);
+		//F->setCallingConv(llvm::CallingConv::Fast);
 	}
 
 	void makeFunction(neko::Function const & neko_function) {

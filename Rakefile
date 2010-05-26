@@ -102,3 +102,53 @@ task :neko_test => TEST_BINARIES do |t|
 
 	raise "Some tests has failed" if !all_test_passed
 end
+
+REPETETION = 30
+
+#c++ helpers
+task :make_repeat, [:num] do |t, args|
+	args.with_defaults :num => REPETETION
+	File.open('vm/llvm/repeat.h', "w") do |f|
+		f << "# This file is auto generated\n"
+        f << "# Do not change it by hands, instead run $ rake make_repeat\n"
+		f << "\n"
+		f << "#define REPEAT_0(x)\n"
+		f << "#define REPEAT_1(x) x\n"
+		(2..args.num).each do |i|
+			f << "#define REPEAT_#{i}(x) REPEAT_#{i-1}(x), x\n"
+		end
+	end
+end
+
+file 'vm/llvm/repeat.h' => :make_repeat
+
+task :make_repeat, [:num] do |t, args|
+	args.with_defaults :num => REPETETION
+	File.open('vm/llvm/repeat.h', "w") do |f|
+		f << "// This file is auto generated\n"
+        f << "// Do not change it by hands, instead run $ rake make_repeat\n"
+		f << "\n"
+		f << "#define REPEAT_0(x)\n"
+		f << "#define REPEAT_1(x) x\n"
+		(2..args.num).each do |i|
+			f << "#define REPEAT_#{i}(x) REPEAT_#{i-1}(x), x\n"
+		end
+	end
+end
+
+file 'vm/llvm/repeat.h' => :make_repeat
+
+task :make_repeat_macro, [:num] do |t, args|
+	args.with_defaults :num => REPETETION
+	File.open('vm/llvm/repeat_macro.h', "w") do |f|
+		f << "// This file is auto generated\n"
+        f << "// Do not change it by hands, instead run $ rake make_repeat_macro\n"
+		f << "\n"
+		f << "#define REPEAT_MACRO_0(M) M(0)\n"
+		f << "#define REPEAT_MACRO_1(M) REPEAT_MACRO_0(M) M(1)\n"
+		(2..args.num).each do |i|
+			f << "#define REPEAT_MACRO_#{i}(M) REPEAT_MACRO_#{i-1}(M) M(#{i})\n"
+		end
+	end
+end
+file 'vm/llvm/repeat_macro.h' => :make_repeat_macro
