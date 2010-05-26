@@ -462,7 +462,9 @@ public:
 	{}
 
 	void makeFunctionDeclaration(neko::Function const & neko_function) {
-		llvm::FunctionType * FT = llvm::FunctionType::get(h.int_t(), std::vector<const llvm::Type *>(), false);
+		llvm::FunctionType * FT = llvm::FunctionType::get(h.int_t(),
+														  std::vector<const llvm::Type *>(neko_function.getArgumentsCount(), h.int_t()),
+														  false);
 		llvm::Function * F = llvm::Function::Create(FT,
 													llvm::Function::ExternalLinkage,
 													neko_function.getName(),
