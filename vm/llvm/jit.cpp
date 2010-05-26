@@ -3,6 +3,7 @@
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/JIT.h"
 #include "llvm/Target/TargetSelect.h"
+#include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetData.h"
 #include "llvm/PassManager.h"
 // //#include "llvm/ModuleProvider.h"
@@ -37,6 +38,7 @@ extern "C" {
 		}
 		llvm::Module * module = makeLLVMModule(code_base, vm);
 
+		llvm::GuaranteedTailCallOpt = true;
 		llvm::InitializeNativeTarget();
 
 		std::string error_string;
@@ -49,9 +51,11 @@ extern "C" {
 		}
 
 		//register primitives
+		#define FAST_PRIMITIVE PRIMITIVE
 		#define PRIMITIVE(name) ee->addGlobalMapping(ee->FindFunctionNamed(#name), (void *)p_##name);
 		#include "primitives_list.h"
 		#undef PRIMITIVE
+		#undef FAST_PRIMITIVE
 
 		if (vm->llvm_optimizations) {
 			llvm::PassManager OurFPM;
