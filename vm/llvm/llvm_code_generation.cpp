@@ -33,7 +33,12 @@ public:
 		, vm(vm_)
 		, stack(&function->getEntryBlock())
 		, h(function->getContext())
-	{}
+	{
+		llvm::IRBuilder<> builder(&function->getEntryBlock());
+		for (llvm::Function::arg_iterator it = function->arg_begin(); it != function->arg_end(); ++it) {
+			stack.push(builder, &*it);
+		}
+	}
 
 	llvm::BasicBlock * getBasicBlock(int param) {
 		return id2block.find(param)->second.second;
@@ -290,6 +295,26 @@ public:
 						params.push_back(stack.load(builder, i));
 					}
 					set_acc(builder, callPrimitive(builder, "call", params));
+					stack.pop(param);
+				}
+				break;
+			case TailCall:
+				{
+					//PopInfos(true);
+					std::vector<llvm::Value *> params;
+					int nargs = (int)((param) & 7);
+					params.push_back(h.constant(vm));
+					params.push_back(get_acc(builder)); params.push_back(h.int_n(nargs));
+					for (int_val i = nargs - 1; i >=0; --i) {
+						params.push_back(stack.load(builder, i));
+					}
+					set_acc(builder, callPrimitive(builder, "call", params));
+					stack.pop(nargs);
+				}
+				break;
+			case Ret:
+				{
+					//PopInfos(true);
 					stack.pop(param);
 				}
 				break;
