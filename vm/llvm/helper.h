@@ -6,6 +6,10 @@
 
 #include "common.h"
 
+extern "C" {
+#include "../neko.h"
+}
+
 class Helper {
 public:
 	Helper(llvm::LLVMContext & ctx_): ctx(ctx_) {}
@@ -75,6 +79,11 @@ public:
 		return Convert<T>::from(*this);
 	}
 
+	template<typename T>
+	llvm::Type const * convert_array(int_val size) const {
+		return llvm::ArrayType::get(convert<T>(), size);
+	}
+
 private:
 	llvm::LLVMContext & ctx;
 
@@ -82,6 +91,9 @@ private:
 	struct Convert {
 		static llvm::Type const * from(Helper const & h);
 	};
+
+	template<typename T>
+	friend class Convert;
 };
 
 template<>
@@ -101,6 +113,20 @@ struct Helper::Convert<int> {
 #endif
 
 template<>
+struct Helper::Convert<val_type> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.templ_int_t<val_type>();
+	}
+};
+
+template<>
+struct Helper::Convert<unsigned int> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.templ_int_t<int>();
+	}
+};
+
+template<>
 struct Helper::Convert<char> {
 	static llvm::Type const * from(Helper const & h) {
 		return h.templ_int_t<char>();
@@ -111,6 +137,22 @@ template<>
 struct Helper::Convert<int_val> {
 	static llvm::Type const * from(Helper const & h) {
 		return h.int_t();
+	}
+};
+
+template<>
+struct Helper::Convert<varray> {
+	static llvm::Type const * from(Helper const & h) {
+		// typedef struct {
+		// 	val_type t;
+		// 	value ptr;
+		// } varray;
+
+		std::vector<const llvm::Type*> fields;
+		fields.push_back(h.convert<val_type>()); //t
+		fields.push_back(h.convert<value>()); //ptr
+
+		return llvm::StructType::get(h.ctx, fields, true);
 	}
 };
 
@@ -141,4 +183,3 @@ struct Helper::Convert<T *> {
 		return h.convert<T>()->getPointerTo();
 	}
 };
-

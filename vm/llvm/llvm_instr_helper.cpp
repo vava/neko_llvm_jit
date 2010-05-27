@@ -101,6 +101,27 @@ void LLVMInstrHelper::makeIntOp(llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value
 	stack.pop(1);
 }
 
+llvm::Value * LLVMInstrHelper::makeNekoArray(std::vector<llvm::Value *> const & array) {
+	llvm::Value * arr = callPrimitive("alloc_array", h.constant<unsigned int>(array.size()));
+
+	llvm::Value * ptr =
+		builder.CreatePointerCast(
+			builder.CreateConstGEP2_32(
+				builder.CreatePointerCast(arr, h.convert<varray *>()),
+				0, 1, "ptr"),
+			h.convert_array<int_val>(array.size())->getPointerTo());
+
+	llvm::Value * llvm_arr = builder.CreateLoad(ptr);
+
+	for (int i = 0; i < array.size(); i++) {
+		llvm_arr = builder.CreateInsertValue(llvm_arr, array[i], i);
+	}
+
+	builder.CreateStore(llvm_arr, ptr);
+
+	return builder.CreatePtrToInt(arr, h.int_t());
+}
+
 void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 	switch((OPCODE)opcode) {
 		case AccNull:
@@ -188,6 +209,8 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case Call:
 			{
 				std::vector<llvm::Value *> params;
+				params.reserve(param + 3);
+
 				params.push_back(h.constant(vm));
 				params.push_back(get_acc()); params.push_back(h.int_n(param));
 				for (int_val i = param - 1; i >=0; --i) {
@@ -201,6 +224,8 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			{
 				//PopInfos(true);
 				std::vector<llvm::Value *> params;
+				params.reserve(param + 3);
+
 				int nargs = (int)((param) & 7);
 				params.push_back(h.constant(vm));
 				params.push_back(get_acc()); params.push_back(h.int_n(nargs));
@@ -328,6 +353,22 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case Pop:
 			stack.pop(param);
 			break;
+		case MakeArray:
+			{
+				std::vector<llvm::Value *> values;
+				values.reserve(param + 1);
+
+				values.push_back(get_acc());
+				for (int_val i = param - 1; i >= 0; --i) {
+					values.push_back(stack.load(i));
+				}
+
+				set_acc(makeNekoArray(values));
+
+				stack.pop(param);
+			}
+			break;
+
 		case Last:
 			builder.CreateRetVoid();
 			break;

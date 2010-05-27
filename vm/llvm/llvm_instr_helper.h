@@ -94,6 +94,7 @@ private:
 			h.convert<int_val>());
 	}
 
+	llvm::Value * makeNekoArray(std::vector<llvm::Value *> const & array);
 
 	void makeIntOp(llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value *, llvm::Value *, const llvm::Twine &),
 				   std::string const & op);
