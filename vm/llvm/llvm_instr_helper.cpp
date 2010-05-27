@@ -111,22 +111,13 @@ llvm::Value * LLVMInstrHelper::makeNekoArray(std::vector<llvm::Value *> const & 
 				0, 1, "ptr"),
 			h.convert_array<int_val>(array.size())->getPointerTo());
 
+	llvm::Value * llvm_arr = builder.CreateLoad(ptr);
+
 	for (unsigned int i = 0; i < array.size(); i++) {
-		builder.CreateStore(
-			array[i],
-			builder.CreateConstGEP2_32(
-				ptr,
-				0, i, "ptr[i]"
-			));
+		llvm_arr = builder.CreateInsertValue(llvm_arr, array[i], i);
 	}
 
-	// llvm::Value * llvm_arr = builder.CreateLoad(ptr);
-
-	// for (unsigned int i = 0; i < array.size(); i++) {
-	// 	llvm_arr = builder.CreateInsertValue(llvm_arr, array[i], i);
-	// }
-
-	// builder.CreateStore(llvm_arr, ptr);
+	builder.CreateStore(llvm_arr, ptr);
 
 	return builder.CreatePtrToInt(arr, h.int_t());
 }
