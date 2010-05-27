@@ -52,11 +52,9 @@ extern "C" {
 		}
 
 		//register primitives
-		#define FAST_PRIMITIVE PRIMITIVE
 		#define PRIMITIVE(name) ee->addGlobalMapping(ee->FindFunctionNamed(#name), (void *)p_##name);
 		#include "primitives_list.h"
 		#undef PRIMITIVE
-		#undef FAST_PRIMITIVE
 
 		if (vm->llvm_optimizations) {
 			llvm::PassManager OurFPM;

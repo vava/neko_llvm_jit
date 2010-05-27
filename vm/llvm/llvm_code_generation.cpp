@@ -465,11 +465,10 @@ public:
 		llvm::FunctionType * FT = llvm::FunctionType::get(h.int_t(),
 														  std::vector<const llvm::Type *>(neko_function.getArgumentsCount(), h.int_t()),
 														  false);
-		llvm::Function * F = llvm::Function::Create(FT,
-													llvm::Function::ExternalLinkage,
-													neko_function.getName(),
-													module);
-		//F->setCallingConv(llvm::CallingConv::Fast);
+		llvm::Function::Create(FT,
+							   llvm::Function::ExternalLinkage,
+							   neko_function.getName(),
+							   module);
 	}
 
 	void makeFunction(neko::Function const & neko_function) {
@@ -526,86 +525,55 @@ public:
 
 	template<typename R>
 	void registerPrimitive(std::string const & name, R (*primitive)()) {
-		registerPrimitive(name, h.convert<R>(), type_list(), false, false);
+		registerPrimitive(name, h.convert<R>(), type_list(), false);
 	}
 
 	template<typename R, typename T>
 	void registerPrimitive(std::string const & name, R (*primitive)(T)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T>(), false, false);
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T>(), false);
 	}
 
 	template<typename R, typename T1, typename T2>
 	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2>(), false, false);
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2>(), false);
 	}
 
 	template<typename R, typename T1, typename T2, typename T3>
 	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, T3)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3>(), false, false);
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3>(), false);
 	}
 
 	template<typename R, typename T1, typename T2, typename T3, typename T4>
 	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, T3, T4)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3, T4>(), false, false);
-	}
-
-	template<typename R>
-	void registerFastPrimitive(std::string const & name, R (__attribute__((fastcall)) *primitive)()) {
-		registerPrimitive(name, h.convert<R>(), type_list(), false, true);
-	}
-
-	template<typename R, typename T>
-	void registerFastPrimitive(std::string const & name, R (__attribute__((fastcall)) *primitive)(T)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T>(), false, true);
-	}
-
-	template<typename R, typename T1, typename T2>
-	void registerFastPrimitive(std::string const & name, R (__attribute__((fastcall)) *primitive)(T1, T2)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2>(), false, true);
-	}
-
-	template<typename R, typename T1, typename T2, typename T3>
-	void registerFastPrimitive(std::string const & name, R (__attribute__((fastcall)) *primitive)(T1, T2, T3)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3>(), false, true);
-	}
-
-	template<typename R, typename T1, typename T2, typename T3, typename T4>
-	void registerFastPrimitive(std::string const & name, R (__attribute__((fastcall)) *primitive)(T1, T2, T3, T4)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3, T4>(), false, true);
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3, T4>(), false);
 	}
 
 	template<typename R, typename T>
 	void registerPrimitive(std::string const & name, R (*primitive)(T, ...)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T>(), true, false);
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T>(), true);
 	}
 
 	template<typename R, typename T1, typename T2>
 	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, ...)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2>(), true, false);
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2>(), true);
 	}
 
 	template<typename R, typename T1, typename T2, typename T3>
 	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, T3, ...)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3>(), true, false);
+		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3>(), true);
 	}
 
 private:
-	void registerPrimitive(std::string const & name, llvm::Type const * resultType, type_list const & param_types, bool varArgs, bool fastCall) {
+	void registerPrimitive(std::string const & name, llvm::Type const * resultType, type_list const & param_types, bool varArgs) {
 		llvm::FunctionType * FT = llvm::FunctionType::get(
 			resultType,
 			param_types,
 			varArgs);
 
-		llvm::Function * F = llvm::Function::Create(FT,
-													llvm::Function::ExternalLinkage,
-													name,
-													module);
-
-		if (fastCall) {
-			F->setCallingConv(llvm::CallingConv::Fast);
-		} else {
-			F->setCallingConv(llvm::CallingConv::C);
-		}
+		llvm::Function::Create(FT,
+							   llvm::Function::ExternalLinkage,
+							   name,
+							   module);
 	}
 
 	template<typename T>
@@ -651,10 +619,8 @@ void addPrimitives(llvm::Module * module) {
 	PrimitiveRegistrator registrator(module);
 
 	#define PRIMITIVE(name) registrator.registerPrimitive(#name, p_##name);
-	#define FAST_PRIMITIVE(name) registrator.registerFastPrimitive(#name, p_##name);
 	#include "primitives_list.h"
 	#undef PRIMITIVE
-	#undef FAST_PRIMITIVE
 }
 }
 
