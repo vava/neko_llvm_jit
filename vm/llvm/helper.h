@@ -152,7 +152,7 @@ struct Helper::Convert<varray> {
 		fields.push_back(h.convert<val_type>()); //t
 		fields.push_back(h.convert<value>()); //ptr
 
-		return llvm::StructType::get(h.ctx, fields, true);
+		return llvm::StructType::get(h.ctx, fields);
 	}
 };
 
