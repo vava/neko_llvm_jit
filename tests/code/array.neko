@@ -1,0 +1,6 @@
+var a = $amake(0); // empty array
+a = $array(1,3,"test"); // array with three values
+ $print(a[0]); // 1
+$print(a[2]); // "test"
+$print(a[3]); // null
+// $print(a["2"]); // exception
