@@ -23,7 +23,7 @@ public:
 		: builder(curr_bb)
 		, next_bb(next_bb_)
 		, acc(acc_)
-		, stack(stack_)
+		, stack(stack_.lockStack(builder))
 		, function(function_)
 		, module(module_)
 		, vm(vm_)
@@ -105,7 +105,7 @@ private:
 	llvm::IRBuilder<> builder;
 	llvm::BasicBlock * next_bb;
 	llvm::AllocaInst * acc;
-	Stack & stack;
+	LockedStack stack;
 	llvm::Function * function;
 	llvm::Module * module;
 	neko_vm * vm;

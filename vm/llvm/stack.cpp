@@ -32,3 +32,7 @@ llvm::Value * Stack::load(llvm::IRBuilder<> & builder, int_val index) {
 void Stack::store(llvm::IRBuilder<> & builder, int_val index, llvm::Value * value) {
 	builder.CreateStore(value, get(index));
 }
+
+LockedStack Stack::lockStack(llvm::IRBuilder<> & builder) {
+	return LockedStack(*this, builder);
+}

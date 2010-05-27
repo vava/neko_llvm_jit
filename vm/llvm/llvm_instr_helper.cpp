@@ -47,7 +47,7 @@ void LLVMInstrHelper::makeAccBoolBranching(llvm::Value * condition, llvm::Value 
 void LLVMInstrHelper::makeCompare(llvm::Value* (llvm::IRBuilder<>::*f_cmp)(llvm::Value *, llvm::Value *, const llvm::Twine &)) {
 	set_acc(builder.CreateSExt(callPrimitive("val_compare",
 											 builder.CreateIntToPtr(
-												 stack.load(builder, 0),
+												 stack.load(0),
 												 h.convert<int_val *>()),
 											 builder.CreateIntToPtr(
 												 get_acc(),
@@ -70,7 +70,7 @@ void LLVMInstrHelper::makeIntOp(llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value
 		builder.CreateICmpNE(
 			builder.CreateAnd(
 				builder.CreateAnd(get_acc(), h.int_n(1)),
-				builder.CreateAnd(stack.load(builder, 0), h.int_n(1))
+				builder.CreateAnd(stack.load(0), h.int_n(1))
 			),
 			h.int_0()),
 		bb_true,
@@ -79,7 +79,7 @@ void LLVMInstrHelper::makeIntOp(llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value
 	builder.SetInsertPoint(bb_true);
 	set_acc(makeAllocInt((builder.*f)(
 							 builder.CreateAShr(
-								 builder.CreateTrunc(stack.load(builder, 0), h.convert<int>()),
+								 builder.CreateTrunc(stack.load(0), h.convert<int>()),
 								 h.constant_1<int>()
 							 ),
 							 builder.CreateAShr(
@@ -119,13 +119,13 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			set_acc(h.int_n(param));
 			break;
 		case AccStack0:
-			set_acc(stack.load(builder, 0));
+			set_acc(stack.load(0));
 			break;
 		case AccStack1:
-			set_acc(stack.load(builder, 1));
+			set_acc(stack.load(1));
 			break;
 		case AccStack:
-			set_acc(stack.load(builder, param));
+			set_acc(stack.load(param));
 			break;
 		case AccGlobal:
 			set_acc(builder.CreateLoad(
@@ -136,7 +136,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 					));
 			break;
 		case SetStack:
-			stack.store(builder, param, get_acc());
+			stack.store(param, get_acc());
 			break;
 		case SetGlobal:
 			builder.CreateStore(
@@ -148,23 +148,23 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			);
 			break;
 		case Add:
-			set_acc(callPrimitive("add", h.constant(vm), stack.load(builder, 0), get_acc()));
+			set_acc(callPrimitive("add", h.constant(vm), stack.load(0), get_acc()));
 			stack.pop(1);
 			break;
 		case Sub:
-			set_acc(callPrimitive("sub", stack.load(builder, 0), get_acc()));
+			set_acc(callPrimitive("sub", stack.load(0), get_acc()));
 			stack.pop(1);
 			break;
 		case Mult:
-			set_acc(callPrimitive("mult", stack.load(builder, 0), get_acc()));
+			set_acc(callPrimitive("mult", stack.load(0), get_acc()));
 			stack.pop(1);
 			break;
 		case Div:
-			set_acc(callPrimitive("div", stack.load(builder, 0), get_acc()));
+			set_acc(callPrimitive("div", stack.load(0), get_acc()));
 			stack.pop(1);
 			break;
 		case Mod:
-			set_acc(callPrimitive("mod", stack.load(builder, 0), get_acc()));
+			set_acc(callPrimitive("mod", stack.load(0), get_acc()));
 			stack.pop(1);
 			break;
 		case Shl:
@@ -191,7 +191,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				params.push_back(h.constant(vm));
 				params.push_back(get_acc()); params.push_back(h.int_n(param));
 				for (int_val i = param - 1; i >=0; --i) {
-					params.push_back(stack.load(builder, i));
+					params.push_back(stack.load(i));
 				}
 				set_acc(callPrimitive("call", params));
 				stack.pop(param);
@@ -205,7 +205,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				params.push_back(h.constant(vm));
 				params.push_back(get_acc()); params.push_back(h.int_n(nargs));
 				for (int_val i = nargs - 1; i >=0; --i) {
-					params.push_back(stack.load(builder, i));
+					params.push_back(stack.load(i));
 				}
 				set_acc(callPrimitive("call", params));
 				stack.pop(nargs);
@@ -237,7 +237,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				set_acc(builder.CreateSExt(
 							callPrimitive("val_compare",
 										  builder.CreateIntToPtr(
-											  stack.load(builder, 0),
+											  stack.load(0),
 											  h.convert<int_val *>()),
 										  builder.CreateIntToPtr(
 											  get_acc(),
@@ -277,7 +277,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				set_acc(builder.CreateSExt(
 							callPrimitive("val_compare",
 										  builder.CreateIntToPtr(
-											  stack.load(builder, 0),
+											  stack.load(0),
 											  h.convert<int_val *>()),
 										  builder.CreateIntToPtr(
 											  get_acc(),
@@ -295,7 +295,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
 				llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
 
-				builder.CreateCondBr(builder.CreateICmpSGT(stack.load(builder, 0), get_acc()),
+				builder.CreateCondBr(builder.CreateICmpSGT(stack.load(0), get_acc()),
 									 bb_true,
 									 bb_false);
 
@@ -304,7 +304,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				builder.CreateBr(bb_cont);
 
 				builder.SetInsertPoint(bb_false);
-				makeAccBoolBranching(builder.CreateICmpSLT(stack.load(builder, 0), get_acc()),
+				makeAccBoolBranching(builder.CreateICmpSLT(stack.load(0), get_acc()),
 									 makeAllocCInt(-1), makeAllocCInt(0));
 				builder.CreateBr(bb_cont);
 
@@ -323,7 +323,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			builder.CreateCondBr(builder.CreateICmpNE(get_acc(), get_true()), getBasicBlock(param), next_bb);
 			break;
 		case Push:
-			stack.push(builder, get_acc());
+			stack.push(get_acc());
 			break;
 		case Pop:
 			stack.pop(param);
