@@ -2,7 +2,7 @@
 
 #include "primitives.h"
 #include "stack.h"
-
+#include "llvm_instr_helper.h"
 
 #include "llvm/DerivedTypes.h"
 #include "llvm/Function.h"
@@ -11,13 +11,11 @@
 #include <sstream>
 #include <stdio.h>
 
-
 extern "C" {
 	#include "../opcodes.h"
 }
 
 namespace {
-typedef std::map<ptr_val, std::pair<neko::BasicBlock const *, llvm::BasicBlock *> > id2block_type;
 
 class CodeGeneration {
 public:
@@ -32,7 +30,6 @@ public:
 		, module(module_)
 		, vm(vm_)
 		, stack(&function->getEntryBlock())
-		, h(function->getContext())
 	{
 		llvm::IRBuilder<> builder(&function->getEntryBlock());
 		for (llvm::Function::arg_iterator it = function->arg_begin(); it != function->arg_end(); ++it) {
@@ -40,406 +37,18 @@ public:
 		}
 	}
 
-	llvm::BasicBlock * getBasicBlock(int param) {
-		return id2block.find(param)->second.second;
-	}
-
 	void makeBasicBlock(neko::BasicBlock const & neko_bb, llvm::BasicBlock * curr_bb, llvm::BasicBlock * next_bb) {
-		llvm::IRBuilder<> builder(curr_bb);
+		LLVMInstrHelper instr_generator(curr_bb, next_bb,
+										acc, stack,
+										function, module, vm,
+										id2block);
 
 		for (neko::BasicBlock::const_iterator it = neko_bb.begin();
 			 it != neko_bb.end();
 			 ++it)
 			{
-				makeOpCode(builder,
-						   next_bb,
-						   (OPCODE)it->second.first, it->second.second);
+				instr_generator.makeOpCode(it->second.first, it->second.second);
 			}
-		//make sure block ends with terminate expression
-		if (builder.GetInsertBlock()->getTerminator() == 0) {
-			builder.CreateBr(next_bb);
-		}
-	}
-
-	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive) const {
-		std::vector<llvm::Value *> args;
-		return callPrimitive(builder, primitive, args);
-	}
-	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive, llvm::Value * p1) const {
-		std::vector<llvm::Value *> args;
-		args.push_back(p1);
-		return callPrimitive(builder, primitive, args);
-	}
-	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive, llvm::Value * p1, llvm::Value * p2) const {
-		std::vector<llvm::Value *> args;
-		args.push_back(p1);args.push_back(p2);
-		return callPrimitive(builder, primitive, args);
-	}
-	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive, llvm::Value * p1, llvm::Value * p2, llvm::Value * p3 ) const {
-		std::vector<llvm::Value *> args;
-		args.push_back(p1);args.push_back(p2);args.push_back(p3);
-		return callPrimitive(builder, primitive, args);
-	}
-
-	llvm::CallInst * callPrimitive(llvm::IRBuilder<> & builder, std::string const & primitive, std::vector<llvm::Value *> const & arguments) const {
-		llvm::Function * P = module->getFunction(primitive);
-		llvm::CallInst * callInst = builder.CreateCall(P, arguments.begin(), arguments.end());
-		callInst->setCallingConv(P->getCallingConv());
-		return callInst;
-	}
-
-	void set_acc(llvm::IRBuilder<> & builder, llvm::Value * acc_val) {
-		builder.CreateStore(acc_val, acc);
-	}
-
-	llvm::Value * get_acc(llvm::IRBuilder<> & builder) const {
-		return builder.CreateLoad(acc);
-	}
-
-	llvm::Value * get_null() const {
-		return h.int_n((int_val)val_null);
-	}
-
-	llvm::Value * get_false() const {
-		return h.int_n((int_val)val_false);
-	}
-
-	llvm::Value * get_true() const {
-		return h.int_n((int_val)val_true);
-	}
-
-	void makeAccBoolBranching(llvm::IRBuilder<> & builder, llvm::Value * condition, llvm::Value * true_, llvm::Value * false_) {
-		llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
-		llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
-		llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
-
-		builder.CreateCondBr(condition,
-							 bb_true,
-							 bb_false);
-
-		builder.SetInsertPoint(bb_true);
-		set_acc(builder, true_);
-		builder.CreateBr(bb_cont);
-
-		builder.SetInsertPoint(bb_false);
-		set_acc(builder, false_);
-		builder.CreateBr(bb_cont);
-
-		builder.SetInsertPoint(bb_cont);
-	}
-
-	void makeCompare(llvm::IRBuilder<> & builder, llvm::Value* (llvm::IRBuilder<>::*f_cmp)(llvm::Value *, llvm::Value *, const llvm::Twine &)) {
-		set_acc(builder, builder.CreateSExt(callPrimitive(builder,
-														  "val_compare",
-														  builder.CreateIntToPtr(
-															  stack.load(builder, 0),
-															  h.convert<int_val *>()),
-														  builder.CreateIntToPtr(
-															  get_acc(builder),
-															  h.convert<int_val *>())),
-											h.convert<int_val>()));
-		stack.pop(1);
-
-		makeAccBoolBranching(builder, builder.CreateAnd((builder.*f_cmp)(get_acc(builder), h.int_0(), ""),
-														builder.CreateICmpNE(get_acc(builder), h.int_n(invalid_comparison))),
-							 get_true(), get_false());
-	}
-
-	llvm::Value * makeAllocInt(int_val value) const {
-		return h.int_n((int_val)((((int)(value)) << 1) | 1));
-	}
-
-	llvm::Value * makeAllocInt(llvm::IRBuilder<> &builder, llvm::Value * value) const {
-		return builder.CreateSExt(
-			builder.CreateOr(
-				builder.CreateShl(
-					builder.CreateTrunc(value, h.convert<int>()), 1),
-				h.constant_1<int>()
-			),
-			h.convert<int_val>());
-	}
-
-	void makeIntOp(llvm::IRBuilder<> & builder,
-				   llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value *, llvm::Value *, const llvm::Twine &),
-				   std::string const & op) {
-		llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
-		llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
-		llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
-
-		builder.CreateCondBr(
-			builder.CreateICmpNE(
-				builder.CreateAnd(
-					builder.CreateAnd(get_acc(builder), h.int_n(1)),
-					builder.CreateAnd(stack.load(builder, 0), h.int_n(1))
-				),
-				h.int_0()),
-			bb_true,
-			bb_false);
-
-		builder.SetInsertPoint(bb_true);
-		set_acc(builder,
-				makeAllocInt(builder,
-					(builder.*f)(
-						builder.CreateAShr(
-							builder.CreateTrunc(stack.load(builder, 0), h.convert<int>()),
-							h.constant_1<int>()
-						),
-						builder.CreateAShr(
-							builder.CreateTrunc(get_acc(builder), h.convert<int>()),
-							h.constant_1<int>()
-						),
-						""
-					)
-				)
-		);
-		builder.CreateBr(bb_cont);
-
-		builder.SetInsertPoint(bb_false);
-		callPrimitive(builder, "val_throw", callPrimitive(builder, "alloc_string", builder.CreateGlobalStringPtr(op.c_str())));
-		builder.CreateBr(bb_cont);
-
-		builder.SetInsertPoint(bb_cont);
-
-		stack.pop(1);
-	}
-
-	void makeOpCode(llvm::IRBuilder<> & builder, llvm::BasicBlock * next_bb, OPCODE opcode, int_val param) {
-		switch(opcode) {
-			case AccNull:
-				set_acc(builder, get_null());
-				break;
-			case AccTrue:
-				set_acc(builder, get_true());
-				break;
-			case AccFalse:
-				set_acc(builder, get_false());
-				break;
-			case AccInt:
-				set_acc(builder, h.int_n(param));
-				break;
-			case AccBuiltin:
-				set_acc(builder, h.int_n(param));
-				break;
-			case AccStack0:
-				set_acc(builder, stack.load(builder, 0));
-				break;
-			case AccStack1:
-				set_acc(builder, stack.load(builder, 1));
-				break;
-			case AccStack:
-				set_acc(builder, stack.load(builder, param));
-				break;
-			case AccGlobal:
-				set_acc(builder, builder.CreateLoad(
-							builder.CreateIntToPtr(
-								h.int_n(param),
-								h.convert<int_val *>()
-							)
-						));
-				break;
-			case SetStack:
-				stack.store(builder, param, get_acc(builder));
-				break;
-			case SetGlobal:
-				builder.CreateStore(
-					get_acc(builder),
-					builder.CreateIntToPtr(
-						h.int_n(param),
-						h.convert<int_val *>()
-					)
-				);
-				break;
-			case Add:
-				set_acc(builder, callPrimitive(builder, "add", h.constant(vm), stack.load(builder, 0), get_acc(builder)));
-				stack.pop(1);
-				break;
-			case Sub:
-				set_acc(builder, callPrimitive(builder, "sub", stack.load(builder, 0), get_acc(builder)));
-				stack.pop(1);
-				break;
-			case Mult:
-				set_acc(builder, callPrimitive(builder, "mult", stack.load(builder, 0), get_acc(builder)));
-				stack.pop(1);
-				break;
-			case Div:
-				set_acc(builder, callPrimitive(builder, "div", stack.load(builder, 0), get_acc(builder)));
-				stack.pop(1);
-				break;
-			case Mod:
-				set_acc(builder, callPrimitive(builder, "mod", stack.load(builder, 0), get_acc(builder)));
-				stack.pop(1);
-				break;
-			case Shl:
-				makeIntOp(builder, &llvm::IRBuilder<>::CreateShl, "<<");
-				break;
-			case Shr:
-				makeIntOp(builder, &llvm::IRBuilder<>::CreateAShr, ">>");
-				break;
-			case UShr:
-				makeIntOp(builder, &llvm::IRBuilder<>::CreateLShr, ">>>");
-				break;
-			case Or:
-				makeIntOp(builder, &llvm::IRBuilder<>::CreateOr, "|");
-				break;
-			case And:
-				makeIntOp(builder, &llvm::IRBuilder<>::CreateAnd, "&");
-				break;
-			case Xor:
-				makeIntOp(builder, &llvm::IRBuilder<>::CreateXor, "^");
-				break;
-			case Call:
-				{
-					std::vector<llvm::Value *> params;
-					params.push_back(h.constant(vm));
-					params.push_back(get_acc(builder)); params.push_back(h.int_n(param));
-					for (int_val i = param - 1; i >=0; --i) {
-						params.push_back(stack.load(builder, i));
-					}
-					set_acc(builder, callPrimitive(builder, "call", params));
-					stack.pop(param);
-				}
-				break;
-			case TailCall:
-				{
-					//PopInfos(true);
-					std::vector<llvm::Value *> params;
-					int nargs = (int)((param) & 7);
-					params.push_back(h.constant(vm));
-					params.push_back(get_acc(builder)); params.push_back(h.int_n(nargs));
-					for (int_val i = nargs - 1; i >=0; --i) {
-						params.push_back(stack.load(builder, i));
-					}
-					set_acc(builder, callPrimitive(builder, "call", params));
-					stack.pop(nargs);
-				}
-				break;
-			case Ret:
-				{
-					//PopInfos(true);
-					stack.pop(param);
-				}
-				break;
-			case Lt:
-				makeCompare(builder, &llvm::IRBuilder<>::CreateICmpSLT);
-				break;
-			case Eq:
-				makeCompare(builder, &llvm::IRBuilder<>::CreateICmpEQ);
-				break;
-			case Lte:
-				makeCompare(builder, &llvm::IRBuilder<>::CreateICmpSLE);
-				break;
-			case Gt:
-				makeCompare(builder, &llvm::IRBuilder<>::CreateICmpSGT);
-				break;
-			case Gte:
-				makeCompare(builder, &llvm::IRBuilder<>::CreateICmpSGE);
-				break;
-			case Neq:
-				{
-					set_acc(builder, builder.CreateSExt(
-								callPrimitive(builder,
-											  "val_compare",
-											  builder.CreateIntToPtr(
-												  stack.load(builder, 0),
-												  h.convert<int_val *>()),
-											  builder.CreateIntToPtr(
-												  get_acc(builder),
-												  h.convert<int_val *>())),
-								h.convert<int_val>()));
-					stack.pop(1);
-
-					makeAccBoolBranching(builder, builder.CreateICmpEQ(get_acc(builder), h.int_0()), get_false(), get_true());
-				}
-				break;
-			case Bool:
-				makeAccBoolBranching(builder,
-									 builder.CreateOr(
-										 builder.CreateOr(
-											 builder.CreateICmpEQ(get_acc(builder), get_false()),
-											 builder.CreateICmpEQ(get_acc(builder), get_null())),
-										 builder.CreateICmpEQ(get_acc(builder), h.int_1())),
-									 get_false(), get_true());
-				break;
-			case Not:
-				makeAccBoolBranching(builder,
-									 builder.CreateOr(
-										 builder.CreateOr(
-											 builder.CreateICmpEQ(get_acc(builder), get_false()),
-											 builder.CreateICmpEQ(get_acc(builder), get_null())),
-										 builder.CreateICmpEQ(get_acc(builder), h.int_1())),
-									 get_true(), get_false());
-				break;
-			case IsNull:
-				makeAccBoolBranching(builder,
-									 builder.CreateICmpEQ(get_acc(builder), get_null()),
-									 get_true(), get_false());
-				break;
-			case IsNotNull:
-				makeAccBoolBranching(builder,
-									 builder.CreateICmpEQ(get_acc(builder), get_null()),
-									 get_false(), get_true());
-				break;
-			case Compare:
-				{
-					set_acc(builder, builder.CreateSExt(
-								callPrimitive(builder,
-											  "val_compare",
-											  builder.CreateIntToPtr(
-												  stack.load(builder, 0),
-												  h.convert<int_val *>()),
-											  builder.CreateIntToPtr(
-												  get_acc(builder),
-												  h.convert<int_val *>())),
-								h.convert<int_val>()));
-					stack.pop(1);
-
-					makeAccBoolBranching(builder, builder.CreateICmpEQ(get_acc(builder), h.int_n(invalid_comparison)),
-										 get_null(), makeAllocInt(builder, get_acc(builder)));
-				}
-				break;
-			case PhysCompare:
-				{
-					llvm::BasicBlock * bb_true = llvm::BasicBlock::Create(function->getContext(), "", function);
-					llvm::BasicBlock * bb_false = llvm::BasicBlock::Create(function->getContext(), "", function);
-					llvm::BasicBlock * bb_cont = llvm::BasicBlock::Create(function->getContext(), "", function);
-
-					builder.CreateCondBr(builder.CreateICmpSGT(stack.load(builder, 0), get_acc(builder)),
-										 bb_true,
-										 bb_false);
-
-					builder.SetInsertPoint(bb_true);
-					set_acc(builder, makeAllocInt(1));
-					builder.CreateBr(bb_cont);
-
-					builder.SetInsertPoint(bb_false);
-					makeAccBoolBranching(builder, builder.CreateICmpSLT(stack.load(builder, 0), get_acc(builder)),
-										 makeAllocInt(-1), makeAllocInt(0));
-					builder.CreateBr(bb_cont);
-
-					builder.SetInsertPoint(bb_cont);
-					stack.pop(1);
-				}
-				break;
-			case Jump:
-				builder.CreateBr(getBasicBlock(param));
-				break;
-			case JumpIf:
-				builder.CreateCondBr(builder.CreateICmpEQ(get_acc(builder), get_true()), getBasicBlock(param), next_bb);
-				break;
-			case JumpIfNot:
-				//callPrimitive(builder, "debug_print", get_acc(builder));
-				builder.CreateCondBr(builder.CreateICmpNE(get_acc(builder), get_true()), getBasicBlock(param), next_bb);
-				break;
-			case Push:
-				stack.push(builder, get_acc(builder));
-				break;
-			case Pop:
-				stack.pop(param);
-				break;
-			case Last:
-				builder.CreateRetVoid();
-				break;
-		}
 	}
 
 private:
@@ -450,7 +59,6 @@ private:
 	neko_vm * vm;
 
 	Stack stack;
-	Helper h;
 };
 
 class FunctionGenerator {

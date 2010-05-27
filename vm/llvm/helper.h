@@ -1,3 +1,5 @@
+#pragma once
+
 #include "llvm/Constants.h"
 #include "llvm/Type.h"
 #include "llvm/DerivedTypes.h"
