@@ -1,0 +1,4 @@
+o = $new(null);
+o.inc = 1;
+o.fn = function(a) { return a + this.inc; }
+$print(o.fn(1));
