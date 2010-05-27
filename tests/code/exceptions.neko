@@ -1,0 +1,8 @@
+var foo = function() {
+    $throw("failure");
+}
+try {
+	foo()
+} catch e {
+      $print(e); // prints "failure"
+}
