@@ -49,6 +49,21 @@ public:
 	}
 
 	template<typename T>
+	llvm::Constant * constant(T t) const {
+		return llvm::ConstantInt::get(convert<T>(), t);
+	}
+
+	template<typename T>
+	llvm::Constant * constant_0() const {
+		return llvm::ConstantInt::get(convert<T>(), 0);
+	}
+
+	template<typename T>
+	llvm::Constant * constant_1() const {
+		return llvm::ConstantInt::get(convert<T>(), 1);
+	}
+
+	template<typename T>
 	llvm::Constant * constant(T * t) const {
 		return llvm::ConstantExpr::getIntToPtr(int_n((int_val)t), convert<T *>());
 	}

@@ -154,7 +154,8 @@ public:
 			builder.CreateOr(
 				builder.CreateShl(
 					builder.CreateTrunc(value, h.convert<int>()), 1),
-				h.int_1()),
+				h.constant_1<int>()
+			),
 			h.convert<int_val>());
 	}
 
@@ -181,11 +182,11 @@ public:
 					(builder.*f)(
 						builder.CreateAShr(
 							builder.CreateTrunc(stack.load(builder, 0), h.convert<int>()),
-							h.int_1()
+							h.constant_1<int>()
 						),
 						builder.CreateAShr(
 							builder.CreateTrunc(get_acc(builder), h.convert<int>()),
-							h.int_1()
+							h.constant_1<int>()
 						),
 						""
 					)
