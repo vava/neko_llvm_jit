@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <stdio.h>
+#include <sstream>
 
 //C interface
 extern "C" {
@@ -94,14 +95,30 @@ extern "C" {
 			module->dump();
 		}
 
+		//converting globals
+		for (ptr_val k = 0; k < m->nglobals; k++) {
+			if (val_is_function(m->globals[k])) {
+				vfunction * f = (vfunction*)m->globals[k];
+				std::stringstream ss; ss << (int_val)f->addr;
+				std::string name = ss.str();
+
+				llvm::Function * F = module->getFunction(name);
+				if (F) {
+					llvm::verifyFunction(*F);
+
+					void *FPtr = ee->getPointerToFunction(F);
+					f->addr = FPtr;
+					f->t = VAL_LLVMJITFUN;
+				}
+			}
+		}
+
 		llvm::Function * main = module->getFunction("main");
 		llvm::verifyFunction(*main);
 
 		void *FPtr = ee->getPointerToFunction(main);
 
 		m->jit = FPtr;
-
-		//TODO: patch globals
 	}
 }
 
