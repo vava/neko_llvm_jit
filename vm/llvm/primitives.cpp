@@ -18,6 +18,7 @@ extern "C" {
 }
 
 extern field id_add, id_radd, id_sub, id_rsub, id_mult, id_rmult, id_div, id_rdiv, id_mod, id_rmod;
+extern field id_get, id_set;
 
 typedef int_val (*c_prim0)();
 typedef int_val (*c_prim1)(int_val);
@@ -436,4 +437,52 @@ int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 int_val p_debug_print(int_val v) {
 	printf("%d", v);
 	return v;
+}
+
+int_val p_get_arr_index(int_val acc, int_val index) {
+	if( val_is_int(index) && val_is_array(acc) ) {
+		index = val_int(index);
+		if( index < 0 || index >= (int_val)val_array_size(acc) ) {
+			return (int_val)val_null;
+		} else {
+			return (int_val)val_array_ptr(acc)[index];
+		}
+	} else if( val_is_object(acc) ) {
+		value _o = (value)acc;
+		value _arg = (value)alloc_int(index);
+		value _f = val_field(_o,id_get);
+
+		if( _f == val_null ) {
+			val_throw(alloc_string("Unsupported operation"));
+		} else {
+			return (int_val)val_callEx(_o,_f,&_arg,1,NULL);
+		}
+	} else {
+		val_throw(alloc_string("Invalid array access"));
+	}
+	return 0;
+}
+
+int_val p_set_arr_index(int_val arr, int_val index, int_val new_value) {
+	if( val_is_array(arr) && val_is_int(index) ) {
+		int k = val_int(index);
+		if( k >= 0 && k < (int)val_array_size(arr) ) {
+			val_array_ptr(arr)[k] = (value)new_value;
+		}
+
+		return new_value;
+	} else if( val_is_object(arr) ) {
+		value args[] = { (value)index, (value)new_value };
+		value f = val_field((value)arr,id_set);
+		if( f == val_null ) {
+			val_throw(alloc_string("Unsupported operation"));
+		} else {
+			val_callEx((value)arr,f,args,2,NULL);
+			return (int_val)args[1];
+		}
+	} else {
+		val_throw(alloc_string("Invalid array access"));
+	}
+
+	return 0;
 }

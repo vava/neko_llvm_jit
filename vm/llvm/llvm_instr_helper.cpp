@@ -368,7 +368,27 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				stack.pop(param);
 			}
 			break;
-
+		case AccIndex0:
+			set_acc(callPrimitive("get_arr_index", get_acc(), makeAllocCInt(0)));
+			break;
+		case AccIndex1:
+			set_acc(callPrimitive("get_arr_index", get_acc(), makeAllocCInt(1)));
+			break;
+		case AccIndex:
+			set_acc(callPrimitive("get_arr_index", get_acc(), makeAllocCInt(param)));
+			break;
+		case AccArray:
+			set_acc(callPrimitive("get_arr_index", stack.load(0), get_acc()));
+			stack.pop(1);
+			break;
+		case SetArray:
+			set_acc(callPrimitive("set_arr_index", stack.load(0), stack.load(1), get_acc()));
+			stack.pop(2);
+			break;
+		case SetIndex:
+			set_acc(callPrimitive("set_arr_index", stack.load(0), makeAllocCInt(param), get_acc()));
+			stack.pop(1);
+			break;
 		case Last:
 			builder.CreateRetVoid();
 			break;
