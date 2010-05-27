@@ -389,6 +389,24 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			set_acc(callPrimitive("set_arr_index", stack.load(0), makeAllocCInt(param), get_acc()));
 			stack.pop(1);
 			break;
+		case New:
+			set_acc(builder.CreatePtrToInt(
+						callPrimitive("alloc_object",
+									  builder.CreateIntToPtr(
+										  get_acc(),
+										  h.convert<value>())),
+						h.int_t()));
+			break;
+		case Hash:
+			set_acc(callPrimitive("hash", get_acc()));
+			break;
+		case AccField:
+			set_acc(callPrimitive("acc_field", h.constant(vm), get_acc(), h.int_n(param)));
+			break;
+		case SetField:
+			callPrimitive("set_field", stack.load(0), h.int_n(param), get_acc());
+			stack.pop(1);
+			break;
 		case Last:
 			builder.CreateRetVoid();
 			break;

@@ -5,13 +5,13 @@
 #include <stdio.h>
 
 #include "repeat.h"
-#include "repeat_macro.h"
 
 extern "C" {
 	#include "neko.h"
 	#include "neko_vm.h"
 	#include "neko_mod.h"
 	#include "vm.h"
+	#include "objtable.h"
 
 	value neko_append_int( neko_vm *vm, value str, int x, bool way );
 	value neko_append_strings( value s1, value s2 );
@@ -361,16 +361,28 @@ int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 					result = ((c_prim1)func->addr)(va_arg(argp, int_val));
 					break;
 				case 2:
-					result = ((c_prim2)func->addr)(va_arg(argp, int_val),va_arg(argp, int_val));
+					{
+						int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val)};
+						result = ((c_prim2)func->addr)(args[0], args[1]);
+					}
 					break;
 				case 3:
-					result = ((c_prim3)func->addr)(va_arg(argp, int_val),va_arg(argp, int_val), va_arg(argp, int_val));
+					{
+						int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val)};
+						result = ((c_prim3)func->addr)(args[0], args[1], args[2]);
+					}
 					break;
 				case 4:
-					result = ((c_prim4)func->addr)(va_arg(argp, int_val),va_arg(argp, int_val), va_arg(argp, int_val),va_arg(argp, int_val));
+					{
+						int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val)};
+						result = ((c_prim4)func->addr)(args[0], args[1], args[2], args[3]);
+					}
 					break;
 				case 5:
-					result = ((c_prim5)func->addr)(va_arg(argp, int_val),va_arg(argp, int_val), va_arg(argp, int_val),va_arg(argp, int_val),va_arg(argp, int_val));
+					{
+						int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val)};
+						result = ((c_prim5)func->addr)(args[0], args[1], args[2], args[3], args[4]);
+					}
 					break;
 				}
 			va_end(argp);
@@ -404,9 +416,14 @@ int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 
 			int_val result = 0;
 			switch( n ) {
-				#define CASE(x) case x: result = ((c_llvmjit##x)func->addr)(REPEAT_##x(va_arg(argp, int_val))); break;
+				#define M(x) args[x - 1]
+				#define CASE(x) case x: { \
+									int_val args[] = {REPEAT_##x(va_arg(argp, int_val))}; \
+									result = ((c_llvmjit##x)func->addr)(REPEAT_LIST_MACRO_##x(M)); } \
+									break;
 				REPEAT_MACRO_30(CASE)
 				#undef CASE
+				#undef M
 			}
 			va_end(argp);
 			return result;
@@ -485,4 +502,63 @@ int_val p_set_arr_index(int_val arr, int_val index, int_val new_value) {
 	}
 
 	return 0;
+}
+
+int_val p_hash(int_val acc) {
+	if( val_is_string(acc) ) {
+		return (int_val)alloc_int( val_id(val_string(acc)) );
+	} else {
+		val_throw(alloc_string("$hash"));
+	}
+
+	return 0;
+}
+
+int_val p_acc_field(neko_vm * vm, int_val obj, int_val idx) {
+	if( val_is_object(obj) ) {
+		value *f;
+		value old = (value)obj, tacc = (value)obj;
+		do {
+			f = otable_find(&((vobject*)obj)->table,(field)idx);
+			if( f )
+				break;
+			obj = (int_val)((vobject*)tacc)->proto;
+			tacc = (value)obj;
+		} while( obj );
+		if( f ) {
+			return (int_val)*f;
+		} else if( vm->resolver ) {
+			return (int_val)val_call2(vm->resolver,old,alloc_int(idx));
+		} else {
+			return (int_val)val_null;
+		}
+	} else {
+		value v = val_field_name((field)idx);
+		buffer b;
+		if ( val_is_null(v) ) {
+			val_throw(alloc_string("Invalid field access"));
+		}
+		b = alloc_buffer("Invalid field access : ");
+		val_buffer(b,v);
+		//PushInfos();
+		val_throw(buffer_to_string(b));
+	}
+
+	return 0;
+}
+
+void p_set_field(int_val obj, int_val idx, int_val new_value) {
+	if( val_is_object(obj) ) {
+		otable_replace(&((vobject*)obj)->table,(field)idx,(value)new_value);
+	} else {
+		value v = val_field_name((field)idx);
+		buffer b;
+		if ( val_is_null(v) ) {
+			val_throw(alloc_string("Invalid field access"));
+		}
+		b = alloc_buffer("Invalid field access : ");
+		val_buffer(b,v);
+		//PushInfos();
+		val_throw(buffer_to_string(b));
+	}
 }

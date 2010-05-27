@@ -6,6 +6,7 @@
 #define p_val_throw val_throw
 #define p_alloc_string alloc_string
 #define p_alloc_array alloc_array
+#define p_alloc_object alloc_object
 
 typedef struct _neko_module neko_module;
 typedef uintptr_t ptr_val;
