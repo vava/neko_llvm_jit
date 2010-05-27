@@ -1,0 +1,7 @@
+o = $new(null);
+o.field = 1;
+o2 = $new(o); // makes a copy of o
+$print(o.field);
+$print($objfield(o2,$hash("field")));
+$objremove(o,$hash("field"));
+$print($objfield(o,$hash("field")));
