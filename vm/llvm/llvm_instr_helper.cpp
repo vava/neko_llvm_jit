@@ -113,7 +113,7 @@ llvm::Value * LLVMInstrHelper::makeNekoArray(std::vector<llvm::Value *> const & 
 
 	llvm::Value * llvm_arr = builder.CreateLoad(ptr);
 
-	for (int i = 0; i < array.size(); i++) {
+	for (unsigned int i = 0; i < array.size(); i++) {
 		llvm_arr = builder.CreateInsertValue(llvm_arr, array[i], i);
 	}
 
