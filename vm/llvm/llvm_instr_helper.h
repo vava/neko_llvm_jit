@@ -77,6 +77,7 @@ private:
 	llvm::Value * get_false() const;
 	llvm::Value * get_true() const;
 	llvm::Value * get_this();
+	void set_this(llvm::Value * new_this);
 
 	void makeAccBoolBranching(llvm::Value * condition, llvm::Value * true_, llvm::Value * false_);
 	void makeCompare(llvm::Value* (llvm::IRBuilder<>::*f_cmp)(llvm::Value *, llvm::Value *, const llvm::Twine &));

@@ -26,6 +26,14 @@ llvm::Value * LLVMInstrHelper::get_this() {
 				0, 3, "vm->vthis"));
 }
 
+void LLVMInstrHelper::set_this(llvm::Value * new_this) {
+		builder.CreateStore(
+			new_this,
+			builder.CreateConstGEP2_32(
+				vm,
+				0, 3, "vm->vthis"));
+}
+
 llvm::CallInst * LLVMInstrHelper::callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments) {
 	llvm::Function * P = module->getFunction(primitive);
 	llvm::CallInst * callInst = builder.CreateCall(P, arguments.begin(), arguments.end());
@@ -405,6 +413,9 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			break;
 		case AccThis:
 			set_acc(builder.CreatePtrToInt(get_this(), h.int_t()));
+			break;
+		case SetThis:
+			set_this(get_acc());
 			break;
 		case ObjCall:
 			{
