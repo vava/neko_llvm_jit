@@ -134,10 +134,15 @@ task :make_repeat, [:num] do |t, args|
 			f << "#define REPEAT_#{i}(x) REPEAT_#{i-1}(x), x\n"
 		end
 
-		f << "#define REPEAT_MACRO_0(M) M(0)\n"
-		f << "#define REPEAT_MACRO_1(M) REPEAT_MACRO_0(M) M(1)\n"
+		f << "#define REPEAT_MACRO_0_TO_0(M) M(0)\n"
+		f << "#define REPEAT_MACRO_0_TO_1(M) REPEAT_MACRO_0_TO_0(M) M(1)\n"
 		(2..args.num).each do |i|
-			f << "#define REPEAT_MACRO_#{i}(M) REPEAT_MACRO_#{i-1}(M) M(#{i})\n"
+			f << "#define REPEAT_MACRO_0_TO_#{i}(M) REPEAT_MACRO_0_TO_#{i-1}(M) M(#{i})\n"
+		end
+
+		f << "#define REPEAT_MACRO_1_TO_1(M) M(1)\n"
+		(2..args.num).each do |i|
+			f << "#define REPEAT_MACRO_1_TO_#{i}(M) REPEAT_MACRO_1_TO_#{i-1}(M) M(#{i})\n"
 		end
 
 		f << "#define REPEAT_LIST_MACRO_0(M) \n"
