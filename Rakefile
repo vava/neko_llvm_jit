@@ -44,6 +44,10 @@ TEST_SOURCE.each { |f|
 		sh neko_command('--jit --llvm-jit --no-llvm-optimizations --dump-neko --dump-llvm ' + f.ext('n'))
 	end
 
+	Rake::Task.define_task("run_opt_" + File.basename(f, '.neko') => [:compile, f.ext('n')]) do |t|
+		sh neko_command('--jit --llvm-jit --llvm-optimizations --dump-neko --dump-llvm ' + f.ext('n'))
+	end
+
 	Rake::Task.define_task("trace_" + File.basename(f, '.neko') => [:compile, f.ext('n')]) do |t|
 		sh "#{neko_environment} gdb --batch --eval-command 'run' --eval-command 'bt' --args bin/neko --jit --llvm-jit --no-llvm-optimizations --dump-neko --dump-llvm #{f.ext('n')}"
 	end
