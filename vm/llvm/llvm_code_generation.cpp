@@ -1,5 +1,6 @@
 #include "llvm_code_generation.h"
 
+#include "repeat.h"
 #include "primitives.h"
 #include "stack.h"
 #include "llvm_instr_helper.h"
@@ -22,25 +23,25 @@ public:
 	CodeGeneration(id2block_type const & id2block_,
 				   llvm::AllocaInst * acc_,
 				   llvm::Function * function_,
-				   llvm::Module * module_,
-				   neko_vm * vm_)
+				   llvm::Module * module_)
 		: id2block(id2block_)
 		, acc(acc_)
 		, function(function_)
 		, module(module_)
-		, vm(vm_)
 		, stack(&function->getEntryBlock())
 	{
 		llvm::IRBuilder<> builder(&function->getEntryBlock());
-		for (llvm::Function::arg_iterator it = function->arg_begin(); it != function->arg_end(); ++it) {
+		llvm::Function::arg_iterator it = function->arg_begin();
+		vm = &*it++; //vm is always first parameter
+		for (; it != function->arg_end(); ++it) {
 			stack.push(builder, &*it);
 		}
 	}
 
 	void makeBasicBlock(neko::BasicBlock const & neko_bb, llvm::BasicBlock * curr_bb, llvm::BasicBlock * next_bb) {
 		LLVMInstrHelper instr_generator(curr_bb, next_bb,
-										acc, stack,
-										function, module, vm,
+										acc, vm, stack,
+										function, module,
 										id2block);
 
 		for (neko::BasicBlock::const_iterator it = neko_bb.begin();
@@ -54,25 +55,30 @@ public:
 private:
 	id2block_type const & id2block;
 	llvm::AllocaInst * acc;
+	llvm::Value * vm;
 	llvm::Function * function;
 	llvm::Module * module;
-	neko_vm * vm;
 
 	Stack stack;
 };
 
 class FunctionGenerator {
 public:
-	FunctionGenerator(llvm::Module * module_,
-					  neko_vm * vm_)
+	FunctionGenerator(llvm::Module * module_)
 		: module(module_)
 		, h(module->getContext())
-		, vm(vm_)
 	{}
 
 	void makeFunctionDeclaration(neko::Function const & neko_function) {
+		std::vector<const llvm::Type *> params;
+		params.reserve(neko_function.getArgumentsCount() + 1);
+		params.push_back(h.convert<neko_vm *>()); //vm * is always a first parameter
+		for (int i = 0; i < neko_function.getArgumentsCount(); i++) {
+			params.push_back(h.int_t());
+		}
+
 		llvm::FunctionType * FT = llvm::FunctionType::get(h.int_t(),
-														  std::vector<const llvm::Type *>(neko_function.getArgumentsCount(), h.int_t()),
+														  params,
 														  false);
 		llvm::Function::Create(FT,
 							   llvm::Function::ExternalLinkage,
@@ -105,7 +111,7 @@ public:
 		 		id2block.insert(std::make_pair(it->getId(), std::make_pair(&(*it), bb)));
 			}
 
-		CodeGeneration cd(id2block, acc, function, module, vm);
+		CodeGeneration cd(id2block, acc, function, module);
 
 		for (id2block_type::const_iterator it = id2block.begin(); it != id2block.end(); ++it) {
 			id2block_type::const_iterator next = it; ++next;
@@ -137,40 +143,31 @@ public:
 		registerPrimitive(name, h.convert<R>(), type_list(), false);
 	}
 
-	template<typename R, typename T>
-	void registerPrimitive(std::string const & name, R (*primitive)(T)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T>(), false);
-	}
+	#define TT(x) typename T##x
+	#define T(x) T##x
+	#define PRIM(x) template<typename R, REPEAT_LIST_MACRO_##x(TT)>			\
+					void registerPrimitive(std::string const & name, R (*primitive)(REPEAT_LIST_MACRO_##x(T))) { \
+						registerPrimitive(name, h.convert<R>(), makeTypeList<REPEAT_LIST_MACRO_##x(T)>(), false); \
+					}
 
-	template<typename R, typename T1, typename T2>
-	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2>(), false);
-	}
+	REPEAT_MACRO_1_TO_5(PRIM)
 
-	template<typename R, typename T1, typename T2, typename T3>
-	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, T3)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3>(), false);
-	}
+	#undef PRIM
+	#undef T
+	#undef TT
 
-	template<typename R, typename T1, typename T2, typename T3, typename T4>
-	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, T3, T4)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3, T4>(), false);
-	}
+	#define TT(x) typename T##x
+	#define T(x) T##x
+	#define PRIM(x) template<typename R, REPEAT_LIST_MACRO_##x(TT)>			\
+		void registerPrimitive(std::string const & name, R (*primitive)(REPEAT_LIST_MACRO_##x(T), ...)) { \
+						registerPrimitive(name, h.convert<R>(), makeTypeList<REPEAT_LIST_MACRO_##x(T)>(), true); \
+					}
 
-	template<typename R, typename T>
-	void registerPrimitive(std::string const & name, R (*primitive)(T, ...)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T>(), true);
-	}
+	REPEAT_MACRO_1_TO_5(PRIM)
 
-	template<typename R, typename T1, typename T2>
-	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, ...)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2>(), true);
-	}
-
-	template<typename R, typename T1, typename T2, typename T3>
-	void registerPrimitive(std::string const & name, R (*primitive)(T1, T2, T3, ...)) {
-		registerPrimitive(name, h.convert<R>(), makeTypeList<T1, T2, T3>(), true);
-	}
+	#undef PRIM
+	#undef T
+	#undef TT
 
 private:
 	void registerPrimitive(std::string const & name, llvm::Type const * resultType, type_list const & param_types, bool varArgs) {
@@ -185,39 +182,19 @@ private:
 							   module);
 	}
 
-	template<typename T>
-	type_list makeTypeList() {
-		type_list tl;
-		tl.push_back(h.convert<T>());
-		return tl;
-	}
+	#define TT(x) typename T##x
+	#define T(x) h.convert<T##x>()
+	#define PRIM(x) template<REPEAT_LIST_MACRO_##x(TT)>			\
+					type_list makeTypeList() { \
+						llvm::Type const * types[] = {REPEAT_LIST_MACRO_##x(T)}; \
+						return type_list(types, types + sizeof(types) / sizeof(types[0])); \
+					}
 
-	template<typename T1, typename T2>
-	type_list makeTypeList() {
-		type_list tl;
-		tl.push_back(h.convert<T1>());
-		tl.push_back(h.convert<T2>());
-		return tl;
-	}
+	REPEAT_MACRO_1_TO_5(PRIM)
 
-	template<typename T1, typename T2, typename T3>
-	type_list makeTypeList() {
-		type_list tl;
-		tl.push_back(h.convert<T1>());
-		tl.push_back(h.convert<T2>());
-		tl.push_back(h.convert<T3>());
-		return tl;
-	}
-
-	template<typename T1, typename T2, typename T3, typename T4>
-	type_list makeTypeList() {
-		type_list tl;
-		tl.push_back(h.convert<T1>());
-		tl.push_back(h.convert<T2>());
-		tl.push_back(h.convert<T3>());
-		tl.push_back(h.convert<T4>());
-		return tl;
-	}
+	#undef PRIM
+	#undef T
+	#undef TT
 
 	llvm::Module * module;
 	Helper h;
@@ -233,13 +210,12 @@ void addPrimitives(llvm::Module * module) {
 }
 }
 
-llvm::Module * makeLLVMModule(neko::Module const & neko_module,
-							  neko_vm * vm) {
+llvm::Module * makeLLVMModule(neko::Module const & neko_module) {
 	llvm::Module * module = new ::llvm::Module("neko module", llvm::getGlobalContext());
 
 	addPrimitives(module);
 
-	FunctionGenerator fg(module, vm);
+	FunctionGenerator fg(module);
 
 	for (neko::Module::const_iterator it = neko_module.begin();
 		 it != neko_module.end();

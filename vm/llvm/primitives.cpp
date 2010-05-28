@@ -29,8 +29,9 @@ typedef int_val (*c_prim5)(int_val,int_val,int_val,int_val,int_val);
 typedef int_val (*c_primN)(value*,int);
 typedef int_val (*jit_prim)( neko_vm *, void *, value , neko_module *m );
 
-#define LLVM_JIT_TYPEDEF(n) typedef int_val (*c_llvmjit##n)(REPEAT_##n(int_val));
-REPEAT_MACRO_30(LLVM_JIT_TYPEDEF)
+typedef int_val (*c_llvmjit0)(neko_vm *);
+#define LLVM_JIT_TYPEDEF(n) typedef int_val (*c_llvmjit##n)(neko_vm *, REPEAT_##n(int_val));
+REPEAT_MACRO_1_TO_30(LLVM_JIT_TYPEDEF)
 #undef LLVM_JIT_TYPEDEF
 
 extern char *jit_boot_seq;
@@ -328,7 +329,7 @@ int_val p_mod(int_val a, int_val b) {
 	return 0;
 }
 
-int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
+int_val p_call(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
 	vfunction* func = (vfunction*)f;
 
 	if( f & 1 ) {
@@ -339,8 +340,9 @@ int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 
 		value env_backup = vm->env;
 		value vthis_backup = vm->vthis;
-
+		vm->vthis = this_arg;
 		vm->env = func->env;
+
 		int_val result = (int_val)neko_interp(vm, m, f, pc);
 
 		vm->env = env_backup;
@@ -351,6 +353,11 @@ int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 		if( n == func->nargs ) {
 			va_list argp;
 			va_start(argp, n);
+
+			value env_backup = vm->env;
+			value vthis_backup = vm->vthis;
+			vm->vthis = this_arg;
+			vm->env = func->env;
 
 			int_val result = 0;
 			switch( n ) {
@@ -386,6 +393,10 @@ int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 					break;
 				}
 			va_end(argp);
+
+			vm->env = env_backup;
+			vm->vthis = vthis_backup;
+
 			return result;
 		} else if( func->nargs == VAR_ARGS ) {
 			va_list argp;
@@ -399,6 +410,8 @@ int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 
 			value env_backup = vm->env;
 			value vthis_backup = vm->vthis;
+			vm->vthis = this_arg;
+			vm->env = func->env;
 
 			int_val result = ((c_primN)func->addr)((value*)(void*)args, n);
 
@@ -414,18 +427,32 @@ int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 			va_list argp;
 			va_start(argp, n);
 
+			value env_backup = vm->env;
+			value vthis_backup = vm->vthis;
+			vm->vthis = this_arg;
+			vm->env = func->env;
+
 			int_val result = 0;
 			switch( n ) {
+				case 0:
+					{
+						result = ((c_llvmjit0)func->addr)(vm);
+					}
+					break;
 				#define M(x) args[x - 1]
 				#define CASE(x) case x: { \
 									int_val args[] = {REPEAT_##x(va_arg(argp, int_val))}; \
-									result = ((c_llvmjit##x)func->addr)(REPEAT_LIST_MACRO_##x(M)); } \
+									result = ((c_llvmjit##x)func->addr)(vm, REPEAT_LIST_MACRO_##x(M)); } \
 									break;
-				REPEAT_MACRO_30(CASE)
+				REPEAT_MACRO_1_TO_30(CASE)
 				#undef CASE
 				#undef M
 			}
 			va_end(argp);
+
+			vm->env = env_backup;
+			vm->vthis = vthis_backup;
+
 			return result;
 		} else {
 			val_throw(alloc_string("Invalid call"));
@@ -434,6 +461,8 @@ int_val p_call(neko_vm * vm, int_val f, int_val n, ...) {
 		if( n == func->nargs ) {
 			value env_backup = vm->env;
 			value vthis_backup = vm->vthis;
+			vm->vthis = this_arg;
+			vm->env = func->env;
 
 			int_val result = jit_run(vm,func);
 

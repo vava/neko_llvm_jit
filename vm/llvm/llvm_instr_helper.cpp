@@ -3,6 +3,7 @@
 extern "C" {
 	#include "../opcodes.h"
 	#include "../neko.h"
+	#include "../vm.h"
 }
 
 llvm::Value * LLVMInstrHelper::get_null() const {
@@ -15,6 +16,14 @@ llvm::Value * LLVMInstrHelper::get_false() const {
 
 llvm::Value * LLVMInstrHelper::get_true() const {
 	return h.int_n((int_val)val_true);
+}
+
+llvm::Value * LLVMInstrHelper::get_this() {
+	return
+		builder.CreateLoad(
+			builder.CreateConstGEP2_32(
+				vm,
+				0, 3, "vm->vthis"));
 }
 
 llvm::CallInst * LLVMInstrHelper::callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments) {
@@ -169,7 +178,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			);
 			break;
 		case Add:
-			set_acc(callPrimitive("add", h.constant(vm), stack.load(0), get_acc()));
+			set_acc(callPrimitive("add", vm, stack.load(0), get_acc()));
 			stack.pop(1);
 			break;
 		case Sub:
@@ -211,7 +220,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				std::vector<llvm::Value *> params;
 				params.reserve(param + 3);
 
-				params.push_back(h.constant(vm));
+				params.push_back(vm);params.push_back(get_this());
 				params.push_back(get_acc()); params.push_back(h.int_n(param));
 				for (int_val i = param - 1; i >=0; --i) {
 					params.push_back(stack.load(i));
@@ -227,7 +236,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				params.reserve(param + 3);
 
 				int nargs = (int)((param) & 7);
-				params.push_back(h.constant(vm));
+				params.push_back(vm);params.push_back(get_this());
 				params.push_back(get_acc()); params.push_back(h.int_n(nargs));
 				for (int_val i = nargs - 1; i >=0; --i) {
 					params.push_back(stack.load(i));
@@ -401,11 +410,28 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			set_acc(callPrimitive("hash", get_acc()));
 			break;
 		case AccField:
-			set_acc(callPrimitive("acc_field", h.constant(vm), get_acc(), h.int_n(param)));
+			set_acc(callPrimitive("acc_field", vm, get_acc(), h.int_n(param)));
 			break;
 		case SetField:
 			callPrimitive("set_field", stack.load(0), h.int_n(param), get_acc());
 			stack.pop(1);
+			break;
+		case AccThis:
+			set_acc(builder.CreatePtrToInt(get_this(), h.int_t()));
+			break;
+		case ObjCall:
+			{
+				std::vector<llvm::Value *> params;
+				params.reserve(param + 3);
+
+				params.push_back(vm);params.push_back(builder.CreateIntToPtr(stack.load(0), h.convert<value>()));
+				params.push_back(get_acc()); params.push_back(h.int_n(param));
+				for (int_val i = param; i > 0; --i) {
+					params.push_back(stack.load(i));
+				}
+				set_acc(callPrimitive("call", params));
+				stack.pop(param);
+			}
 			break;
 		case Last:
 			builder.CreateRetVoid();

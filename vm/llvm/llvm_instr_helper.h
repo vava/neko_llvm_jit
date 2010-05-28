@@ -15,18 +15,18 @@ public:
 	LLVMInstrHelper(llvm::BasicBlock * curr_bb,
 					llvm::BasicBlock * next_bb_,
 					llvm::AllocaInst * acc_,
+					llvm::Value * vm_,
 					Stack & stack_,
 					llvm::Function * function_,
 					llvm::Module * module_,
-					neko_vm * vm_,
 					id2block_type const & id2block_)
 		: builder(curr_bb)
 		, next_bb(next_bb_)
 		, acc(acc_)
+		, vm(vm_)
 		, stack(stack_.lockStack(builder))
 		, function(function_)
 		, module(module_)
-		, vm(vm_)
 		, id2block(id2block_)
 		, h(module->getContext())
 	{}
@@ -76,6 +76,7 @@ private:
 	llvm::Value * get_null() const;
 	llvm::Value * get_false() const;
 	llvm::Value * get_true() const;
+	llvm::Value * get_this();
 
 	void makeAccBoolBranching(llvm::Value * condition, llvm::Value * true_, llvm::Value * false_);
 	void makeCompare(llvm::Value* (llvm::IRBuilder<>::*f_cmp)(llvm::Value *, llvm::Value *, const llvm::Twine &));
@@ -106,10 +107,10 @@ private:
 	llvm::IRBuilder<> builder;
 	llvm::BasicBlock * next_bb;
 	llvm::AllocaInst * acc;
+	llvm::Value * vm;
 	LockedStack stack;
 	llvm::Function * function;
 	llvm::Module * module;
-	neko_vm * vm;
 	id2block_type const & id2block;
 	Helper h;
 };

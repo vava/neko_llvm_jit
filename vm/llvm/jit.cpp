@@ -26,8 +26,8 @@ extern "C" {
 	#include "neko_mod.h"
 	extern char *jit_boot_seq;
 
-	void llvm_jit_boot(neko_vm * vm, int_val * code, value acc, neko_module * m) {
-		((void (*)())code)();
+	void llvm_jit_boot(neko_vm * vm, int_val * code, value, neko_module *) {
+		((void (*)(neko_vm *))code)(vm);
 	}
 
 	void llvm_cpp_jit(neko_vm * vm, neko_module * m) {
@@ -37,7 +37,7 @@ extern "C" {
 		if (vm->dump_neko) {
 			code_base.neko_dump();
 		}
-		llvm::Module * module = makeLLVMModule(code_base, vm);
+		llvm::Module * module = makeLLVMModule(code_base);
 
 		llvm::GuaranteedTailCallOpt = true;
 		llvm::InitializeNativeTarget();
@@ -119,77 +119,3 @@ extern "C" {
 		m->jit = FPtr;
 	}
 }
-
-
-// below is code that we might need later again
-// 	std::vector<const llvm::Type*> vfunction_struct_types;
-// 	vfunction_struct_types.push_back(h.int_t());// val_type t
-// 	vfunction_struct_types.push_back(h.int_t());// int nargs
-// 	vfunction_struct_types.push_back(h.int_t());// void * addr
-// 	vfunction_struct_types.push_back(h.int_t());// int32 * env
-// 	vfunction_struct_types.push_back(h.int_t());// void * module
-
-// 	vfunction_struct = llvm::StructType::get(ctx, vfunction_struct_types, true)->getPointerTo();
-
-// 	std::vector<const llvm::Type*> prim1_types;
-// 	prim1_types.push_back(h.int_t());
-// 	prim1_types.push_back(h.int_t());
-// 	prim1 = llvm::FunctionType::get(h.int_t(), prim1_types, false)->getPointerTo();
-// }
-
-// Module::~Module() {
-// }
-
-// void Module::add_new_opcode(OPCODE opcode, int param, int params_count) {
-// 	// 			llvm::Value * left = stack.load(0);
-// 	// 			llvm::Value * right = acc;
-
-// 	// 			llvm::BasicBlock * Then = llvm::BasicBlock::Create(ctx, "then", main);
-// 	// 			llvm::BasicBlock * Else = llvm::BasicBlock::Create(ctx, "else", main);
-// 	// 			llvm::BasicBlock * Merge = llvm::BasicBlock::Create(ctx, "merge", main);
-
-// 	// 			builder.CreateCondBr(
-// 	// 				builder.CreateICmpEQ(
-// 	// 					builder.CreateAnd(
-// 	// 						h.is_int(builder, left),
-// 	// 						h.is_int(builder, right),
-// 	// 						"is_int(acc) && is_int(*sp)"),
-// 	// 					h.int_1()),
-// 	// 				Then,
-// 	// 				Else);
-// 	// 			//empty Else
-// 	// 			builder.SetInsertPoint(Else);
-// 	// 			builder.CreateBr(Merge);
-// 	// 			//Create Then
-// 	// 			builder.SetInsertPoint(Then);
-// 	// 			acc = builder.CreateSub(builder.CreateAdd(left, right), h.int_1());
-// 	// 			builder.CreateBr(Merge);
-// 	// 			builder.SetInsertPoint(Merge);
-
-// 	// 			llvm::PHINode * phi = builder.CreatePHI(h.int_t());
-// 	// 			phi->addIncoming(acc, Then);
-// 	// 			phi->addIncoming(h.int_0(), Else);
-
-// 	// 			acc = phi;
-
-// 	// 			stack.pop(1);
-// 	// 		}
-// 	// 		break;
-// 	// 	case Call:
-// 	// 		{
-// 	// 			llvm::Value * vfunc_ptr = builder.CreateIntToPtr(acc, vfunction_struct, "(vfunction *)acc");
-// 	// 			llvm::Value * val_type = builder.CreateLoad(builder.CreateConstGEP2_32(vfunc_ptr, 0, 0, "val_type"));
-// 	// 			llvm::Value * addr = builder.CreateIntToPtr(builder.CreateLoad(builder.CreateConstGEP2_32(vfunc_ptr, 0, 2), "addr"), prim1);
-// 	// 			llvm::Value * param1 = stack.load(0);
-// 	// 			llvm::Value * returnValue;
-// 	// 			llvm::Value * arr = builder.CreateAlloca(h.int_t(), h.int_n(param), "arr");
-// 	// 			builder.CreateStore(param1, builder.CreateConstGEP1_32(arr, 0));
-// 	// 			switch(param) {
-// 	// 				case 1:
-// 	// 					acc = builder.CreateCall2(addr, builder.CreatePtrToInt(arr, h.int_t()), h.int_n(param));
-// 	// 					break;
-// 	// 			}
-
-// 	// 			stack.pop(1);
-// 	// 		}
-// 	// 		break;
