@@ -157,9 +157,62 @@ struct Helper::Convert<varray> {
 };
 
 template<>
-struct Helper::Convert<neko_vm *> {
+struct Helper::Convert<neko_vm> {
 	static llvm::Type const * from(Helper const & h) {
-		return h.convert<int_val>()->getPointerTo();
+		// struct _neko_vm {
+		// 	int_val *sp;
+		// 	int_val *csp;
+		// 	value env;
+		// 	value vthis;
+		// 	int_val *spmin;
+		// 	int_val *spmax;
+		// 	int_val trap;
+		// 	void *jit_val;
+		// 	jmp_buf start;
+		// 	void *c_stack_max;
+		// 	int run_jit;
+		// 	int llvm_jit;
+		// 	int llvm_optimizations;
+		// 	int dump_neko;
+		// 	int dump_llvm;
+		// 	value exc_stack;
+		// 	neko_printer print;
+		// 	void *print_param;
+		// 	custom_list *clist;
+		// 	value resolver;
+		// 	char tmp[100];
+		// 	int trusted_code;
+		// 	neko_stat_func fstats;
+		// 	neko_stat_func pstats;
+		// };
+		std::vector<const llvm::Type*> fields;
+		fields.push_back(h.convert<int_val *>()); //*sp
+		fields.push_back(h.convert<int_val *>()); //*csp
+		fields.push_back(h.convert<value>()); //env
+		fields.push_back(h.convert<value>()); //vthis
+		//we don't care about them yet
+		// fields.push_back(h.convert<int_val *>()); //*spmin
+		// fields.push_back(h.convert<int_val *>()); //*spmax
+		// fields.push_back(h.convert<int_val>()); //trap
+		// fields.push_back(h.convert<void *>()); //jit_val
+		// fields.push_back(h.convert<jmp_buf>()); //start
+		// fields.push_back(h.convert<void *>()); //c_stack_max
+		// fields.push_back(h.convert<int>()); //run_jit
+		// fields.push_back(h.convert<int>()); //llvm_jit
+		// fields.push_back(h.convert<int>()); //llvm_optimizations
+		// fields.push_back(h.convert<int>()); //dump_neko
+		// fields.push_back(h.convert<int>()); //dump_llvm
+		// fields.push_back(h.convert<value>()); //exc_stack
+		// fields.push_back(h.convert<neko_printer>()); //print
+		// fields.push_back(h.convert<void *>()); //print_param
+		// fields.push_back(h.convert<custom_list *>()); //clist
+		// fields.push_back(h.convert<value>()); //resolver
+		// fields.push_back(h.convert_array<char>(100)); //tmp
+		// fields.push_back(h.convert<int>()); //trusted_code
+		// fields.push_back(h.convert<neko_stat_func>()); //fstats
+		// fields.push_back(h.convert<neko_stat_func>()); //pstats
+
+		return llvm::StructType::get(h.ctx, fields);
 	}
 };
 
