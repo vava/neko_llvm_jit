@@ -215,10 +215,13 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case Xor:
 			makeIntOp(&llvm::IRBuilder<>::CreateXor, "^");
 			break;
+		case TailCall:
+			param = (int)((param) & 7);
+			//fall through
 		case Call:
 			{
 				std::vector<llvm::Value *> params;
-				params.reserve(param + 3);
+				params.reserve(param + 4);
 
 				params.push_back(vm);params.push_back(get_this());
 				params.push_back(get_acc()); params.push_back(h.int_n(param));
@@ -227,22 +230,6 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				}
 				set_acc(callPrimitive("call", params));
 				stack.pop(param);
-			}
-			break;
-		case TailCall:
-			{
-				//PopInfos(true);
-				std::vector<llvm::Value *> params;
-				params.reserve(param + 3);
-
-				int nargs = (int)((param) & 7);
-				params.push_back(vm);params.push_back(get_this());
-				params.push_back(get_acc()); params.push_back(h.int_n(nargs));
-				for (int_val i = nargs - 1; i >=0; --i) {
-					params.push_back(stack.load(i));
-				}
-				set_acc(callPrimitive("call", params));
-				stack.pop(nargs);
 			}
 			break;
 		case Ret:
@@ -422,7 +409,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case ObjCall:
 			{
 				std::vector<llvm::Value *> params;
-				params.reserve(param + 3);
+				params.reserve(param + 4);
 
 				params.push_back(vm);params.push_back(builder.CreateIntToPtr(stack.load(0), h.convert<value>()));
 				params.push_back(get_acc()); params.push_back(h.int_n(param));
@@ -430,7 +417,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 					params.push_back(stack.load(i));
 				}
 				set_acc(callPrimitive("call", params));
-				stack.pop(param);
+				stack.pop(param + 1);
 			}
 			break;
 		case MakeEnv:
