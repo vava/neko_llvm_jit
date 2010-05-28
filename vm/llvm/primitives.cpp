@@ -15,6 +15,7 @@ extern "C" {
 
 	value neko_append_int( neko_vm *vm, value str, int x, bool way );
 	value neko_append_strings( value s1, value s2 );
+	value neko_alloc_module_function( void *m, int_val pos, int nargs );
 }
 
 extern field id_add, id_radd, id_sub, id_rsub, id_mult, id_rmult, id_div, id_rdiv, id_mod, id_rmod;
@@ -590,4 +591,30 @@ void p_set_field(int_val obj, int_val idx, int_val new_value) {
 		//PushInfos();
 		val_throw(buffer_to_string(b));
 	}
+}
+
+int_val p_make_env(int_val acc, value arr) {
+	if( val_is_int(acc) || !val_is_function(acc) ) {
+		val_throw(alloc_string("Invalid environment"));
+	}
+	vfunction * f = (vfunction*)acc;
+	vfunction * f_copy = (vfunction *) neko_alloc_module_function(f->module, (int_val)f->addr, f->nargs);
+	f_copy->t = f->t;
+	f_copy->env = arr;
+
+	return (int_val)f_copy;
+}
+
+int_val p_acc_env(neko_vm * vm, int_val idx) {
+	if( idx >= (int_val)val_array_size(vm->env) ) {
+		val_throw(alloc_string("Reading Outside Env"));
+	}
+	return (int_val)val_array_ptr(vm->env)[idx];
+}
+
+void p_set_env(neko_vm * vm, int_val idx, int_val acc) {
+	if( idx >= (int_val)val_array_size(vm->env) ) {
+		val_throw(alloc_string("Writing Outside Env"));
+	}
+	val_array_ptr(vm->env)[idx] = (value)acc;
 }

@@ -1,0 +1,10 @@
+gen = function() {
+	var i = 0;
+	return function() { $print(i); i = i + 1; };
+}
+f1 = gen();
+f2 = gen();
+f1(); // print 0
+f1(); // print 1
+f2(); // print 0
+f1(); // print 2

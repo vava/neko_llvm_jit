@@ -128,7 +128,7 @@ llvm::Value * LLVMInstrHelper::makeNekoArray(std::vector<llvm::Value *> const & 
 
 	builder.CreateStore(llvm_arr, ptr);
 
-	return builder.CreatePtrToInt(arr, h.int_t());
+	return arr;
 }
 
 void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
@@ -372,7 +372,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 					values.push_back(stack.load(i));
 				}
 
-				set_acc(makeNekoArray(values));
+				set_acc(builder.CreatePtrToInt(makeNekoArray(values), h.int_t()));
 
 				stack.pop(param);
 			}
@@ -432,6 +432,25 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				set_acc(callPrimitive("call", params));
 				stack.pop(param);
 			}
+			break;
+		case MakeEnv:
+			{
+				std::vector<llvm::Value *> values;
+				values.reserve(param);
+
+				for (int_val i = param - 1; i >= 0; --i) {
+					values.push_back(stack.load(i));
+				}
+
+				set_acc(callPrimitive("make_env", get_acc(), makeNekoArray(values)));
+				stack.pop(param);
+			}
+			break;
+		case AccEnv:
+			set_acc(callPrimitive("acc_env", vm, h.int_n(param)));
+			break;
+		case SetEnv:
+			callPrimitive("set_env", vm, h.int_n(param), get_acc());
 			break;
 		case Last:
 			builder.CreateRetVoid();

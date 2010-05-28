@@ -20,3 +20,7 @@ PRIMITIVE(val_throw)
 PRIMITIVE(alloc_string)
 PRIMITIVE(alloc_array)
 PRIMITIVE(alloc_object)
+
+PRIMITIVE(make_env)
+PRIMITIVE(acc_env)
+PRIMITIVE(set_env)
