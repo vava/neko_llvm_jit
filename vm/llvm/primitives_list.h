@@ -24,3 +24,5 @@ PRIMITIVE(alloc_object)
 PRIMITIVE(make_env)
 PRIMITIVE(acc_env)
 PRIMITIVE(set_env)
+
+PRIMITIVE(apply)

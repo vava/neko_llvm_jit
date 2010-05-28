@@ -16,6 +16,8 @@ extern "C" {
 	value neko_append_int( neko_vm *vm, value str, int x, bool way );
 	value neko_append_strings( value s1, value s2 );
 	value neko_alloc_module_function( void *m, int_val pos, int nargs );
+
+	int_val llvm_call(neko_vm * vm, void * f, value * args, int nargs);
 }
 
 extern field id_add, id_radd, id_sub, id_rsub, id_mult, id_rmult, id_div, id_rdiv, id_mod, id_rmod;
@@ -330,7 +332,8 @@ int_val p_mod(int_val a, int_val b) {
 	return 0;
 }
 
-int_val p_call(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
+namespace {
+int_val v_call(neko_vm * vm, value this_arg, int_val f, int_val n, va_list argp) {
 	vfunction* func = (vfunction*)f;
 
 	if( f & 1 ) {
@@ -352,9 +355,6 @@ int_val p_call(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
 		return result;
 	} else if( val_tag(f) == VAL_PRIMITIVE) {
 		if( n == func->nargs ) {
-			va_list argp;
-			va_start(argp, n);
-
 			value env_backup = vm->env;
 			value vthis_backup = vm->vthis;
 			vm->vthis = this_arg;
@@ -393,21 +393,16 @@ int_val p_call(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
 					}
 					break;
 				}
-			va_end(argp);
 
 			vm->env = env_backup;
 			vm->vthis = vthis_backup;
 
 			return result;
 		} else if( func->nargs == VAR_ARGS ) {
-			va_list argp;
-			va_start(argp, n);
-
 			int_val args[CALL_MAX_ARGS];
 			for (int i = 0; i < n; i++) {
 				args[i] = va_arg(argp, int_val);
 			}
-			va_end(argp);
 
 			value env_backup = vm->env;
 			value vthis_backup = vm->vthis;
@@ -425,9 +420,6 @@ int_val p_call(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
 		}
 	} else if( val_tag(f) == VAL_LLVMJITFUN) {
 			if( n == func->nargs ) {
-			va_list argp;
-			va_start(argp, n);
-
 			value env_backup = vm->env;
 			value vthis_backup = vm->vthis;
 			vm->vthis = this_arg;
@@ -437,19 +429,18 @@ int_val p_call(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
 			switch( n ) {
 				case 0:
 					{
-						result = ((c_llvmjit0)func->addr)(vm);
+						result = llvm_call(vm, (void *)func->addr, 0, 0);
 					}
 					break;
 				#define M(x) args[x - 1]
 				#define CASE(x) case x: { \
 									int_val args[] = {REPEAT_##x(va_arg(argp, int_val))}; \
-									result = ((c_llvmjit##x)func->addr)(vm, REPEAT_LIST_MACRO_##x(M)); } \
+									result = llvm_call(vm, (void *)func->addr, (value *)args, n); }	\
 									break;
 				REPEAT_MACRO_1_TO_30(CASE)
 				#undef CASE
 				#undef M
 			}
-			va_end(argp);
 
 			vm->env = env_backup;
 			vm->vthis = vthis_backup;
@@ -479,6 +470,16 @@ int_val p_call(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
 	}
 
 	return 0;
+}
+}
+
+int_val p_call(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
+	va_list argp;
+	va_start(argp, n);
+	int_val result = v_call(vm, this_arg, f, n, argp);
+	va_end(argp);
+
+	return result;
 }
 
 int_val p_debug_print(int_val v) {
@@ -617,4 +618,66 @@ void p_set_env(neko_vm * vm, int_val idx, int_val acc) {
 		val_throw(alloc_string("Writing Outside Env"));
 	}
 	val_array_ptr(vm->env)[idx] = (value)acc;
+}
+
+int_val p_apply(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
+	if( !val_is_function(f) ) {
+		val_throw(alloc_string("$apply"));
+	} else {
+		int fargs = val_fun_nargs(f);
+		if( fargs == n || fargs == VAR_ARGS ) {
+			va_list argp;
+			va_start(argp, n);
+
+			int_val result = v_call(vm, this_arg, f, n, argp);
+
+			va_end(argp);
+
+			return result;
+		} else if( n > fargs ) {
+			val_throw(alloc_string("$apply"));
+		} else {
+			value env = alloc_array(fargs + 1);
+
+			int i = 0;
+			val_array_ptr(env)[i++] = (value)f;
+
+			va_list argp;
+			va_start(argp, n);
+			for (; i <= n; i++) {
+				val_array_ptr(env)[i] = (value)va_arg(argp, int_val);
+			}
+			va_end(argp);
+
+			for (; i <= fargs; i++) {
+				val_array_ptr(env)[i] = val_null;
+			}
+
+			return (int_val)neko_alloc_apply((int)(fargs - n),env);
+		}
+	}
+	return 0;
+}
+
+extern "C" {
+int_val llvm_call(neko_vm * vm, void * f, value * args, int nargs) {
+	switch( nargs ) {
+		case 0:
+			{
+				return ((c_llvmjit0)f)(vm);
+			}
+			break;
+		#define M(x) (int_val)args[x - 1]
+		#define CASE(x) case x: { \
+			return ((c_llvmjit##x)f)(vm, REPEAT_LIST_MACRO_##x(M)); } \
+			break;
+
+		REPEAT_MACRO_1_TO_30(CASE)
+
+		#undef CASE
+		#undef M
+	}
+
+	return 0;
+}
 }

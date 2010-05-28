@@ -439,6 +439,20 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case SetEnv:
 			callPrimitive("set_env", vm, h.int_n(param), get_acc());
 			break;
+		case Apply:
+			{
+				std::vector<llvm::Value *> params;
+				params.reserve(param + 4);
+
+				params.push_back(vm);params.push_back(get_this());
+				params.push_back(get_acc()); params.push_back(h.int_n(param));
+				for (int_val i = param - 1; i >=0; --i) {
+					params.push_back(stack.load(i));
+				}
+				set_acc(callPrimitive("apply", params));
+				stack.pop(param);
+			}
+			break;
 		case Last:
 			builder.CreateRetVoid();
 			break;

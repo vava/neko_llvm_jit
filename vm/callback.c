@@ -34,6 +34,7 @@ typedef value (*jit_prim)( neko_vm *, void *, value, neko_module * );
 extern void neko_setup_trap( neko_vm *vm );
 extern void neko_process_trap( neko_vm *vm );
 extern int neko_stack_expand( int_val *sp, int_val *csp, neko_vm *vm );
+extern int_val llvm_call(neko_vm * vm, void * f, value * args, int nargs);
 extern char *jit_boot_seq;
 
 EXTERN value val_callEx( value vthis, value f, value *args, int nargs, value *exc ) {
@@ -90,29 +91,33 @@ EXTERN value val_callEx( value vthis, value f, value *args, int nargs, value *ex
 		else
 			val_throw(alloc_string("Invalid call"));		
 		if( ret == NULL )
-			val_throw( (value)((vfunction*)f)->module );		
+			val_throw( (value)((vfunction*)f)->module );
 	} else if( (val_tag(f)&7) == VAL_FUNCTION ) {
 		if( nargs == ((vfunction*)f)->nargs )  {
-			int n;
-			if( vm->csp + 4 >= vm->sp - nargs && !neko_stack_expand(vm->sp,vm->csp,vm) ) {
-				if( exc ) {
-					neko_process_trap(vm);
-					memcpy(&vm->start,&oldjmp,sizeof(jmp_buf));	
-				}
-				failure("Stack Overflow");
+			if (val_tag(f) == VAL_LLVMJITFUN) {
+				ret = (value)llvm_call(vm, (void *)(((vfunction*)f)->addr), args, nargs);
 			} else {
-				for(n=0;n<nargs;n++)
-					*--vm->sp = (int_val)args[n];
-				vm->env = ((vfunction*)f)->env;
-				if( val_tag(f) == VAL_FUNCTION ) {
-					*++vm->csp = (int_val)callback_return;
-					*++vm->csp = 0;
-					*++vm->csp = 0;
-					*++vm->csp = 0;
-					ret = neko_interp(vm,((vfunction*)f)->module,(int_val)val_null,(int_val*)((vfunction*)f)->addr);
+				int n;
+				if( vm->csp + 4 >= vm->sp - nargs && !neko_stack_expand(vm->sp,vm->csp,vm) ) {
+					if( exc ) {
+						neko_process_trap(vm);
+						memcpy(&vm->start,&oldjmp,sizeof(jmp_buf));	
+					}
+					failure("Stack Overflow");
 				} else {
-					neko_module *m = (neko_module*)((vfunction*)f)->module;
-					ret = ((jit_prim)jit_boot_seq)(vm,((vfunction*)f)->addr,val_null,m);			
+					for(n=0;n<nargs;n++)
+						*--vm->sp = (int_val)args[n];
+					vm->env = ((vfunction*)f)->env;
+					if( val_tag(f) == VAL_FUNCTION ) {
+						*++vm->csp = (int_val)callback_return;
+						*++vm->csp = 0;
+						*++vm->csp = 0;
+						*++vm->csp = 0;
+						ret = neko_interp(vm,((vfunction*)f)->module,(int_val)val_null,(int_val*)((vfunction*)f)->addr);
+					} else {
+						neko_module *m = (neko_module*)((vfunction*)f)->module;
+						ret = ((jit_prim)jit_boot_seq)(vm,((vfunction*)f)->addr,val_null,m);			
+					}
 				}
 			}
 		}

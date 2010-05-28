@@ -15,4 +15,5 @@ void p_set_field(int_val obj, int_val idx, int_val new_value);
 int_val p_make_env(int_val acc, value arr);
 int_val p_acc_env(neko_vm * vm, int_val idx);
 void p_set_env(neko_vm * vm, int_val idx, int_val acc);
+int_val p_apply(neko_vm * vm, value this_arg, int_val f, int_val n, ...);
 

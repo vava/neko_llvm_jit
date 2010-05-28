@@ -1,0 +1,7 @@
+f = function(a, b) {
+    return a + b;
+}
+
+var f1 = $apply(f, 1);
+
+$print(f1(3));
