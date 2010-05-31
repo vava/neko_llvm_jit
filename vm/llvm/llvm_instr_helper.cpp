@@ -470,6 +470,23 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case TypeOf:
 			set_acc(callPrimitive("type_of", get_acc()));
 			break;
+		case Trap:
+			{
+				llvm::BasicBlock * catchBlock = getBasicBlock(param);
+				trap_queue.push_back(catchBlock);
+
+				//monkey patch receiving block as it expects exception to be in acc
+				llvm::IRBuilder<> catch_builder(catchBlock);
+				catch_builder.CreateStore(catch_builder.CreateLoad(
+											  catch_builder.CreateConstGEP2_32(
+												  vm,
+												  0, 3, "vm->vthis")),
+										  acc);
+			}
+			break;
+		case EndTrap:
+			trap_queue.pop_back();
+			break;
 		case Last:
 			builder.CreateRetVoid();
 			break;

@@ -38,11 +38,15 @@ public:
 		}
 	}
 
+	~CodeGeneration() {
+		assert(trap_queue.empty());
+	}
+
 	void makeBasicBlock(neko::BasicBlock const & neko_bb, llvm::BasicBlock * curr_bb, llvm::BasicBlock * next_bb) {
 		LLVMInstrHelper instr_generator(curr_bb, next_bb,
 										acc, vm, stack,
 										function, module,
-										id2block);
+										id2block, trap_queue);
 
 		for (neko::BasicBlock::const_iterator it = neko_bb.begin();
 			 it != neko_bb.end();
@@ -70,6 +74,8 @@ private:
 	llvm::Module * module;
 
 	Stack stack;
+
+	std::vector<llvm::BasicBlock *> trap_queue;
 };
 
 class FunctionGenerator {
