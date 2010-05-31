@@ -20,7 +20,7 @@ public:
 					llvm::Function * function_,
 					llvm::Module * module_,
 					id2block_type const & id2block_,
-					std::vector<llvm::BasicBlock *> & trap_queue_)
+					std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > & trap_queue_)
 		: builder(curr_bb)
 		, next_bb(next_bb_)
 		, acc(acc_)
@@ -108,6 +108,8 @@ private:
 		return id2block.find(param)->second.second;
 	}
 
+	void makeMemCpyCall(llvm::IRBuilder<> & builder, llvm::Value * dest, llvm::Value * source, llvm::Value * size) const;
+
 	llvm::IRBuilder<> builder;
 	llvm::BasicBlock * next_bb;
 	llvm::AllocaInst * acc;
@@ -116,6 +118,6 @@ private:
 	llvm::Function * function;
 	llvm::Module * module;
 	id2block_type const & id2block;
-	std::vector<llvm::BasicBlock *> & trap_queue;
+	std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > & trap_queue;
 	Helper h;
 };

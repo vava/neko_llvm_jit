@@ -1,5 +1,9 @@
 #include "llvm_instr_helper.h"
 
+#include "llvm/Intrinsics.h"
+
+#include <iostream>
+
 extern "C" {
 	#include "../opcodes.h"
 	#include "../neko.h"
@@ -42,7 +46,7 @@ llvm::Value * LLVMInstrHelper::callPrimitive(std::string const & primitive, std:
 		return callInst;
 	} else {
 		llvm::BasicBlock * normalBlock = llvm::BasicBlock::Create(function->getContext(), "continue", function);
-		llvm::BasicBlock * catchBlock = trap_queue.back();
+		llvm::BasicBlock * catchBlock = trap_queue.back().first;
 		llvm::InvokeInst * invInst = builder.CreateInvoke(P, normalBlock, catchBlock, arguments.begin(), arguments.end());
 		invInst->setCallingConv(P->getCallingConv());
 		builder.SetInsertPoint(normalBlock);
@@ -125,6 +129,20 @@ void LLVMInstrHelper::makeIntOp(llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value
 	builder.SetInsertPoint(bb_cont);
 
 	stack.pop(1);
+}
+
+void LLVMInstrHelper::makeMemCpyCall(llvm::IRBuilder<> & builder, llvm::Value * dest, llvm::Value * source, llvm::Value * size) const {
+	llvm::Type const * memcpy_type = size->getType();
+
+	builder.CreateCall4(llvm::Intrinsic::getDeclaration(
+							module,
+							llvm::Intrinsic::memcpy,
+							&memcpy_type,
+							1),
+						builder.CreatePointerCast(dest, builder.getInt8PtrTy()),
+						builder.CreatePointerCast(source, builder.getInt8PtrTy()),
+						size,
+						h.int_0());
 }
 
 llvm::Value * LLVMInstrHelper::makeNekoArray(std::vector<llvm::Value *> const & array) {
@@ -482,18 +500,54 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case Trap:
 			{
 				llvm::BasicBlock * catchBlock = getBasicBlock(param);
-				trap_queue.push_back(catchBlock);
+				llvm::AllocaInst * jmp_buf_backup = builder.CreateAlloca(h.convert<jmp_buf>(), h.int_1());
 
-				//monkey patch receiving block as it expects exception to be in acc
-				llvm::IRBuilder<> catch_builder(catchBlock);
-				catch_builder.CreateStore(
-					catch_builder.CreatePtrToInt(
-						catch_builder.CreateLoad(
-							catch_builder.CreateConstGEP2_32(
-								vm,
-								0, 3, "vm->vthis")),
-						h.int_t()),
-					acc);
+				trap_queue.push_back(std::make_pair(catchBlock, jmp_buf_backup));
+
+				{
+					llvm::IRBuilder<> catch_builder(catchBlock);
+
+					//monkey patch receiving block as it expects exception to be in acc
+					catch_builder.CreateStore(
+						catch_builder.CreatePtrToInt(
+							catch_builder.CreateLoad(
+								catch_builder.CreateConstGEP2_32(
+									vm,
+									0, 3, "vm->vthis")),
+							h.int_t()),
+						acc);
+
+					//monkey patch receiving block to restore previous exception handler
+					makeMemCpyCall(catch_builder,
+								   catch_builder.CreateConstGEP2_32(
+									   vm,
+									   0, 8, "vm->start"),
+								   jmp_buf_backup,
+								   h.int_n(sizeof(jmp_buf)));
+				}
+				// backup vm->start
+				makeMemCpyCall(builder,
+							   jmp_buf_backup,
+							   builder.CreateConstGEP2_32(
+								   vm,
+								   0, 8, "vm->start"),
+							   h.int_n(sizeof(jmp_buf)));
+
+				llvm::BasicBlock * normalBlock = llvm::BasicBlock::Create(function->getContext(), "", function);
+
+				//if (setjmp(vm->start)) catch_block else normal_block;
+				builder.CreateCondBr(builder.CreateICmpNE(
+										 builder.CreateCall(llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::setjmp),
+															builder.CreatePointerCast(
+																builder.CreateConstGEP2_32(
+																	vm,
+																	0, 8, "vm->start"),
+																builder.getInt8PtrTy())),
+										 h.constant_0<int>()),
+									 catchBlock,
+									 normalBlock);
+
+				builder.SetInsertPoint(normalBlock);
 
 				//original trap does that, we have to emulate the behaviour to
 				//  keep the stack numeration in sync
@@ -503,8 +557,17 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			}
 			break;
 		case EndTrap:
-			trap_queue.pop_back();
-			stack.pop(6);
+			{
+				llvm::AllocaInst * jmp_buf_backup = trap_queue.back().second;
+				makeMemCpyCall(builder,
+							   builder.CreateConstGEP2_32(
+								   vm,
+								   0, 8, "vm->start"),
+							   jmp_buf_backup,
+							   h.int_n(sizeof(jmp_buf)));
+				trap_queue.pop_back();
+				stack.pop(6);
+			}
 			break;
 		case Last:
 			builder.CreateRetVoid();

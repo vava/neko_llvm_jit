@@ -75,7 +75,7 @@ private:
 
 	Stack stack;
 
-	std::vector<llvm::BasicBlock *> trap_queue;
+	std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > trap_queue;
 };
 
 class FunctionGenerator {

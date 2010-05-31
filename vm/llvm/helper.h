@@ -6,6 +6,8 @@
 
 #include "common.h"
 
+#include "setjmp.h"
+
 extern "C" {
 #include "../neko.h"
 }
@@ -52,6 +54,10 @@ public:
 
 	llvm::Type const * void_t() const {
 		return llvm::Type::getVoidTy(ctx);
+	}
+
+	llvm::Constant * constant(bool t) const {
+		return llvm::ConstantInt::get(llvm::Type::getInt1Ty(ctx), t);
 	}
 
 	template<typename T>
@@ -156,6 +162,14 @@ struct Helper::Convert<varray> {
 	}
 };
 
+//completely opaque type as we need just correct size from it
+template<>
+struct Helper::Convert<jmp_buf> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.convert_array<char>(sizeof(jmp_buf));
+	}
+};
+
 template<>
 struct Helper::Convert<neko_vm> {
 	static llvm::Type const * from(Helper const & h) {
@@ -190,12 +204,12 @@ struct Helper::Convert<neko_vm> {
 		fields.push_back(h.convert<int_val *>()); //*csp
 		fields.push_back(h.convert<value>()); //env
 		fields.push_back(h.convert<value>()); //vthis
+		fields.push_back(h.convert<int_val *>()); //*spmin
+		fields.push_back(h.convert<int_val *>()); //*spmax
+		fields.push_back(h.convert<int_val>()); //trap
+		fields.push_back(h.convert<void *>()); //jit_val
+		fields.push_back(h.convert<jmp_buf>()); //start
 		//we don't care about them yet
-		// fields.push_back(h.convert<int_val *>()); //*spmin
-		// fields.push_back(h.convert<int_val *>()); //*spmax
-		// fields.push_back(h.convert<int_val>()); //trap
-		// fields.push_back(h.convert<void *>()); //jit_val
-		// fields.push_back(h.convert<jmp_buf>()); //start
 		// fields.push_back(h.convert<void *>()); //c_stack_max
 		// fields.push_back(h.convert<int>()); //run_jit
 		// fields.push_back(h.convert<int>()); //llvm_jit
