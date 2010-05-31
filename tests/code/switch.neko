@@ -1,0 +1,9 @@
+
+var a = switch (3) {
+   0 => 1
+   1 => 2
+   2 => { var i = 5; i}
+   default => {var j = 3; j}
+}
+
+$print(a);
