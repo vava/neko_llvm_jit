@@ -34,11 +34,20 @@ void LLVMInstrHelper::set_this(llvm::Value * new_this) {
 				0, 3, "vm->vthis"));
 }
 
-llvm::CallInst * LLVMInstrHelper::callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments) {
+llvm::Value * LLVMInstrHelper::callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments) {
 	llvm::Function * P = module->getFunction(primitive);
-	llvm::CallInst * callInst = builder.CreateCall(P, arguments.begin(), arguments.end());
-	callInst->setCallingConv(P->getCallingConv());
-	return callInst;
+	if (trap_queue.empty()) {
+		llvm::CallInst * callInst = builder.CreateCall(P, arguments.begin(), arguments.end());
+		callInst->setCallingConv(P->getCallingConv());
+		return callInst;
+	} else {
+		llvm::BasicBlock * normalBlock = llvm::BasicBlock::Create(function->getContext(), "continue", function);
+		llvm::BasicBlock * catchBlock = trap_queue.back();
+		llvm::InvokeInst * invInst = builder.CreateInvoke(P, normalBlock, catchBlock, arguments.begin(), arguments.end());
+		invInst->setCallingConv(P->getCallingConv());
+		builder.SetInsertPoint(normalBlock);
+		return invInst;
+	}
 }
 
 void LLVMInstrHelper::makeAccBoolBranching(llvm::Value * condition, llvm::Value * true_, llvm::Value * false_) {
@@ -477,15 +486,25 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 
 				//monkey patch receiving block as it expects exception to be in acc
 				llvm::IRBuilder<> catch_builder(catchBlock);
-				catch_builder.CreateStore(catch_builder.CreateLoad(
-											  catch_builder.CreateConstGEP2_32(
-												  vm,
-												  0, 3, "vm->vthis")),
-										  acc);
+				catch_builder.CreateStore(
+					catch_builder.CreatePtrToInt(
+						catch_builder.CreateLoad(
+							catch_builder.CreateConstGEP2_32(
+								vm,
+								0, 3, "vm->vthis")),
+						h.int_t()),
+					acc);
+
+				//original trap does that, we have to emulate the behaviour to
+				//  keep the stack numeration in sync
+				for (int i = 0; i < 6; i++) {
+					stack.push(h.int_0());
+				}
 			}
 			break;
 		case EndTrap:
 			trap_queue.pop_back();
+			stack.pop(6);
 			break;
 		case Last:
 			builder.CreateRetVoid();

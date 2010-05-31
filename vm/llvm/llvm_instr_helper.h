@@ -43,30 +43,30 @@ public:
 	void makeJumpTable(std::vector<ptr_val> const & cases, llvm::BasicBlock * def);
 	void makeOpCode(int_val opcode, int_val param);
 private:
-	llvm::CallInst * callPrimitive(std::string const & primitive) {
+	llvm::Value * callPrimitive(std::string const & primitive) {
 		std::vector<llvm::Value *> args;
 		return callPrimitive(primitive, args);
 	}
 
-	llvm::CallInst * callPrimitive(std::string const & primitive, llvm::Value * p1) {
+	llvm::Value * callPrimitive(std::string const & primitive, llvm::Value * p1) {
 		std::vector<llvm::Value *> args;
 		args.push_back(p1);
 		return callPrimitive(primitive, args);
 	}
 
-	llvm::CallInst * callPrimitive(std::string const & primitive, llvm::Value * p1, llvm::Value * p2) {
+	llvm::Value * callPrimitive(std::string const & primitive, llvm::Value * p1, llvm::Value * p2) {
 		std::vector<llvm::Value *> args;
 		args.push_back(p1);args.push_back(p2);
 		return callPrimitive(primitive, args);
 	}
 
-	llvm::CallInst * callPrimitive(std::string const & primitive, llvm::Value * p1, llvm::Value * p2, llvm::Value * p3 ) {
+	llvm::Value * callPrimitive(std::string const & primitive, llvm::Value * p1, llvm::Value * p2, llvm::Value * p3 ) {
 		std::vector<llvm::Value *> args;
 		args.push_back(p1);args.push_back(p2);args.push_back(p3);
 		return callPrimitive(primitive, args);
 	}
 
-	llvm::CallInst * callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments);
+	llvm::Value * callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments);
 
 	void set_acc(llvm::Value * acc_val) {
 		builder.CreateStore(acc_val, acc);
