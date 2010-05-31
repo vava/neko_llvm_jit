@@ -467,6 +467,9 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case JumpTable:
 			assert(false);//should never happen as it is processed on higher level
 			break;
+		case TypeOf:
+			set_acc(callPrimitive("type_of", get_acc()));
+			break;
 		case Last:
 			builder.CreateRetVoid();
 			break;

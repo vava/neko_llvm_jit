@@ -13,6 +13,8 @@ extern "C" {
 	#include "vm.h"
 	#include "objtable.h"
 
+	extern value NEKO_TYPEOF[];
+
 	value neko_append_int( neko_vm *vm, value str, int x, bool way );
 	value neko_append_strings( value s1, value s2 );
 	value neko_alloc_module_function( void *m, int_val pos, int nargs );
@@ -657,6 +659,10 @@ int_val p_apply(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
 		}
 	}
 	return 0;
+}
+
+int_val p_type_of(int_val acc) {
+	return (int_val)(val_is_int(acc) ? alloc_int(1) : NEKO_TYPEOF[val_tag(acc)&7]);
 }
 
 extern "C" {

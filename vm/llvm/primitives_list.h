@@ -26,3 +26,5 @@ PRIMITIVE(acc_env)
 PRIMITIVE(set_env)
 
 PRIMITIVE(apply)
+
+PRIMITIVE(type_of)
