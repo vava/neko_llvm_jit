@@ -40,6 +40,7 @@ extern "C" {
 		llvm::Module * module = makeLLVMModule(code_base);
 
 		llvm::GuaranteedTailCallOpt = true;
+		llvm::JITEmitDebugInfo = true;
 		llvm::InitializeNativeTarget();
 
 		std::string error_string;
