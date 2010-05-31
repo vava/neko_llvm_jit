@@ -10,3 +10,4 @@ bin/neko
 tests/unit/gmock_main.a
 /tests/code/*.n
 *~
+*.ndll
