@@ -48,7 +48,17 @@ public:
 			 it != neko_bb.end();
 			 ++it)
 			{
-				instr_generator.makeOpCode(it->second.first, it->second.second);
+				if (it->second.first == JumpTable) {
+					std::vector<ptr_val> cases;
+					int_val case_count = it->second.second / 2;
+					//get addresses of cases
+					for (int_val i = 0; i < case_count; ++i) {
+						cases.push_back((++it)->second.second);
+					}
+					instr_generator.makeJumpTable(cases, next_bb);
+				} else {
+					instr_generator.makeOpCode(it->second.first, it->second.second);
+				}
 			}
 	}
 

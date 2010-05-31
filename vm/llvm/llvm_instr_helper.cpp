@@ -464,8 +464,19 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				stack.pop(param);
 			}
 			break;
+		case JumpTable:
+			assert(false);//should never happen as it is processed on higher level
+			break;
 		case Last:
 			builder.CreateRetVoid();
 			break;
+	}
+}
+
+void LLVMInstrHelper::makeJumpTable(std::vector<ptr_val> const & cases, llvm::BasicBlock * def) {
+	llvm::SwitchInst * table = builder.CreateSwitch(get_acc(), def, cases.size());
+	int_val i = 0;
+	for (std::vector<ptr_val>::const_iterator it = cases.begin(); it != cases.end(); ++it, ++i) {
+		table->addCase(makeAllocCInt(i), getBasicBlock(*it));
 	}
 }

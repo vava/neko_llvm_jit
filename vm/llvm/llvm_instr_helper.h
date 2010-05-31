@@ -38,6 +38,7 @@ public:
 		}
 	}
 
+	void makeJumpTable(std::vector<ptr_val> const & cases, llvm::BasicBlock * def);
 	void makeOpCode(int_val opcode, int_val param);
 private:
 	llvm::CallInst * callPrimitive(std::string const & primitive) {
@@ -82,7 +83,7 @@ private:
 	void makeAccBoolBranching(llvm::Value * condition, llvm::Value * true_, llvm::Value * false_);
 	void makeCompare(llvm::Value* (llvm::IRBuilder<>::*f_cmp)(llvm::Value *, llvm::Value *, const llvm::Twine &));
 
-	llvm::Value * makeAllocCInt(int_val value) const {
+	llvm::ConstantInt * makeAllocCInt(int_val value) const {
 		return h.int_n((int_val)((((int)(value)) << 1) | 1));
 	}
 

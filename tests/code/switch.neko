@@ -7,3 +7,12 @@ var a = switch (3) {
 }
 
 $print(a);
+
+var b = switch (2) {
+   0 => 1
+   1 => 2
+   2 => { var i = 5; i}
+   default => {var j = 3; j}
+}
+
+$print(b);
