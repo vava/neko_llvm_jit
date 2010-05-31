@@ -104,3 +104,29 @@ TEST_F(FunctionTest, WorksWithSwitch) {
 					ElementsAre(
 						Pair(80, Pair(AccStack, 0)))));
 }
+
+TEST_F(FunctionTest, WorksWithTrap) {
+	neko_code_container result;
+
+	result.insert(std::make_pair(0, std::make_pair((ptr_val)Add, 4)));
+	result.insert(std::make_pair(10, std::make_pair((ptr_val)Trap, 60)));
+	result.insert(std::make_pair(40, std::make_pair((ptr_val)Pop, 0)));
+	result.insert(std::make_pair(50, std::make_pair((ptr_val)Mult, 0)));
+	result.insert(std::make_pair(60, std::make_pair((ptr_val)AccBuiltin, 100)));
+	result.insert(std::make_pair(70, std::make_pair((ptr_val)AccNull, 0)));
+	result.insert(std::make_pair(80, std::make_pair((ptr_val)AccStack, 0)));
+
+	NekoCodeChunk main_chunk(&result, 0, 100);
+
+	EXPECT_THAT(Function(main_chunk, "name"),
+				ElementsAre(
+					ElementsAre(
+						Pair(0, Pair(Add, 4)),
+						Pair(10, Pair(Trap, 60)),
+						Pair(40, Pair(Pop, 0)),
+						Pair(50, Pair(Mult, 0))),
+					ElementsAre(
+						Pair(60, Pair(AccBuiltin, 100)),
+						Pair(70, Pair(AccNull, 0)),
+						Pair(80, Pair(AccStack, 0)))));
+}

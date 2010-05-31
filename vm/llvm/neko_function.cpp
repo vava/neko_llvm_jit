@@ -14,6 +14,7 @@ namespace {
 
 		for (NekoCodeChunk::const_iterator it = code_chunk.begin(); it != code_chunk.end(); ++it) {
 			switch (it->second.first) {
+				case Trap:
 				case Jump:
 					block_addresses.push_back(it->second.second);
 					break;
