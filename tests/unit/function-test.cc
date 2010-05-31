@@ -72,3 +72,35 @@ TEST_F(FunctionTest, WorksWithEmpty) {
 	EXPECT_THAT(Function(main_chunk.getSubChunk(0, 0), "name"),
 				ElementsAre());
 }
+
+TEST_F(FunctionTest, WorksWithSwitch) {
+	neko_code_container result;
+
+	result.insert(std::make_pair(0, std::make_pair((ptr_val)Add, 4)));
+	result.insert(std::make_pair(10, std::make_pair((ptr_val)JumpTable, 4)));
+	result.insert(std::make_pair(20, std::make_pair((ptr_val)Jump, 60)));
+	result.insert(std::make_pair(30, std::make_pair((ptr_val)Jump, 80)));
+	result.insert(std::make_pair(40, std::make_pair((ptr_val)Pop, 0)));
+	result.insert(std::make_pair(50, std::make_pair((ptr_val)Mult, 0)));
+	result.insert(std::make_pair(60, std::make_pair((ptr_val)AccBuiltin, 100)));
+	result.insert(std::make_pair(70, std::make_pair((ptr_val)AccNull, 0)));
+	result.insert(std::make_pair(80, std::make_pair((ptr_val)AccStack, 0)));
+
+	NekoCodeChunk main_chunk(&result, 0, 100);
+
+	EXPECT_THAT(Function(main_chunk, "name"),
+				ElementsAre(
+					ElementsAre(
+						Pair(0, Pair(Add, 4)),
+						Pair(10, Pair(JumpTable, 4)),
+						Pair(20, Pair(Jump, 60)),
+						Pair(30, Pair(Jump, 80))),
+					ElementsAre(
+						Pair(40, Pair(Pop, 0)),
+						Pair(50, Pair(Mult, 0))),
+					ElementsAre(
+						Pair(60, Pair(AccBuiltin, 100)),
+						Pair(70, Pair(AccNull, 0))),
+					ElementsAre(
+						Pair(80, Pair(AccStack, 0)))));
+}

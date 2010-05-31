@@ -28,6 +28,22 @@ namespace {
 						}
 					}
 					break;
+				case JumpTable:
+					{
+						//JumpTable usually have structure as so:
+						//   JumpTable(4); /*4 means what to add to address in order to jump to default*/
+						//   /*case 0:*/Jump(address);
+						//   /*case 1:*/Jump(address);
+						//   /*default:*/
+
+						//skip all the jumps
+						NekoCodeChunk::const_iterator def_block = it;
+						std::advance(def_block, it->second.second / 2 + 1);
+
+						//add address of default block
+						block_addresses.push_back(def_block->first);
+					}
+					break;
 				default:
 					//do nothing
 					;
