@@ -18,10 +18,12 @@ void Stack::push(llvm::IRBuilder<> & builder, llvm::Value * acc) {
 }
 
 void Stack::pop(int_val how_many) {
+	assert(stack.size() >= (size_t)how_many);
 	stack.erase(stack.end() - how_many, stack.end());
 }
 
 llvm::AllocaInst * Stack::get(int_val index) {
+	assert(stack.size() > (size_t)index);
 	return *(stack.end() - index - 1);
 }
 
