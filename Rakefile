@@ -10,7 +10,7 @@ task :clean do
 end
 
 task :compile do
-	sh 'make libneko neko'
+	sh 'make libneko neko std'
 end
 
 task :test => [:unit_test, :neko_test]
@@ -35,7 +35,11 @@ rule '.n' => '.neko' do |t|
 	sh "nekoc #{t.source}"
 end
 
-TEST_SOURCE = FileList['tests/code/*.neko']
+rule '.n' => '.hx' do |t|
+	sh "haxe -neko #{t.name} -main #{t.source.ext('').gsub('/', '.')}"
+end
+
+TEST_SOURCE = FileList['tests/code/*.neko', 'tests/code/*.hx']
 TEST_BINARIES = TEST_SOURCE.ext('n')
 
 #make tasks for running tests
