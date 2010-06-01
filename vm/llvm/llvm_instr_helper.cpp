@@ -133,16 +133,16 @@ void LLVMInstrHelper::makeIntOp(llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value
 
 void LLVMInstrHelper::makeMemCpyCall(llvm::IRBuilder<> & builder, llvm::Value * dest, llvm::Value * source, llvm::Value * size) const {
 	llvm::Type const * memcpy_type = size->getType();
-
+	
 	builder.CreateCall4(llvm::Intrinsic::getDeclaration(
 							module,
 							llvm::Intrinsic::memcpy,
 							&memcpy_type,
 							1),
-						builder.CreatePointerCast(dest, builder.getInt8PtrTy()),
-						builder.CreatePointerCast(source, builder.getInt8PtrTy()),
-						size,
-						h.int_0());
+			    builder.CreatePointerCast(dest, builder.getInt8PtrTy()),
+			    builder.CreatePointerCast(source, builder.getInt8PtrTy()),
+			    size,
+			    h.constant_0<int>());
 }
 
 llvm::Value * LLVMInstrHelper::makeNekoArray(std::vector<llvm::Value *> const & array) {
