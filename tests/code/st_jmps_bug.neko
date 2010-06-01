@@ -1,0 +1,16 @@
+
+f = function() {
+    var i = 0;
+    var c = 0;
+    while (i < 10) {
+    	  if (i == 5) {
+      	     return 5;
+	  }
+ 	  c = c + 1;
+	  i = i + 1;
+    }
+
+    return c;
+}
+
+$print(f());
