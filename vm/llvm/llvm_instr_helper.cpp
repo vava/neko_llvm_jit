@@ -500,7 +500,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case Trap:
 			{
 				llvm::BasicBlock * catchBlock = getBasicBlock(param);
-				llvm::AllocaInst * jmp_buf_backup = builder.CreateAlloca(h.convert<jmp_buf>(), h.int_1());
+				llvm::AllocaInst * jmp_buf_backup = builder.CreateAlloca(h.convert<jmp_buf>(), h.constant_1<int>());
 
 				trap_queue.push_back(std::make_pair(catchBlock, jmp_buf_backup));
 
