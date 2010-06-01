@@ -21,6 +21,8 @@ public:
 
 	LockedStack lockStack(llvm::IRBuilder<> & builder);
 
+	int_val size() const { return stack.size(); }
+
 private:
 	llvm::AllocaInst * get(int_val index);
 
@@ -51,6 +53,8 @@ public:
 	void store(int_val index, llvm::Value * value) {
 		stack.store(builder, index, value);
 	}
+
+	int_val size() const { return stack.size(); }
 private:
 	Stack & stack;
 	llvm::IRBuilder<> & builder;

@@ -1,6 +1,7 @@
 #include "stack.h"
 
 #include <stdio.h>
+#include <algorithm>
 
 Stack::Stack(llvm::BasicBlock * entryBB_)
   : entryBB(entryBB_)
@@ -18,6 +19,7 @@ void Stack::push(llvm::IRBuilder<> & builder, llvm::Value * acc) {
 }
 
 void Stack::pop(int_val how_many) {
+	how_many = std::min(how_many, (int_val)stack.size());
 	assert(stack.size() >= (size_t)how_many);
 	stack.erase(stack.end() - how_many, stack.end());
 }
