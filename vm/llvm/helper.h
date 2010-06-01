@@ -244,6 +244,13 @@ struct Helper::Convert<const T> {
 	}
 };
 
+template<>
+struct Helper::Convert<void *> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.templ_int_t<char>()->getPointerTo();
+	}
+};
+
 template<typename T>
 struct Helper::Convert<T *> {
 	static llvm::Type const * from(Helper const & h) {
