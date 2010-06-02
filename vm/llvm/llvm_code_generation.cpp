@@ -67,6 +67,11 @@ public:
 					//std::cout << "at " << it->first << std::endl;
 					instr_generator.makeOpCode(it->second.first, it->second.second);
 				}
+
+				if (it->second.first == Ret) {
+					//rest of the block is ignored
+					return;
+				}
 			}
 	}
 
