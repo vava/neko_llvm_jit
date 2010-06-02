@@ -45,6 +45,16 @@ namespace {
 						block_addresses.push_back(def_block->first);
 					}
 					break;
+				case Ret:
+					{
+						//ret has to be the last instruction in llvm block
+						//  it is easier to propagate it here
+						NekoCodeChunk::const_iterator next = it; ++next;
+						if (next != code_chunk.end()) {
+							block_addresses.push_back(next->first);
+						}
+					}
+					break;
 				default:
 					//do nothing
 					;

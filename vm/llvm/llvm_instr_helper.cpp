@@ -270,6 +270,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case Ret:
 			{
 				//PopInfos(true);
+				builder.CreateRet(get_acc());
 				stack.pop(param);
 			}
 			break;
