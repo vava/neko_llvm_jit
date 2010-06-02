@@ -33,9 +33,12 @@ llvm::Value * LLVMInstrHelper::get_this() {
 void LLVMInstrHelper::set_this(llvm::Value * new_this) {
 		builder.CreateStore(
 			new_this,
-			builder.CreateConstGEP2_32(
-				vm,
-				0, 3, "vm->vthis"));
+			builder.CreatePointerCast(
+				builder.CreateConstGEP2_32(
+					vm,
+					0, 3, "vm->vthis"),
+				h.convert<int_val *>()
+			));
 }
 
 llvm::Value * LLVMInstrHelper::callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments) {
