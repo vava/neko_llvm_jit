@@ -370,14 +370,28 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			}
 			break;
 		case Jump:
-			builder.CreateBr(getBasicBlock(param));
+			{
+				llvm::BasicBlock * bb = getBasicBlock(param);
+				builder.CreateBr(bb);
+				checkAndCopyStack(stack, bb);
+			}
 			break;
 		case JumpIf:
-			builder.CreateCondBr(builder.CreateICmpEQ(get_acc(), get_true()), getBasicBlock(param), next_bb);
+			{
+				llvm::BasicBlock * bb = getBasicBlock(param);
+				builder.CreateCondBr(builder.CreateICmpEQ(get_acc(), get_true()), bb, next_bb);
+				checkAndCopyStack(stack, bb);
+				checkAndCopyStack(stack, next_bb);
+			}
 			break;
 		case JumpIfNot:
-			//callPrimitive(builder, "debug_print", get_acc(builder));
-			builder.CreateCondBr(builder.CreateICmpNE(get_acc(), get_true()), getBasicBlock(param), next_bb);
+			{
+				//callPrimitive(builder, "debug_print", get_acc(builder));
+				llvm::BasicBlock * bb = getBasicBlock(param);
+				builder.CreateCondBr(builder.CreateICmpNE(get_acc(), get_true()), bb, next_bb);
+				checkAndCopyStack(stack, bb);
+				checkAndCopyStack(stack, next_bb);
+			}
 			break;
 		case Push:
 			stack.push(get_acc());
@@ -501,6 +515,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 		case Trap:
 			{
 				llvm::BasicBlock * catchBlock = getBasicBlock(param);
+				checkAndCopyStack(stack, catchBlock);
 				llvm::AllocaInst * jmp_buf_backup = builder.CreateAlloca(h.convert<jmp_buf>(), h.constant_1<int>());
 
 				trap_queue.push_back(std::make_pair(catchBlock, jmp_buf_backup));
@@ -578,8 +593,11 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 
 void LLVMInstrHelper::makeJumpTable(std::vector<ptr_val> const & cases, llvm::BasicBlock * def) {
 	llvm::SwitchInst * table = builder.CreateSwitch(get_acc(), def, cases.size());
+	checkAndCopyStack(stack, def);
 	int_val i = 0;
 	for (std::vector<ptr_val>::const_iterator it = cases.begin(); it != cases.end(); ++it, ++i) {
-		table->addCase(makeAllocCInt(i), getBasicBlock(*it));
+		llvm::BasicBlock * bb = getBasicBlock(*it);
+		table->addCase(makeAllocCInt(i), bb);
+		checkAndCopyStack(stack, bb);
 	}
 }

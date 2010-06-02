@@ -9,6 +9,7 @@
 #include <map>
 
 typedef std::map<ptr_val, std::pair<neko::BasicBlock const *, llvm::BasicBlock *> > id2block_type;
+typedef std::map<llvm::BasicBlock *, Stack> Stacks;
 
 class LLVMInstrHelper {
 public:
@@ -20,7 +21,8 @@ public:
 					llvm::Function * function_,
 					llvm::Module * module_,
 					id2block_type const & id2block_,
-					std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > & trap_queue_)
+					std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > & trap_queue_,
+					Stacks & stacks_)
 		: builder(curr_bb)
 		, next_bb(next_bb_)
 		, acc(acc_)
@@ -30,6 +32,7 @@ public:
 		, module(module_)
 		, id2block(id2block_)
 		, trap_queue(trap_queue_)
+		, stacks(stacks_)
 		, h(module->getContext())
 	{}
 
@@ -37,12 +40,24 @@ public:
 		//make sure block ends with terminate expression
 		if (builder.GetInsertBlock()->getTerminator() == 0) {
 			builder.CreateBr(next_bb);
+			checkAndCopyStack(stack, next_bb);
 		}
 	}
 
 	void makeJumpTable(std::vector<ptr_val> const & cases, llvm::BasicBlock * def);
 	void makeOpCode(int_val opcode, int_val param);
 private:
+    void checkAndCopyStack(LockedStack const & curr_stack, llvm::BasicBlock * bb) {
+		Stack & stack = curr_stack.unlock();
+
+		Stacks::iterator stack_it = stacks.find(bb);
+		if (stack_it == stacks.end()) {
+			stacks.insert(std::make_pair(bb, stack));
+		} else {
+			assert(stack == stack_it->second);
+		}
+	}
+
 	llvm::Value * callPrimitive(std::string const & primitive) {
 		std::vector<llvm::Value *> args;
 		return callPrimitive(primitive, args);
@@ -119,5 +134,6 @@ private:
 	llvm::Module * module;
 	id2block_type const & id2block;
 	std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > & trap_queue;
+	Stacks & stacks;
 	Helper h;
 };

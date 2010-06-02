@@ -11,6 +11,7 @@
 
 #include <sstream>
 #include <stdio.h>
+#include <iostream>
 
 extern "C" {
 	#include "../opcodes.h"
@@ -43,10 +44,12 @@ public:
 	}
 
 	void makeBasicBlock(neko::BasicBlock const & neko_bb, llvm::BasicBlock * curr_bb, llvm::BasicBlock * next_bb) {
+		Stacks::iterator stack_it = stacks.find(curr_bb);
+
 		LLVMInstrHelper instr_generator(curr_bb, next_bb,
-										acc, vm, stack,
+										acc, vm, (stack_it == stacks.end()) ? stack : stack_it->second,
 										function, module,
-										id2block, trap_queue);
+										id2block, trap_queue, stacks);
 
 		for (neko::BasicBlock::const_iterator it = neko_bb.begin();
 			 it != neko_bb.end();
@@ -61,6 +64,7 @@ public:
 					}
 					instr_generator.makeJumpTable(cases, next_bb);
 				} else {
+					//std::cout << "at " << it->first << std::endl;
 					instr_generator.makeOpCode(it->second.first, it->second.second);
 				}
 			}
@@ -76,6 +80,7 @@ private:
 	Stack stack;
 
 	std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > trap_queue;
+	Stacks stacks;
 };
 
 class FunctionGenerator {
@@ -104,6 +109,7 @@ public:
 
 	void makeFunction(neko::Function const & neko_function) {
 		llvm::Function * function = module->getFunction(neko_function.getName());
+		//std::cout << "function " << neko_function.getName() << std::endl;
 		llvm::BasicBlock::Create(module->getContext(), "entry", function);
 
 		llvm::IRBuilder<> builder(&function->getEntryBlock());

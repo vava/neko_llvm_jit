@@ -23,6 +23,10 @@ public:
 
 	int_val size() const { return stack.size(); }
 
+	bool operator==(Stack const & rhs) const {
+		return entryBB == rhs.entryBB
+			&& stack == rhs.stack;
+	}
 private:
 	llvm::AllocaInst * get(int_val index);
 
@@ -55,6 +59,9 @@ public:
 	}
 
 	int_val size() const { return stack.size(); }
+
+	Stack & unlock() const { return stack; }
+
 private:
 	Stack & stack;
 	llvm::IRBuilder<> & builder;
