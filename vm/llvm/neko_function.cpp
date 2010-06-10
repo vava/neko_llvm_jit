@@ -59,8 +59,8 @@ namespace {
 	}
 
 	neko::Function::blocks_container get_blocks(NekoCodeChunk const & chunk) {
-		std::vector<ptr_val> block_addresses = get_block_addresses(chunk);
-		std::vector<NekoCodeChunk> chunks = chunk.splitByAddresses(block_addresses);
+		std::vector<ptr_val> const & block_addresses = get_block_addresses(chunk);
+		std::vector<NekoCodeChunk> const & chunks = chunk.splitByAddresses(block_addresses);
 
 		neko::Function::blocks_container result;
 		result.reserve(chunks.size());

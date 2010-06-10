@@ -58,9 +58,9 @@ namespace {
 	}
 
 	neko::Module::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
-		std::vector<vfunction *> const functions = collect_functions(m);
-		std::vector<ptr_val> const function_addresses = get_function_addresses(m, functions);
-		std::vector<NekoCodeChunk> const chunks = chunk.splitByAddresses(function_addresses);
+		std::vector<vfunction *> const & functions = collect_functions(m);
+		std::vector<ptr_val> const & function_addresses = get_function_addresses(m, functions);
+		std::vector<NekoCodeChunk> const & chunks = chunk.splitByAddresses(function_addresses);
 
 		std::vector<NekoCodeChunk>::const_iterator begin = chunks.begin();
 		if (chunks.size() > 1) {
