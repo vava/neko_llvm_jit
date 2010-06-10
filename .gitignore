@@ -13,3 +13,7 @@ tests/unit/gmock_main.a
 *.ndll
 \#*
 .#*
+bin/nekoc
+bin/nekotools
+bin/nekoml
+bin/test.n

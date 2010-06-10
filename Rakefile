@@ -10,7 +10,7 @@ task :clean do
 end
 
 task :compile do
-	sh 'make libneko neko std'
+	sh 'SKIP_UNAVAILABLE="true" make libneko neko std libs'
 end
 
 task :test => [:unit_test, :neko_test]

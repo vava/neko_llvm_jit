@@ -132,6 +132,8 @@ if( osx_universal ) {
 	libs.mysql.lib = dir + "libmysqlclient.a";
 }
 
+skip_unavailable = getenv("SKIP_UNAVAILABLE") == "true"
+
 // COMMANDS
 
 includes = $array(
@@ -308,21 +310,25 @@ link = function(files,target,params1,params2) {
 
 // COMPILATION
 
-loop_include = function(data,i,incl) {
+loop_include = function(data,i,incl,skip_unavailable) {
 	var dir;
 	while( (dir = find_file(data.inc[i],incl)) == null ) {
-		$print("The file "+data.inc[i]+" provided when installing "+data.incname+" was not found\n");
-		$print("Please enter a valid include path to look for it\n");
-		$print("Or 's' to skip this library\n");
-		incl = request_include(incl);
-		if( incl == null )
-			return null;
+	       if (skip_unavailable) {
+	       	  return null;
+	       } else {
+	       	  $print("The file "+data.inc[i]+" provided when installing "+data.incname+" was not found\n");
+		  $print("Please enter a valid include path to look for it\n");
+		  $print("Or 's' to skip this library\n");
+		  incl = request_include(incl);
+		  if( incl == null )
+		      return null;
+	       }
 	}
 	return dir;
 }
 
 
-compile_lib = function(name,data) {
+compile_lib = function(name,data,skip_unavailable) {
 	$print("Compiling ",name,"...\n");
 	var incl = search_includes(data.apache2);
 	var dirs = $array();
@@ -330,7 +336,7 @@ compile_lib = function(name,data) {
 		data.inc = $array(data.inc);
 	var i = 0;
 	while( i < $asize(data.inc) ) {
-		var dir = loop_include(data,i,incl);
+		var dir = loop_include(data,i,incl,skip_unavailable);
 		if( dir == null )
 			return;
 		dirs = append(dirs,dir);
@@ -342,11 +348,15 @@ compile_lib = function(name,data) {
 		linklib = "";
 	else {
 		while( (dir = find_file(linklib,libraries)) == null ) {
-			$print("The file "+linklib+" provided when installing "+data.incname+" was not found\n");
-			$print("Please enter a valid include path to look for it\n");
-			$print("Or 's' to skip this library\n");
-			if( $not(request_lib()) )
+	       	       if (skip_unavailable) {
+	       	       	  return null;
+	       	       } else {
+		       	  $print("The file "+linklib+" provided when installing "+data.incname+" was not found\n");
+			  $print("Please enter a valid include path to look for it\n");
+			  $print("Or 's' to skip this library\n");
+			  if( $not(request_lib()) )
 				return;
+		       }
 		}
 		linklib = dir + "/" + linklib;
 	}
@@ -394,7 +404,7 @@ var liblist = $objfields(libs);
 var i = 0;
 while( i < $asize(liblist) ) {
 	var l = liblist[i];
-	compile_lib($field(l),$objget(libs,l));
+	compile_lib($field(l),$objget(libs,l), skip_unavailable);
 	i += 1;
 }
 
