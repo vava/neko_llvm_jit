@@ -1,0 +1,14 @@
+var i = 0;
+while (i < 10) {
+    switch ( i ) {
+        5 =>
+	  {{
+		var c = 5;
+		break;
+          }}
+        default => {}
+    }
+    i += 1;
+}
+
+$print(i);
