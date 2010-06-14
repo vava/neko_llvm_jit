@@ -122,11 +122,11 @@ compiler:
 bin/${LIBNEKO_NAME}: ${LIBNEKO_OBJECTS} Makefile
 	${MAKESO} ${EXTFLAGS} -o $@ ${LIBNEKO_OBJECTS} ${LIBNEKO_LIBS} ${LLVM_LIBS}
 
-bin/neko: $(VM_OBJECTS) ${LLVM_JIT_OBJECTS} Makefile
+bin/neko: $(VM_OBJECTS) ${LLVM_JIT_OBJECTS} Makefile bin/${LIBNEKO_NAME}
 	${CXX} ${CFLAGS} ${EXTFLAGS} -o $@ ${VM_OBJECTS} ${LLVM_JIT_OBJECTS} ${NEKOVM_FLAGS} ${LLVM_LIBS}
 #	strip bin/neko
 
-bin/std.ndll: ${STD_OBJECTS}
+bin/std.ndll: ${STD_OBJECTS} bin/${LIBNEKO_NAME}
 	${MAKESO} -o $@ ${STD_OBJECTS} ${STD_NDLL_FLAGS}
 
 clean:
