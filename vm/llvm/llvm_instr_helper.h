@@ -21,7 +21,6 @@ public:
 					llvm::Function * function_,
 					llvm::Module * module_,
 					id2block_type const & id2block_,
-					std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > & trap_queue_,
 					Stacks & stacks_)
 		: builder(curr_bb)
 		, next_bb(next_bb_)
@@ -31,7 +30,6 @@ public:
 		, function(function_)
 		, module(module_)
 		, id2block(id2block_)
-		, trap_queue(trap_queue_)
 		, stacks(stacks_)
 		, h(module->getContext())
 	{}
@@ -133,7 +131,6 @@ private:
 	llvm::Function * function;
 	llvm::Module * module;
 	id2block_type const & id2block;
-	std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > & trap_queue;
 	Stacks & stacks;
 	Helper h;
 };

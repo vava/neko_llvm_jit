@@ -43,13 +43,13 @@ void LLVMInstrHelper::set_this(llvm::Value * new_this) {
 
 llvm::Value * LLVMInstrHelper::callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments) {
 	llvm::Function * P = module->getFunction(primitive);
-	if (trap_queue.empty()) {
+	if (stack.trap_empty()) {
 		llvm::CallInst * callInst = builder.CreateCall(P, arguments.begin(), arguments.end());
 		callInst->setCallingConv(P->getCallingConv());
 		return callInst;
 	} else {
 		llvm::BasicBlock * normalBlock = llvm::BasicBlock::Create(function->getContext(), "continue", function);
-		llvm::BasicBlock * catchBlock = trap_queue.back().first;
+		llvm::BasicBlock * catchBlock = stack.trap_back().first;
 		llvm::InvokeInst * invInst = builder.CreateInvoke(P, normalBlock, catchBlock, arguments.begin(), arguments.end());
 		invInst->setCallingConv(P->getCallingConv());
 		builder.SetInsertPoint(normalBlock);
@@ -521,8 +521,6 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				checkAndCopyStack(stack, catchBlock);
 				llvm::AllocaInst * jmp_buf_backup = builder.CreateAlloca(h.convert<jmp_buf>(), h.constant_1<int>());
 
-				trap_queue.push_back(std::make_pair(catchBlock, jmp_buf_backup));
-
 				{
 					llvm::IRBuilder<> catch_builder(catchBlock);
 
@@ -573,18 +571,19 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				for (int i = 0; i < 6; i++) {
 					stack.push(h.int_0());
 				}
+				stack.trap_push(std::make_pair(catchBlock, jmp_buf_backup));
 			}
 			break;
 		case EndTrap:
 			{
-				llvm::AllocaInst * jmp_buf_backup = trap_queue.back().second;
+				llvm::AllocaInst * jmp_buf_backup = stack.trap_back().second;
 				makeMemCpyCall(builder,
 							   builder.CreateConstGEP2_32(
 								   vm,
 								   0, 8, "vm->start"),
 							   jmp_buf_backup,
 							   h.int_n(sizeof(jmp_buf)));
-				trap_queue.pop_back();
+				stack.trap_pop();
 				stack.pop(6);
 			}
 			break;

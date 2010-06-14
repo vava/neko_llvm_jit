@@ -40,7 +40,6 @@ public:
 	}
 
 	~CodeGeneration() {
-		assert(trap_queue.empty());
 	}
 
 	void makeBasicBlock(neko::BasicBlock const & neko_bb, llvm::BasicBlock * curr_bb, llvm::BasicBlock * next_bb) {
@@ -49,7 +48,7 @@ public:
 		LLVMInstrHelper instr_generator(curr_bb, next_bb,
 										acc, vm, (stack_it == stacks.end()) ? stack : stack_it->second,
 										function, module,
-										id2block, trap_queue, stacks);
+										id2block, stacks);
 
 		for (neko::BasicBlock::const_iterator it = neko_bb.begin();
 			 it != neko_bb.end();
@@ -83,8 +82,6 @@ private:
 	llvm::Module * module;
 
 	Stack stack;
-
-	std::vector<std::pair<llvm::BasicBlock *, llvm::AllocaInst *> > trap_queue;
 	Stacks stacks;
 };
 
