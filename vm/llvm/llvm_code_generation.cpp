@@ -68,7 +68,7 @@ public:
 					instr_generator.makeOpCode(it->second.first, it->second.second);
 				}
 
-				if (it->second.first == Ret) {
+				if (it->second.first == Ret || it->second.first == Jump) {
 					//rest of the block is ignored
 					return;
 				}
