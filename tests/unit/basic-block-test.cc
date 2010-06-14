@@ -29,8 +29,8 @@ class BasicBlockTest : public testing::Test {
 	}
 protected:
 	BasicBlockTest() : code_container(make_code_container())
-						, chunk(&code_container, 10, 50)
-						, bb(chunk)
+					 , chunk(0, &code_container, 10, 50)
+					 , bb(chunk)
 	{}
 
 	neko_code_container code_container;

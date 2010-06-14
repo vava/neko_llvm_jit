@@ -28,8 +28,8 @@ class NekoCodeChunkTest : public testing::Test {
 	}
 protected:
 	NekoCodeChunkTest() : code_container(make_code_container())
-						, chunk(&code_container, 10, 50)
-						, over_chunk(&code_container, 0, 70)
+						, chunk(0, &code_container, 10, 50)
+						, over_chunk(0, &code_container, 0, 70)
 	{}
 
 	neko_code_container code_container;

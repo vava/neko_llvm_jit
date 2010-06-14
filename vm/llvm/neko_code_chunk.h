@@ -8,7 +8,7 @@
 
 class NekoCodeChunk {
 public:
-	NekoCodeChunk(neko_code_container const * code_container, ptr_val from_address, ptr_val to_address);
+	NekoCodeChunk(neko_module const * m, neko_code_container const * code_container, ptr_val from_address, ptr_val to_address);
 
 	ptr_val getFromAddress() const { return from_address; }
 	ptr_val getToAddress() const { return to_address; }
@@ -27,6 +27,7 @@ public:
 	void neko_dump(std::string const & indent = "") const;
 
 private:
+	neko_module const * m;
 	neko_code_container const * code_container;
 
 	ptr_val from_address;

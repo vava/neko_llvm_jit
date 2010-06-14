@@ -11,7 +11,7 @@ extern "C" {
 	#include "../opcodes.h"
 }
 
-NekoCodeContainer::NekoCodeContainer(neko_module const * m) {
+NekoCodeContainer::NekoCodeContainer(neko_module const * m_): m(m_) {
 	for (int_val * instruction_address = m->code;
 		 instruction_address < m->code + m->codesize;
 		 instruction_address += parameter_table[(OPCODE)*instruction_address] + 1 )
@@ -24,5 +24,5 @@ NekoCodeContainer::NekoCodeContainer(neko_module const * m) {
 }
 
 NekoCodeChunk NekoCodeContainer::getNekoCodeChunk() const {
-	return NekoCodeChunk(&opcodes, opcodes.begin()->first, std::numeric_limits<ptr_val>::max());
+	return NekoCodeChunk(m, &opcodes, opcodes.begin()->first, std::numeric_limits<ptr_val>::max());
 }

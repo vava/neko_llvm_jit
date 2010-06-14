@@ -13,6 +13,8 @@ public:
 	NekoCodeContainer(neko_module const * m);
 
 	NekoCodeChunk getNekoCodeChunk() const;
+
 private:
 	neko_code_container opcodes;
+	neko_module const * m;
 };

@@ -29,7 +29,7 @@ class FunctionTest : public testing::Test {
 	}
 protected:
 	FunctionTest() : code_container(make_code_container())
-				   , main_chunk(&code_container, 0, 100)
+				   , main_chunk(0, &code_container, 0, 100)
 	{}
 
 	neko_code_container code_container;
@@ -86,7 +86,7 @@ TEST_F(FunctionTest, WorksWithSwitch) {
 	result.insert(std::make_pair(70, std::make_pair((ptr_val)AccNull, 0)));
 	result.insert(std::make_pair(80, std::make_pair((ptr_val)AccStack, 0)));
 
-	NekoCodeChunk main_chunk(&result, 0, 100);
+	NekoCodeChunk main_chunk(0, &result, 0, 100);
 
 	EXPECT_THAT(Function(main_chunk, "name"),
 				ElementsAre(
@@ -116,7 +116,7 @@ TEST_F(FunctionTest, WorksWithTrap) {
 	result.insert(std::make_pair(70, std::make_pair((ptr_val)AccNull, 0)));
 	result.insert(std::make_pair(80, std::make_pair((ptr_val)AccStack, 0)));
 
-	NekoCodeChunk main_chunk(&result, 0, 100);
+	NekoCodeChunk main_chunk(0, &result, 0, 100);
 
 	EXPECT_THAT(Function(main_chunk, "name"),
 				ElementsAre(
