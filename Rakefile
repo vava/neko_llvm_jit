@@ -9,9 +9,40 @@ task :clean do
 	sh 'make -C tests/unit clean'
 end
 
-task :compile do
-	sh 'SKIP_UNAVAILABLE="true" make libneko neko std libs'
+VM_FILES = FileList['vm/stats.c', 'vm/main.c']
+LLVM_JIT_FILES = FileList['vm/llvm/*.cpp', 'vm/llvm/*.h']
+STD_FILES = FileList['libs/std/*.c']
+LIBNEKO_FILES = FileList['vm/*.c', 'Makefile']
+LIBNEKO = 'bin/libneko.so'
+COMPILER_FILES = FileList['src/neko/*.nml', 'src/nekoml/*.nml']
+TOOLS_FILES = FileList['src/core/*.nml', 'src/tools/*.nml', 'src/tools/install.neko', 'boot/nekoc.n', 'boot/nekoml.n']
+
+file LIBNEKO => FileList[LLVM_JIT_FILES, LIBNEKO_FILES] do
+	sh 'make libneko'
 end
+task :make_libneko => LIBNEKO
+
+file 'bin/neko' => FileList[VM_FILES, LLVM_JIT_FILES, LIBNEKO] do
+	sh 'make neko'
+end
+task :make_neko => 'bin/neko'
+
+file 'bin/std.ndll' => FileList[STD_FILES, LIBNEKO] do
+	sh 'make std'
+end
+task :make_std => 'bin/std.ndll'
+
+file 'boot/nekoc.n' => COMPILER_FILES do
+	sh 'make compiler'
+end
+task :make_compiler => 'boot/nekoc.n'
+
+file 'bin/nekoc' => TOOLS_FILES do
+	sh 'SKIP_UNAVAILABLE="true" make libs'
+end
+task :make_libs => 'bin/nekoc'
+
+task :compile => [:make_neko, :make_std, :make_libs]
 
 task :test => [:unit_test, :neko_test]
 
