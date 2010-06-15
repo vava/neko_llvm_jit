@@ -21,11 +21,11 @@ namespace {
 
 class CodeGeneration {
 public:
-	CodeGeneration(id2block_type const & id2block_,
+	CodeGeneration(Blocks & blocks_,
 				   llvm::AllocaInst * acc_,
 				   llvm::Function * function_,
 				   llvm::Module * module_)
-		: id2block(id2block_)
+		: blocks(blocks_)
 		, acc(acc_)
 		, function(function_)
 		, module(module_)
@@ -37,21 +37,23 @@ public:
 		for (; it != function->arg_end(); ++it) {
 			stack.push(builder, &*it);
 		}
+
+		blocks.first()->copyOrCheckStack(stack);
 	}
 
 	~CodeGeneration() {
 	}
 
-	void makeBasicBlock(neko::BasicBlock const & neko_bb, llvm::BasicBlock * curr_bb, llvm::BasicBlock * next_bb) {
-		Stacks::iterator stack_it = stacks.find(curr_bb);
-
-		LLVMInstrHelper instr_generator(curr_bb, next_bb,
-										acc, vm, (stack_it == stacks.end()) ? stack : stack_it->second,
+	void makeBasicBlock(Block * block) {
+		LLVMInstrHelper instr_generator(block,
+										acc, vm,
 										function, module,
-										id2block, stacks);
+										blocks);
 
-		for (neko::BasicBlock::const_iterator it = neko_bb.begin();
-			 it != neko_bb.end();
+		neko::BasicBlock const * neko_bb = block->getNekoBlock();
+
+		for (neko::BasicBlock::const_iterator it = neko_bb->begin();
+			 it != neko_bb->end();
 			 ++it)
 			{
 				if (it->second.first == JumpTable) {
@@ -61,7 +63,7 @@ public:
 					for (int_val i = 0; i < case_count; ++i) {
 						cases.push_back((++it)->second.second);
 					}
-					instr_generator.makeJumpTable(cases, next_bb);
+					instr_generator.makeJumpTable(cases, block->getNext());
 				} else {
 					//std::cout << "at " << it->first << std::endl;
 					instr_generator.makeOpCode(it->second.first, it->second.second);
@@ -75,14 +77,13 @@ public:
 	}
 
 private:
-	id2block_type const & id2block;
+	Blocks & blocks;
 	llvm::AllocaInst * acc;
 	llvm::Value * vm;
 	llvm::Function * function;
 	llvm::Module * module;
 
 	Stack stack;
-	Stacks stacks;
 };
 
 class FunctionGenerator {
@@ -123,30 +124,16 @@ public:
 			ret_builder.CreateRet(ret_builder.CreateLoad(acc));
 		}
 
-		id2block_type id2block;
+		Blocks blocks(neko_function, returnBlock, function);
+		CodeGeneration cd(blocks, acc, function, module);
 
-		for (neko::Function::const_iterator it = neko_function.begin();
-			 it != neko_function.end();
-			 ++it)
-			{
-				std::stringstream bb_name;
-				bb_name << it->getId();
-				llvm::BasicBlock * bb = llvm::BasicBlock::Create(module->getContext(), bb_name.str(), function);
-		 		id2block.insert(std::make_pair(it->getId(), std::make_pair(&(*it), bb)));
-			}
-
-		CodeGeneration cd(id2block, acc, function, module);
-
-		for (id2block_type::const_iterator it = id2block.begin(); it != id2block.end(); ++it) {
-			id2block_type::const_iterator next = it; ++next;
-			llvm::BasicBlock * next_bb = (next == id2block.end()) ? returnBlock : next->second.second;
-			llvm::BasicBlock * curr_bb = it->second.second;
-			neko::BasicBlock const * curr_nekobb = it->second.first;
-			cd.makeBasicBlock(*curr_nekobb, curr_bb, next_bb);
+		while(Block * block = blocks.getNextToCompile()) {
+			assert(block->hasStack());
+			cd.makeBasicBlock(block);
 		}
 
 		//add jump from entry block to first block in function
-		builder.CreateBr(id2block.begin()->second.second);
+		builder.CreateBr(blocks.first()->getLLVMBlock());
 	}
 private:
 	llvm::Module * module;

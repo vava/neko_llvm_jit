@@ -136,7 +136,7 @@ void LLVMInstrHelper::makeIntOp(llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value
 
 void LLVMInstrHelper::makeMemCpyCall(llvm::IRBuilder<> & builder, llvm::Value * dest, llvm::Value * source, llvm::Value * size) const {
 	llvm::Type const * memcpy_type = size->getType();
-	
+
 	builder.CreateCall4(llvm::Intrinsic::getDeclaration(
 							module,
 							llvm::Intrinsic::memcpy,
@@ -374,26 +374,28 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			break;
 		case Jump:
 			{
-				llvm::BasicBlock * bb = getBasicBlock(param);
-				builder.CreateBr(bb);
+				Block * bb = blocks.getById(param);
+				builder.CreateBr(bb->getLLVMBlock());
 				checkAndCopyStack(stack, bb);
 			}
 			break;
 		case JumpIf:
 			{
-				llvm::BasicBlock * bb = getBasicBlock(param);
-				builder.CreateCondBr(builder.CreateICmpEQ(get_acc(), get_true()), bb, next_bb);
+				Block * bb = blocks.getById(param);
+				Block * next = block->getNext();
+				builder.CreateCondBr(builder.CreateICmpEQ(get_acc(), get_true()), bb->getLLVMBlock(), next->getLLVMBlock());
 				checkAndCopyStack(stack, bb);
-				checkAndCopyStack(stack, next_bb);
+				checkAndCopyStack(stack, next);
 			}
 			break;
 		case JumpIfNot:
 			{
 				//callPrimitive(builder, "debug_print", get_acc(builder));
-				llvm::BasicBlock * bb = getBasicBlock(param);
-				builder.CreateCondBr(builder.CreateICmpNE(get_acc(), get_true()), bb, next_bb);
+				Block * bb = blocks.getById(param);
+				Block * next = block->getNext();
+				builder.CreateCondBr(builder.CreateICmpNE(get_acc(), get_true()), bb->getLLVMBlock(), next->getLLVMBlock());
 				checkAndCopyStack(stack, bb);
-				checkAndCopyStack(stack, next_bb);
+				checkAndCopyStack(stack, next);
 			}
 			break;
 		case Push:
@@ -517,12 +519,12 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 			break;
 		case Trap:
 			{
-				llvm::BasicBlock * catchBlock = getBasicBlock(param);
+				Block * catchBlock = blocks.getById(param);
 				checkAndCopyStack(stack, catchBlock);
 				llvm::AllocaInst * jmp_buf_backup = builder.CreateAlloca(h.convert<jmp_buf>(), h.constant_1<int>());
 
 				{
-					llvm::IRBuilder<> catch_builder(catchBlock);
+					llvm::IRBuilder<> catch_builder(catchBlock->getLLVMBlock());
 
 					//monkey patch receiving block as it expects exception to be in acc
 					catch_builder.CreateStore(
@@ -561,7 +563,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 																	0, 8, "vm->start"),
 																builder.getInt8PtrTy())),
 										 h.constant_0<int>()),
-									 catchBlock,
+									 catchBlock->getLLVMBlock(),
 									 normalBlock);
 
 				builder.SetInsertPoint(normalBlock);
@@ -571,7 +573,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				for (int i = 0; i < 6; i++) {
 					stack.push(h.int_0());
 				}
-				stack.trap_push(std::make_pair(catchBlock, jmp_buf_backup));
+				stack.trap_push(std::make_pair(catchBlock->getLLVMBlock(), jmp_buf_backup));
 			}
 			break;
 		case EndTrap:
@@ -593,13 +595,13 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 	}
 }
 
-void LLVMInstrHelper::makeJumpTable(std::vector<ptr_val> const & cases, llvm::BasicBlock * def) {
-	llvm::SwitchInst * table = builder.CreateSwitch(get_acc(), def, cases.size());
+void LLVMInstrHelper::makeJumpTable(std::vector<ptr_val> const & cases, Block * def) {
+	llvm::SwitchInst * table = builder.CreateSwitch(get_acc(), def->getLLVMBlock(), cases.size());
 	checkAndCopyStack(stack, def);
 	int_val i = 0;
 	for (std::vector<ptr_val>::const_iterator it = cases.begin(); it != cases.end(); ++it, ++i) {
-		llvm::BasicBlock * bb = getBasicBlock(*it);
-		table->addCase(makeAllocCInt(i), bb);
+		Block * bb = blocks.getById(*it);
+		table->addCase(makeAllocCInt(i), bb->getLLVMBlock());
 		checkAndCopyStack(stack, bb);
 	}
 }

@@ -1,6 +1,7 @@
 
 #include "neko_basic_block.h"
 #include "stack.h"
+#include "blocks.h"
 
 #include "llvm/Support/IRBuilder.h"
 #include "llvm/BasicBlock.h"
@@ -13,47 +14,39 @@ typedef std::map<llvm::BasicBlock *, Stack> Stacks;
 
 class LLVMInstrHelper {
 public:
-	LLVMInstrHelper(llvm::BasicBlock * curr_bb,
-					llvm::BasicBlock * next_bb_,
+	LLVMInstrHelper(Block * block_,
 					llvm::AllocaInst * acc_,
 					llvm::Value * vm_,
-					Stack & stack_,
 					llvm::Function * function_,
 					llvm::Module * module_,
-					id2block_type const & id2block_,
-					Stacks & stacks_)
-		: builder(curr_bb)
-		, next_bb(next_bb_)
+					Blocks & blocks_)
+		: block(block_)
+		, builder(block->getLLVMBlock())
 		, acc(acc_)
 		, vm(vm_)
-		, stack(stack_.lockStack(builder))
+		, stack(block->getStack()->lockStack(builder))
 		, function(function_)
 		, module(module_)
-		, id2block(id2block_)
-		, stacks(stacks_)
+		, blocks(blocks_)
 		, h(module->getContext())
 	{}
 
 	~LLVMInstrHelper() {
 		//make sure block ends with terminate expression
 		if (builder.GetInsertBlock()->getTerminator() == 0) {
-			builder.CreateBr(next_bb);
-			checkAndCopyStack(stack, next_bb);
+			builder.CreateBr(block->getNext()->getLLVMBlock());
+			checkAndCopyStack(stack, block->getNext());
 		}
 	}
 
-	void makeJumpTable(std::vector<ptr_val> const & cases, llvm::BasicBlock * def);
+	void makeJumpTable(std::vector<ptr_val> const & cases, Block * def);
 	void makeOpCode(int_val opcode, int_val param);
 private:
-    void checkAndCopyStack(LockedStack const & curr_stack, llvm::BasicBlock * bb) {
+    void checkAndCopyStack(LockedStack const & curr_stack, Block * bb) {
 		Stack & stack = curr_stack.unlock();
 
-		Stacks::iterator stack_it = stacks.find(bb);
-		if (stack_it == stacks.end()) {
-			stacks.insert(std::make_pair(bb, stack));
-		} else {
-			assert(stack == stack_it->second);
-		}
+		bb->copyOrCheckStack(stack);
+		blocks.addToCompilationQueue(bb);
 	}
 
 	llvm::Value * callPrimitive(std::string const & primitive) {
@@ -117,20 +110,15 @@ private:
 	void makeIntOp(llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value *, llvm::Value *, const llvm::Twine &),
 				   std::string const & op);
 
-	llvm::BasicBlock * getBasicBlock(int param) {
-		return id2block.find(param)->second.second;
-	}
-
 	void makeMemCpyCall(llvm::IRBuilder<> & builder, llvm::Value * dest, llvm::Value * source, llvm::Value * size) const;
 
+	Block * block;
 	llvm::IRBuilder<> builder;
-	llvm::BasicBlock * next_bb;
 	llvm::AllocaInst * acc;
 	llvm::Value * vm;
 	LockedStack stack;
 	llvm::Function * function;
 	llvm::Module * module;
-	id2block_type const & id2block;
-	Stacks & stacks;
+	Blocks & blocks;
 	Helper h;
 };
