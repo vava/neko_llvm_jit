@@ -98,10 +98,10 @@ TEST_SOURCE.each { |f|
 
 def table_header
 	puts <<EOF
-+-------------+-------------+-------------+-------------+-------------+------+
-|    test name|       interp|      x86 jit|     llvm jit|     llvm jit|status|
-|             |             |             |       no opt|     with opt|      |
-+-------------+-------------+-------------+-------------+-------------+------+
++---------------+-------------+-------------+-------------+-------------+------+
+|      test name|       interp|      x86 jit|     llvm jit|     llvm jit|status|
+|               |             |             |       no opt|     with opt|      |
++---------------+-------------+-------------+-------------+-------------+------+
 EOF
 end
 
@@ -119,7 +119,7 @@ task :neko_test => TEST_BINARIES do |t|
 	all_test_passed = true
 
 	table_header
-	column_sizes = [13, 13, 13, 13, 13, 6]
+	column_sizes = [15, 13, 13, 13, 13, 6]
 	columns = ["--no-jit", "--jit --no-llvm-jit", "--jit --llvm-jit --no-llvm-optimizations", "--jit --llvm-jit --llvm-optimizations"];
 	t.prerequisites.each {|f|
 		#results
@@ -144,7 +144,7 @@ task :neko_test => TEST_BINARIES do |t|
 		print "\n"
 
 		#closing line
-		puts "+-------------+-------------+-------------+-------------+-------------+------+"
+		puts "+---------------+-------------+-------------+-------------+-------------+------+"
 	}
 
 	raise "Some tests has failed" if !all_test_passed
