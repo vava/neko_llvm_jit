@@ -558,7 +558,7 @@ int_val p_hash(int_val acc) {
 	return 0;
 }
 
-int_val p_acc_field(neko_vm * vm, int_val obj, int_val idx) {
+int_val p_acc_field(neko_vm * vm, neko_module * m, int_val pc, int_val obj, int_val idx) {
 	if( val_is_object(obj) ) {
 		value *f;
 		value old = (value)obj, tacc = (value)obj;
@@ -584,7 +584,8 @@ int_val p_acc_field(neko_vm * vm, int_val obj, int_val idx) {
 		}
 		b = alloc_buffer("Invalid field access : ");
 		val_buffer(b,v);
-		//PushInfos();
+
+		save_state(vm, m, pc);
 		val_throw(buffer_to_string(b));
 	}
 

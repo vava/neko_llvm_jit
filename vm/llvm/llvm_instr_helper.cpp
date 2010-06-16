@@ -455,7 +455,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 			set_acc(callPrimitive("hash", get_acc()));
 			break;
 		case AccField:
-			set_acc(callPrimitive("acc_field", vm, get_acc(), h.int_n(param)));
+			set_acc(callPrimitive("acc_field", vm, h.constant(m), h.int_n(pc), get_acc(), h.int_n(param)));
 			break;
 		case SetField:
 			callPrimitive("set_field", stack.load(0), h.int_n(param), get_acc());
