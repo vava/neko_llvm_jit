@@ -62,6 +62,10 @@ task :neko_trace, [:param] => [:compile] do |t, args|
 	sh "#{neko_environment} gdb --batch --eval-command 'run' --eval-command 'bt' --args bin/neko --jit --llvm-jit --no-llvm-optimizations --dump-neko --dump-llvm #{args.param}"
 end
 
+task :neko_run, [:param] => [:compile] do |t, args|
+	sh "#{neko_environment} bin/neko --jit --llvm-jit #{args.param}"
+end
+
 task :neko, [:param] => [:compile] do |t, args|
 	sh neko_command(args.param)
 end
