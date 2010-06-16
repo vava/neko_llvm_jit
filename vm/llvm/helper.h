@@ -28,16 +28,6 @@ public:
 		return llvm::ConstantInt::get(int_t(), n);
 	}
 
-	// llvm::Value * getArrayIndex(Builder & builder, llvm::Value * array, llvm::Value * idx, std::string const & array_name = "array") const {
-	// 	llvm::Value * indexies[2] = {idx, int_0()};
-	// 	return builder.CreateGEP(array, indexies, indexies + 2, array_name + "[idx]");
-	// }
-
-	//return 1 if value represents neko int and 0 otherwise
-	// llvm::Value * is_int(Builder & builder, llvm::Value * v) const {
-	// 	return builder.CreateAnd(v, int_1());
-	// }
-
 	llvm::IntegerType const * int_t() const {
 		return templ_int_t<int_val>();
 	}
@@ -227,6 +217,13 @@ struct Helper::Convert<neko_vm> {
 		// fields.push_back(h.convert<neko_stat_func>()); //pstats
 
 		return llvm::StructType::get(h.ctx, fields);
+	}
+};
+
+template<>
+struct Helper::Convert<neko_module *> {
+	static llvm::Type const * from(Helper const & h) {
+		return h.convert<int_val>()->getPointerTo();
 	}
 };
 

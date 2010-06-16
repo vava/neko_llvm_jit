@@ -19,7 +19,8 @@ public:
 					llvm::Value * vm_,
 					llvm::Function * function_,
 					llvm::Module * module_,
-					Blocks & blocks_)
+					Blocks & blocks_,
+					neko_module * m_)
 		: block(block_)
 		, builder(block->getLLVMBlock())
 		, acc(acc_)
@@ -28,6 +29,7 @@ public:
 		, function(function_)
 		, module(module_)
 		, blocks(blocks_)
+		, m(m_)
 		, h(module->getContext())
 	{}
 
@@ -40,7 +42,7 @@ public:
 	}
 
 	void makeJumpTable(std::vector<ptr_val> const & cases, Block * def);
-	void makeOpCode(int_val opcode, int_val param);
+	void makeOpCode(int_val opcode, int_val param, ptr_val pc);
 private:
     void checkAndCopyStack(LockedStack const & curr_stack, Block * bb) {
 		Stack & stack = curr_stack.unlock();
@@ -120,5 +122,6 @@ private:
 	llvm::Function * function;
 	llvm::Module * module;
 	Blocks & blocks;
+	neko_module * m;
 	Helper h;
 };

@@ -37,7 +37,7 @@ extern "C" {
 		if (vm->dump_neko) {
 			code_base.neko_dump();
 		}
-		llvm::Module * module = makeLLVMModule(code_base);
+		llvm::Module * module = makeLLVMModule(code_base, m);
 
 		llvm::GuaranteedTailCallOpt = true;
 		llvm::JITEmitDebugInfo = true;

@@ -169,7 +169,7 @@ llvm::Value * LLVMInstrHelper::makeNekoArray(std::vector<llvm::Value *> const & 
 	return arr;
 }
 
-void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
+void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 	switch((OPCODE)opcode) {
 		case AccNull:
 			set_acc(get_null());
@@ -261,7 +261,10 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				std::vector<llvm::Value *> params;
 				params.reserve(param + 4);
 
-				params.push_back(vm);params.push_back(get_this());
+				params.push_back(vm);
+				params.push_back(h.constant(m));
+				params.push_back(h.int_n(pc));
+				params.push_back(get_this());
 				params.push_back(get_acc()); params.push_back(h.int_n(param));
 				for (int_val i = param - 1; i >=0; --i) {
 					params.push_back(stack.load(i));
@@ -469,7 +472,10 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				std::vector<llvm::Value *> params;
 				params.reserve(param + 4);
 
-				params.push_back(vm);params.push_back(builder.CreateIntToPtr(stack.load(0), h.convert<value>()));
+				params.push_back(vm);
+				params.push_back(h.constant(m));
+				params.push_back(h.int_n(pc));
+				params.push_back(builder.CreateIntToPtr(stack.load(0), h.convert<value>()));
 				params.push_back(get_acc()); params.push_back(h.int_n(param));
 				for (int_val i = param; i > 0; --i) {
 					params.push_back(stack.load(i));
@@ -502,7 +508,10 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param) {
 				std::vector<llvm::Value *> params;
 				params.reserve(param + 4);
 
-				params.push_back(vm);params.push_back(get_this());
+				params.push_back(vm);
+				params.push_back(h.constant(m));
+				params.push_back(h.int_n(pc));
+				params.push_back(get_this());
 				params.push_back(get_acc()); params.push_back(h.int_n(param));
 				for (int_val i = param - 1; i >=0; --i) {
 					params.push_back(stack.load(i));

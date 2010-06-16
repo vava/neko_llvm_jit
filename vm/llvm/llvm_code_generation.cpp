@@ -15,6 +15,7 @@
 
 extern "C" {
 	#include "../opcodes.h"
+	#include "neko_mod.h"
 }
 
 namespace {
@@ -24,11 +25,13 @@ public:
 	CodeGeneration(Blocks & blocks_,
 				   llvm::AllocaInst * acc_,
 				   llvm::Function * function_,
-				   llvm::Module * module_)
+				   llvm::Module * module_,
+				   neko_module * m_)
 		: blocks(blocks_)
 		, acc(acc_)
 		, function(function_)
 		, module(module_)
+		, m(m_)
 		, stack(&function->getEntryBlock())
 	{
 		llvm::IRBuilder<> builder(&function->getEntryBlock());
@@ -48,7 +51,7 @@ public:
 		LLVMInstrHelper instr_generator(block,
 										acc, vm,
 										function, module,
-										blocks);
+										blocks, m);
 
 		neko::BasicBlock const * neko_bb = block->getNekoBlock();
 
@@ -66,7 +69,7 @@ public:
 					instr_generator.makeJumpTable(cases, block->getNext());
 				} else {
 					//std::cout << "at " << it->first << std::endl;
-					instr_generator.makeOpCode(it->second.first, it->second.second);
+					instr_generator.makeOpCode(it->second.first, it->second.second, it->first);
 				}
 
 				if (it->second.first == Ret || it->second.first == Jump) {
@@ -82,14 +85,16 @@ private:
 	llvm::Value * vm;
 	llvm::Function * function;
 	llvm::Module * module;
+	neko_module * m;
 
 	Stack stack;
 };
 
 class FunctionGenerator {
 public:
-	FunctionGenerator(llvm::Module * module_)
+	FunctionGenerator(llvm::Module * module_, neko_module * m_)
 		: module(module_)
+		, m(m_)
 		, h(module->getContext())
 	{}
 
@@ -125,7 +130,7 @@ public:
 		}
 
 		Blocks blocks(neko_function, returnBlock, function);
-		CodeGeneration cd(blocks, acc, function, module);
+		CodeGeneration cd(blocks, acc, function, module, m);
 
 		while(Block * block = blocks.getNextToCompile()) {
 			assert(block->hasStack());
@@ -137,8 +142,8 @@ public:
 	}
 private:
 	llvm::Module * module;
+	neko_module * m;
 	Helper h;
-	neko_vm * vm;
 };
 
 class PrimitiveRegistrator {
@@ -161,7 +166,7 @@ public:
 						registerPrimitive(name, h.convert<R>(), makeTypeList<REPEAT_LIST_MACRO_##x(T)>(), false); \
 					}
 
-	REPEAT_MACRO_1_TO_5(PRIM)
+	REPEAT_MACRO_1_TO_10(PRIM)
 
 	#undef PRIM
 	#undef T
@@ -174,7 +179,7 @@ public:
 						registerPrimitive(name, h.convert<R>(), makeTypeList<REPEAT_LIST_MACRO_##x(T)>(), true); \
 					}
 
-	REPEAT_MACRO_1_TO_5(PRIM)
+	REPEAT_MACRO_1_TO_10(PRIM)
 
 	#undef PRIM
 	#undef T
@@ -201,7 +206,7 @@ private:
 						return type_list(types, types + sizeof(types) / sizeof(types[0])); \
 					}
 
-	REPEAT_MACRO_1_TO_5(PRIM)
+	REPEAT_MACRO_1_TO_10(PRIM)
 
 	#undef PRIM
 	#undef T
@@ -221,22 +226,22 @@ void addPrimitives(llvm::Module * module) {
 }
 }
 
-llvm::Module * makeLLVMModule(neko::Module const & neko_module) {
+llvm::Module * makeLLVMModule(neko::Module const & n_m, neko_module * m) {
 	llvm::Module * module = new ::llvm::Module("neko module", llvm::getGlobalContext());
 
 	addPrimitives(module);
 
-	FunctionGenerator fg(module);
+	FunctionGenerator fg(module, m);
 
-	for (neko::Module::const_iterator it = neko_module.begin();
-		 it != neko_module.end();
+	for (neko::Module::const_iterator it = n_m.begin();
+		 it != n_m.end();
 		 ++it)
 		{
 			fg.makeFunctionDeclaration(*it);
 		}
 
-	for (neko::Module::const_iterator it = neko_module.begin();
-		 it != neko_module.end();
+	for (neko::Module::const_iterator it = n_m.begin();
+		 it != n_m.end();
 		 ++it)
 		{
 			fg.makeFunction(*it);

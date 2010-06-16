@@ -18,6 +18,7 @@ extern "C" {
 	value neko_append_int( neko_vm *vm, value str, int x, bool way );
 	value neko_append_strings( value s1, value s2 );
 	value neko_alloc_module_function( void *m, int_val pos, int nargs );
+	int neko_stack_expand( int_val *sp, int_val *csp, neko_vm *vm );
 
 	int_val llvm_call(neko_vm * vm, void * f, value * args, int nargs);
 }
@@ -335,150 +336,160 @@ int_val p_mod(int_val a, int_val b) {
 }
 
 namespace {
-int_val v_call(neko_vm * vm, value this_arg, int_val f, int_val n, va_list argp) {
-	vfunction* func = (vfunction*)f;
-
-	if( f & 1 ) {
-		val_throw(alloc_string("Invalid call"));
-	} else if( val_tag(f) == VAL_FUNCTION && n == func->nargs ) {
-		neko_module * m = (neko_module*)func->module;
-		int_val* pc = (int_val*)func->addr;
-
-		value env_backup = vm->env;
-		value vthis_backup = vm->vthis;
-		vm->vthis = this_arg;
-		vm->env = func->env;
-
-		int_val result = (int_val)neko_interp(vm, m, f, pc);
-
-		vm->env = env_backup;
-		vm->vthis = vthis_backup;
-
-		return result;
-	} else if( val_tag(f) == VAL_PRIMITIVE) {
-		if( n == func->nargs ) {
-			value env_backup = vm->env;
-			value vthis_backup = vm->vthis;
-			vm->vthis = this_arg;
-			vm->env = func->env;
-
-			int_val result = 0;
-			switch( n ) {
-				case 0:
-					result = ((c_prim0)func->addr)();
-					break;
-				case 1:
-					result = ((c_prim1)func->addr)(va_arg(argp, int_val));
-					break;
-				case 2:
-					{
-						int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val)};
-						result = ((c_prim2)func->addr)(args[0], args[1]);
-					}
-					break;
-				case 3:
-					{
-						int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val)};
-						result = ((c_prim3)func->addr)(args[0], args[1], args[2]);
-					}
-					break;
-				case 4:
-					{
-						int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val)};
-						result = ((c_prim4)func->addr)(args[0], args[1], args[2], args[3]);
-					}
-					break;
-				case 5:
-					{
-						int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val)};
-						result = ((c_prim5)func->addr)(args[0], args[1], args[2], args[3], args[4]);
-					}
-					break;
-				}
-
-			vm->env = env_backup;
-			vm->vthis = vthis_backup;
-
-			return result;
-		} else if( func->nargs == VAR_ARGS ) {
-			int_val args[CALL_MAX_ARGS];
-			for (int i = 0; i < n; i++) {
-				args[i] = va_arg(argp, int_val);
+	void save_state(neko_vm * vm, neko_module * m, int_val pc) {
+		if ( vm->csp + 4 >= vm->sp ) {
+			if (neko_stack_expand(vm->sp,vm->csp,vm) == 0) {
+				val_throw(alloc_string("Stack Overflow"));
 			}
-
-			value env_backup = vm->env;
-			value vthis_backup = vm->vthis;
-			vm->vthis = this_arg;
-			vm->env = func->env;
-
-			int_val result = ((c_primN)func->addr)((value*)(void*)args, n);
-
-			vm->env = env_backup;
-			vm->vthis = vthis_backup;
-
-			return result;
-		} else {
-			val_throw(alloc_string("Invalid call"));
 		}
-	} else if( val_tag(f) == VAL_LLVMJITFUN) {
-			if( n == func->nargs ) {
-			value env_backup = vm->env;
-			value vthis_backup = vm->vthis;
-			vm->vthis = this_arg;
-			vm->env = func->env;
 
-			int_val result = 0;
-			switch( n ) {
-				case 0:
-					{
-						result = llvm_call(vm, (void *)func->addr, 0, 0);
-					}
-					break;
-				#define M(x) args[x - 1]
-				#define CASE(x) case x: { \
-									int_val args[] = {REPEAT_##x(va_arg(argp, int_val))}; \
-									result = llvm_call(vm, (void *)func->addr, (value *)args, n); }	\
-									break;
-				REPEAT_MACRO_1_TO_30(CASE)
-				#undef CASE
-				#undef M
-			}
-
-			vm->env = env_backup;
-			vm->vthis = vthis_backup;
-
-			return result;
-		} else {
-			val_throw(alloc_string("Invalid call"));
-		}
-	} else if( val_tag(f) == VAL_JITFUN ) {
-		if( n == func->nargs ) {
-			value env_backup = vm->env;
-			value vthis_backup = vm->vthis;
-			vm->vthis = this_arg;
-			vm->env = func->env;
-
-			int_val result = jit_run(vm,func);
-
-			vm->env = env_backup;
-			vm->vthis = vthis_backup;
-
-			return result;
-		} else {
-			val_throw(alloc_string("Invalid call"));
-		}
-	} else {
-		val_throw(alloc_string("Invalid call"));
+		*++vm->csp = (int_val)pc;
+		*++vm->csp = (int_val)vm->env;
+		*++vm->csp = (int_val)vm->vthis;
+		*++vm->csp = (int_val)m;
 	}
 
-	return 0;
-}
+	void restore_state(neko_vm * vm) {
+		*vm->csp--; //m
+		vm->vthis = (value)*vm->csp--;
+		vm->env = (value)*vm->csp--;
+		*vm->csp--; //pc
+	}
+
+	int_val v_call(neko_vm * vm, neko_module * m, int_val pc, value this_arg, int_val f, int_val n, va_list argp) {
+		vfunction* func = (vfunction*)f;
+
+		if( f & 1 ) {
+			val_throw(alloc_string("Invalid call"));
+		} else if( val_tag(f) == VAL_FUNCTION && n == func->nargs ) {
+			neko_module * fm = (neko_module*)func->module;
+			int_val* fpc = (int_val*)func->addr;
+
+			save_state(vm, m, pc);
+			vm->vthis = this_arg;
+			vm->env = func->env;
+
+			int_val result = (int_val)neko_interp(vm, fm, f, fpc);
+
+			restore_state(vm);
+
+			return result;
+		} else if( val_tag(f) == VAL_PRIMITIVE) {
+			if( n == func->nargs ) {
+				save_state(vm, m, pc);
+				vm->vthis = this_arg;
+				vm->env = func->env;
+
+				int_val result = 0;
+				switch( n ) {
+					case 0:
+						result = ((c_prim0)func->addr)();
+						break;
+					case 1:
+						result = ((c_prim1)func->addr)(va_arg(argp, int_val));
+						break;
+					case 2:
+						{
+							int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val)};
+							result = ((c_prim2)func->addr)(args[0], args[1]);
+						}
+						break;
+					case 3:
+						{
+							int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val)};
+							result = ((c_prim3)func->addr)(args[0], args[1], args[2]);
+						}
+						break;
+					case 4:
+						{
+							int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val)};
+							result = ((c_prim4)func->addr)(args[0], args[1], args[2], args[3]);
+						}
+						break;
+					case 5:
+						{
+							int_val args[] = {va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val), va_arg(argp, int_val)};
+							result = ((c_prim5)func->addr)(args[0], args[1], args[2], args[3], args[4]);
+						}
+						break;
+				}
+
+				restore_state(vm);
+
+				return result;
+			} else if( func->nargs == VAR_ARGS ) {
+				int_val args[CALL_MAX_ARGS];
+				for (int i = 0; i < n; i++) {
+					args[i] = va_arg(argp, int_val);
+				}
+
+				save_state(vm, m, pc);
+				vm->vthis = this_arg;
+				vm->env = func->env;
+
+				int_val result = ((c_primN)func->addr)((value*)(void*)args, n);
+
+				restore_state(vm);
+
+				return result;
+			} else {
+				val_throw(alloc_string("Invalid call"));
+			}
+		} else if( val_tag(f) == VAL_LLVMJITFUN) {
+			if( n == func->nargs ) {
+				save_state(vm, m, pc);
+				vm->vthis = this_arg;
+				vm->env = func->env;
+
+				int_val result = 0;
+				switch( n ) {
+					case 0:
+						{
+							result = llvm_call(vm, (void *)func->addr, 0, 0);
+						}
+						break;
+#define M(x) args[x - 1]
+#define CASE(x) case x: {												\
+					int_val args[] = {REPEAT_##x(va_arg(argp, int_val))}; \
+					result = llvm_call(vm, (void *)func->addr, (value *)args, n); }	\
+					break;
+						REPEAT_MACRO_1_TO_30(CASE)
+#undef CASE
+#undef M
+							}
+
+				restore_state(vm);
+
+				return result;
+			} else {
+				val_throw(alloc_string("Invalid call"));
+			}
+		} else if( val_tag(f) == VAL_JITFUN ) {
+			if( n == func->nargs ) {
+				save_state(vm, m, pc);
+				vm->vthis = this_arg;
+				vm->env = func->env;
+
+				int_val result = jit_run(vm,func);
+
+				restore_state(vm);
+
+				return result;
+			} else {
+				val_throw(alloc_string("Invalid call"));
+			}
+		} else {
+			val_throw(alloc_string("Invalid call"));
+		}
+
+		return 0;
+	}
 }
 
-int_val p_call(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
+int_val p_call(neko_vm * vm, neko_module * m, int_val pc, value this_arg, int_val f, int_val n, ...) {
 	va_list argp;
 	va_start(argp, n);
-	int_val result = v_call(vm, this_arg, f, n, argp);
+	int_val result = v_call(vm, m, pc, this_arg, f, n, argp);
 	va_end(argp);
 
 	return result;
@@ -622,7 +633,7 @@ void p_set_env(neko_vm * vm, int_val idx, int_val acc) {
 	val_array_ptr(vm->env)[idx] = (value)acc;
 }
 
-int_val p_apply(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
+int_val p_apply(neko_vm * vm, neko_module * m, int_val pc, value this_arg, int_val f, int_val n, ...) {
 	if( !val_is_function(f) ) {
 		val_throw(alloc_string("$apply"));
 	} else {
@@ -631,7 +642,7 @@ int_val p_apply(neko_vm * vm, value this_arg, int_val f, int_val n, ...) {
 			va_list argp;
 			va_start(argp, n);
 
-			int_val result = v_call(vm, this_arg, f, n, argp);
+			int_val result = v_call(vm, m, pc, this_arg, f, n, argp);
 
 			va_end(argp);
 
