@@ -510,7 +510,7 @@ int_val p_get_arr_index(int_val acc, int_val index) {
 		}
 	} else if( val_is_object(acc) ) {
 		value _o = (value)acc;
-		value _arg = (value)alloc_int(index);
+		value _arg = (value)index;
 		value _f = val_field(_o,id_get);
 
 		if( _f == val_null ) {
