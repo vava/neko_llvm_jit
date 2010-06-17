@@ -682,6 +682,31 @@ int_val p_type_of(int_val acc) {
 	return (int_val)(val_is_int(acc) ? alloc_int(1) : NEKO_TYPEOF[val_tag(acc)&7]);
 }
 
+void p_setup_trap(neko_vm * vm, neko_module * m, int_val trap_addr) {
+	vm->sp -= 6;
+	if( vm->sp <= vm->csp ) {
+		if (neko_stack_expand(vm->sp,vm->csp,vm) == 0) {
+			val_throw(alloc_string("Stack Overflow"));
+		}
+	}
+
+	vm->sp[0] = (int_val)alloc_int((int_val)(vm->csp - vm->spmin));
+	vm->sp[1] = (int_val)vm->vthis;
+	vm->sp[2] = (int_val)vm->env;
+	vm->sp[3] = (((int_val)(trap_addr)) | 1);
+	vm->sp[4] = (((int_val)(m)) | 1);
+	vm->sp[5] = (int_val)alloc_int(vm->trap);
+	vm->trap = vm->spmax - vm->sp;
+}
+
+void p_end_trap(neko_vm * vm) {
+	if( vm->spmax - vm->trap != vm->sp ) {
+		val_throw(alloc_string("Invalid End Trap"));
+	}
+	vm->trap = val_int(vm->sp[5]);
+	vm->sp += 6;
+}
+
 extern "C" {
 int_val llvm_call(neko_vm * vm, void * f, value * args, int nargs) {
 	switch( nargs ) {

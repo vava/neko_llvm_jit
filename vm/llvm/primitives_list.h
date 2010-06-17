@@ -28,3 +28,7 @@ PRIMITIVE(set_env)
 PRIMITIVE(apply)
 
 PRIMITIVE(type_of)
+
+PRIMITIVE(setup_trap)
+PRIMITIVE(end_trap)
+PRIMITIVE(neko_process_trap)

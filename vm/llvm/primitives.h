@@ -16,3 +16,6 @@ int_val p_acc_env(neko_vm * vm, neko_module * m, int_val pc, int_val idx);
 void p_set_env(neko_vm * vm, int_val idx, int_val acc);
 int_val p_apply(neko_vm * vm, neko_module * m, int_val pc, value this_arg, int_val f, int_val n, ...);
 int_val p_type_of(int_val acc);
+void p_setup_trap(neko_vm * vm, neko_module * m, int_val trap_addr);
+void p_end_trap(neko_vm * vm);
+

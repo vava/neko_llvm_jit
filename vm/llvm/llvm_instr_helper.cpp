@@ -563,6 +563,10 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 									   0, 8, "vm->start"),
 								   jmp_buf_backup,
 								   h.int_n(sizeof(jmp_buf)));
+
+					llvm::Function * P = module->getFunction("neko_process_trap");
+					llvm::CallInst * callInst = catch_builder.CreateCall(P, vm);
+					callInst->setCallingConv(P->getCallingConv());
 				}
 				// backup vm->start
 				makeMemCpyCall(builder,
@@ -571,6 +575,8 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 								   vm,
 								   0, 8, "vm->start"),
 							   h.int_n(sizeof(jmp_buf)));
+
+				callPrimitive("setup_trap", vm, h.constant(m), h.int_n(param));
 
 				llvm::BasicBlock * normalBlock = llvm::BasicBlock::Create(function->getContext(), "", function);
 
@@ -605,6 +611,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 								   0, 8, "vm->start"),
 							   jmp_buf_backup,
 							   h.int_n(sizeof(jmp_buf)));
+				callPrimitive("end_trap", vm);
 				stack.trap_pop();
 				stack.pop(6);
 			}

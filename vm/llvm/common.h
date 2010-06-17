@@ -8,9 +8,11 @@
 #define p_alloc_string alloc_string
 #define p_alloc_array alloc_array
 #define p_alloc_object alloc_object
+#define p_neko_process_trap neko_process_trap
 
 typedef struct _neko_module neko_module;
 typedef uintptr_t ptr_val;
 typedef intptr_t int_val;
 typedef struct _value *value;
 typedef struct _neko_vm neko_vm;
+extern "C" void neko_process_trap( neko_vm *vm );
