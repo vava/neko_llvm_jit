@@ -41,6 +41,17 @@ void LLVMInstrHelper::set_this(llvm::Value * new_this) {
 			));
 }
 
+void LLVMInstrHelper::debugPrint(llvm::Value * v) {
+	if (v->getType()->isIntegerTy()) {
+		v = builder.CreateIntToPtr(
+			v,
+			h.convert<value>()
+		);
+	}
+
+	callPrimitive("val_print", v);
+}
+
 llvm::Value * LLVMInstrHelper::callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments) {
 	llvm::Function * P = module->getFunction(primitive);
 	if (stack.trap_empty()) {
@@ -458,7 +469,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 			set_acc(callPrimitive("acc_field", vm, h.constant(m), h.int_n(pc), get_acc(), h.int_n(param)));
 			break;
 		case SetField:
-			callPrimitive("set_field", stack.load(0), h.int_n(param), get_acc());
+			callPrimitive("set_field", vm, h.constant(m), h.int_n(pc), stack.load(0), h.int_n(param), get_acc());
 			stack.pop(1);
 			break;
 		case AccThis:
@@ -498,7 +509,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 			}
 			break;
 		case AccEnv:
-			set_acc(callPrimitive("acc_env", vm, h.int_n(param)));
+			set_acc(callPrimitive("acc_env", vm, h.constant(m), h.int_n(pc), h.int_n(param)));
 			break;
 		case SetEnv:
 			callPrimitive("set_env", vm, h.int_n(param), get_acc());

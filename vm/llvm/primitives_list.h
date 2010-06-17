@@ -13,7 +13,7 @@ PRIMITIVE(hash)
 PRIMITIVE(acc_field)
 PRIMITIVE(set_field)
 
-PRIMITIVE(debug_print)
+PRIMITIVE(val_print)
 
 PRIMITIVE(val_compare)
 PRIMITIVE(val_throw)

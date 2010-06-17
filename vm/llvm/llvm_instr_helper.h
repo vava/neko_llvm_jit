@@ -2,6 +2,7 @@
 #include "neko_basic_block.h"
 #include "stack.h"
 #include "blocks.h"
+#include "repeat.h"
 
 #include "llvm/Support/IRBuilder.h"
 #include "llvm/BasicBlock.h"
@@ -56,35 +57,18 @@ private:
 		return callPrimitive(primitive, args);
 	}
 
-	llvm::Value * callPrimitive(std::string const & primitive, llvm::Value * p1) {
-		std::vector<llvm::Value *> args;
-		args.push_back(p1);
-		return callPrimitive(primitive, args);
-	}
+	#define TT(x) llvm::Value * p##x
+	#define T(x) p##x
+	#define PRIM(x) llvm::Value * callPrimitive(std::string const & primitive, REPEAT_LIST_MACRO_##x(TT)) { \
+						llvm::Value * args[] = {REPEAT_LIST_MACRO_##x(T)};			\
+						return callPrimitive(primitive, std::vector<llvm::Value *>(args, args + sizeof(args) / sizeof(args[0]))); \
+					}
 
-	llvm::Value * callPrimitive(std::string const & primitive, llvm::Value * p1, llvm::Value * p2) {
-		std::vector<llvm::Value *> args;
-		args.push_back(p1);args.push_back(p2);
-		return callPrimitive(primitive, args);
-	}
+	REPEAT_MACRO_1_TO_10(PRIM)
 
-	llvm::Value * callPrimitive(std::string const & primitive, llvm::Value * p1, llvm::Value * p2, llvm::Value * p3 ) {
-		std::vector<llvm::Value *> args;
-		args.push_back(p1);args.push_back(p2);args.push_back(p3);
-		return callPrimitive(primitive, args);
-	}
-
-	llvm::Value * callPrimitive(std::string const & primitive, llvm::Value * p1, llvm::Value * p2, llvm::Value * p3, llvm::Value * p4 ) {
-		std::vector<llvm::Value *> args;
-		args.push_back(p1);args.push_back(p2);args.push_back(p3);args.push_back(p4);
-		return callPrimitive(primitive, args);
-	}
-
-	llvm::Value * callPrimitive(std::string const & primitive, llvm::Value * p1, llvm::Value * p2, llvm::Value * p3, llvm::Value * p4, llvm::Value * p5 ) {
-		std::vector<llvm::Value *> args;
-		args.push_back(p1);args.push_back(p2);args.push_back(p3);args.push_back(p4);args.push_back(p5);
-		return callPrimitive(primitive, args);
-	}
+	#undef PRIM
+	#undef T
+	#undef TT
 
 	llvm::Value * callPrimitive(std::string const & primitive, std::vector<llvm::Value *> const & arguments);
 
@@ -125,6 +109,8 @@ private:
 				   std::string const & op);
 
 	void makeMemCpyCall(llvm::IRBuilder<> & builder, llvm::Value * dest, llvm::Value * source, llvm::Value * size) const;
+
+	void debugPrint(llvm::Value * value);
 
 	Block * block;
 	llvm::IRBuilder<> builder;

@@ -95,6 +95,7 @@ EXTERN value val_callEx( value vthis, value f, value *args, int nargs, value *ex
 	} else if( (val_tag(f)&7) == VAL_FUNCTION ) {
 		if( nargs == ((vfunction*)f)->nargs )  {
 			if (val_tag(f) == VAL_LLVMJITFUN) {
+				vm->env = ((vfunction*)f)->env;
 				ret = (value)llvm_call(vm, (void *)(((vfunction*)f)->addr), args, nargs);
 			} else {
 				int n;

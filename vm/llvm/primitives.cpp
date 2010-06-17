@@ -360,6 +360,7 @@ namespace {
 		vfunction* func = (vfunction*)f;
 
 		if( f & 1 ) {
+			save_state(vm, m, pc);
 			val_throw(alloc_string("Invalid call"));
 		} else if( val_tag(f) == VAL_FUNCTION && n == func->nargs ) {
 			neko_module * fm = (neko_module*)func->module;
@@ -433,6 +434,7 @@ namespace {
 
 				return result;
 			} else {
+				save_state(vm, m, pc);
 				val_throw(alloc_string("Invalid call"));
 			}
 		} else if( val_tag(f) == VAL_LLVMJITFUN) {
@@ -462,6 +464,7 @@ namespace {
 
 				return result;
 			} else {
+				save_state(vm, m, pc);
 				val_throw(alloc_string("Invalid call"));
 			}
 		} else if( val_tag(f) == VAL_JITFUN ) {
@@ -476,9 +479,11 @@ namespace {
 
 				return result;
 			} else {
+				save_state(vm, m, pc);
 				val_throw(alloc_string("Invalid call"));
 			}
 		} else {
+			save_state(vm, m, pc);
 			val_throw(alloc_string("Invalid call"));
 		}
 
@@ -493,11 +498,6 @@ int_val p_call(neko_vm * vm, neko_module * m, int_val pc, value this_arg, int_va
 	va_end(argp);
 
 	return result;
-}
-
-int_val p_debug_print(int_val v) {
-	printf("%d", v);
-	return v;
 }
 
 int_val p_get_arr_index(int_val acc, int_val index) {
@@ -592,7 +592,7 @@ int_val p_acc_field(neko_vm * vm, neko_module * m, int_val pc, int_val obj, int_
 	return 0;
 }
 
-void p_set_field(int_val obj, int_val idx, int_val new_value) {
+void p_set_field(neko_vm * vm, neko_module * m, int_val pc, int_val obj, int_val idx, int_val new_value) {
 	if( val_is_object(obj) ) {
 		otable_replace(&((vobject*)obj)->table,(field)idx,(value)new_value);
 	} else {
@@ -603,7 +603,8 @@ void p_set_field(int_val obj, int_val idx, int_val new_value) {
 		}
 		b = alloc_buffer("Invalid field access : ");
 		val_buffer(b,v);
-		//PushInfos();
+
+		save_state(vm, m, pc);
 		val_throw(buffer_to_string(b));
 	}
 }
@@ -616,11 +617,11 @@ int_val p_make_env(int_val acc, value arr) {
 	vfunction * f_copy = (vfunction *) neko_alloc_module_function(f->module, (int_val)f->addr, f->nargs);
 	f_copy->t = f->t;
 	f_copy->env = arr;
-
 	return (int_val)f_copy;
 }
 
-int_val p_acc_env(neko_vm * vm, int_val idx) {
+int_val p_acc_env(neko_vm * vm, neko_module * m, int_val pc, int_val idx) {
+	save_state(vm, m, pc);
 	if( idx >= (int_val)val_array_size(vm->env) ) {
 		val_throw(alloc_string("Reading Outside Env"));
 	}

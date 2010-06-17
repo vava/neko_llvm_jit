@@ -1,0 +1,8 @@
+var h = $hnew(0);
+$hset(h, "a", 1, null);
+$hset(h, "b", 2, null);
+
+var a = 1;
+$hiter(h, function(_,v) {
+     $print(a);
+});
