@@ -621,8 +621,8 @@ int_val p_make_env(int_val acc, value arr) {
 }
 
 int_val p_acc_env(neko_vm * vm, neko_module * m, int_val pc, int_val idx) {
-	save_state(vm, m, pc);
 	if( idx >= (int_val)val_array_size(vm->env) ) {
+		save_state(vm, m, pc);
 		val_throw(alloc_string("Reading Outside Env"));
 	}
 	return (int_val)val_array_ptr(vm->env)[idx];
