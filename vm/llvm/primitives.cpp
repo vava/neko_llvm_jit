@@ -580,6 +580,7 @@ int_val p_acc_field(neko_vm * vm, neko_module * m, int_val pc, int_val obj, int_
 		value v = val_field_name((field)idx);
 		buffer b;
 		if ( val_is_null(v) ) {
+			save_state(vm, m, pc);
 			val_throw(alloc_string("Invalid field access"));
 		}
 		b = alloc_buffer("Invalid field access : ");
@@ -599,6 +600,7 @@ void p_set_field(neko_vm * vm, neko_module * m, int_val pc, int_val obj, int_val
 		value v = val_field_name((field)idx);
 		buffer b;
 		if ( val_is_null(v) ) {
+			save_state(vm, m, pc);
 			val_throw(alloc_string("Invalid field access"));
 		}
 		b = alloc_buffer("Invalid field access : ");
@@ -637,6 +639,7 @@ void p_set_env(neko_vm * vm, int_val idx, int_val acc) {
 
 int_val p_apply(neko_vm * vm, neko_module * m, int_val pc, value this_arg, int_val f, int_val n, ...) {
 	if( !val_is_function(f) ) {
+		save_state(vm, m, pc);
 		val_throw(alloc_string("$apply"));
 	} else {
 		int fargs = val_fun_nargs(f);
@@ -650,6 +653,7 @@ int_val p_apply(neko_vm * vm, neko_module * m, int_val pc, value this_arg, int_v
 
 			return result;
 		} else if( n > fargs ) {
+			save_state(vm, m, pc);
 			val_throw(alloc_string("$apply"));
 		} else {
 			value env = alloc_array(fargs + 1);
