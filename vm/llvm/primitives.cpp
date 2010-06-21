@@ -350,10 +350,12 @@ namespace {
 	}
 
 	void restore_state(neko_vm * vm) {
-		*vm->csp--; //m
-		vm->vthis = (value)*vm->csp--;
-		vm->env = (value)*vm->csp--;
-		*vm->csp--; //pc
+		*vm->csp-- = 0; //m
+		vm->vthis = (value)*vm->csp;
+		*vm->csp-- = 0; //vthis
+		vm->env = (value)*vm->csp;
+		*vm->csp-- = 0; //env
+		*vm->csp-- = 0; //pc
 	}
 
 	int_val v_call(neko_vm * vm, neko_module * m, int_val pc, value this_arg, int_val f, int_val n, va_list argp) {
@@ -704,7 +706,11 @@ void p_end_trap(neko_vm * vm) {
 		val_throw(alloc_string("Invalid End Trap"));
 	}
 	vm->trap = val_int(vm->sp[5]);
-	vm->sp += 6;
+	int tmp = 6;
+	while( tmp-- > 0 ) {
+		*vm->sp++ = 0;
+	}
+	//vm->sp += 6;
 }
 
 extern "C" {
