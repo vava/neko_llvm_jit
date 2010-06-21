@@ -541,7 +541,8 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 			{
 				Block * catchBlock = blocks.getById(param);
 				checkAndCopyStack(stack, catchBlock);
-				llvm::AllocaInst * jmp_buf_backup = builder.CreateAlloca(h.convert<jmp_buf>(), h.constant_1<int>());
+				llvm::AllocaInst * jmp_buf_backup = llvm::IRBuilder<>(&function->getEntryBlock())
+					.CreateAlloca(h.convert<jmp_buf>(), h.constant_1<int>(), "jmp_buf_backup");
 
 				{
 					llvm::IRBuilder<> catch_builder(catchBlock->getLLVMBlock());
