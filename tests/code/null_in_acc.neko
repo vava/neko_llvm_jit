@@ -1,0 +1,4 @@
+var regexp_new_options = $loader.loadprim("regexp@regexp_new_options",2);
+
+var r = regexp_new_options("aaa", "A");
+$print(m == null);

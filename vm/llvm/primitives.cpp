@@ -373,6 +373,9 @@ namespace {
 			vm->env = func->env;
 
 			int_val result = (int_val)neko_interp(vm, fm, f, fpc);
+			if (result == (int_val)NULL) {
+				val_throw( (value)fm );
+			}
 
 			restore_state(vm);
 
@@ -417,6 +420,10 @@ namespace {
 						break;
 				}
 
+				if (result == (int_val)NULL) {
+					val_throw( (value)func->module );
+				}
+
 				restore_state(vm);
 
 				return result;
@@ -431,6 +438,9 @@ namespace {
 				vm->env = func->env;
 
 				int_val result = ((c_primN)func->addr)((value*)(void*)args, n);
+				if (result == (int_val)NULL) {
+					val_throw( (value)func->module );
+				}
 
 				restore_state(vm);
 
@@ -462,6 +472,9 @@ namespace {
 #undef M
 							}
 
+				if (result == (int_val)NULL) {
+					val_throw( (value)func->module );
+				}
 				restore_state(vm);
 
 				return result;
@@ -476,6 +489,9 @@ namespace {
 				vm->env = func->env;
 
 				int_val result = jit_run(vm,func);
+				if (result == (int_val)NULL) {
+					val_throw( (value)func->module );
+				}
 
 				restore_state(vm);
 
