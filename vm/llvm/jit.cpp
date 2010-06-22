@@ -64,7 +64,7 @@ extern "C" {
 			OurFPM.add(new llvm::TargetData(*ee->getTargetData()));
 
 			// Promote allocas to registers.
-			OurFPM.add(llvm::createPromoteMemoryToRegisterPass());
+			//OurFPM.add(llvm::createPromoteMemoryToRegisterPass());
 			// Reassociate expressions.
 			OurFPM.add(llvm::createReassociatePass());
 
@@ -72,13 +72,13 @@ extern "C" {
 			//  http://www.remcobloemen.nl/2010/02/brainfuck-using-llvm/
 			//seems to be working good for us but we need more research on optimizations
 			OurFPM.add(llvm::createInstructionCombiningPass()); // Cleanup for scalarrepl.
-			OurFPM.add(llvm::createLICMPass());                 // Hoist loop invariants
+			// OurFPM.add(llvm::createLICMPass());                 // Hoist loop invariants
 			OurFPM.add(llvm::createIndVarSimplifyPass());       // Canonicalize indvars
 			OurFPM.add(llvm::createLoopDeletionPass());         // Delete dead loops
 
 			// Simplify code
 			for(int repeat=0; repeat < 3; repeat++)	{
-				OurFPM.add(llvm::createGVNPass());                  // Remove redundancies
+				// OurFPM.add(llvm::createGVNPass());                  // Remove redundancies
 				OurFPM.add(llvm::createSCCPPass());                 // Constant prop with SCCP
 				OurFPM.add(llvm::createCFGSimplificationPass());    // Merge & remove BBs
 				OurFPM.add(llvm::createInstructionCombiningPass());

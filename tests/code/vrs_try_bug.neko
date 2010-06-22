@@ -1,0 +1,13 @@
+var j = 0;
+
+try {
+   while (true) {
+      j += 1;
+      if (j > 5) {
+          $throw(1);
+      }
+   }
+} catch e {
+}
+
+$print(j);
