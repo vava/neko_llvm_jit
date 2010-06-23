@@ -85,7 +85,7 @@ extern "C" {
 		// target lays out data structures.
 		OurFPM.add(new llvm::TargetData(*ee->getTargetData()));
 		createStandardFunctionPasses(&OurFPM, (vm->llvm_optimizations)?3:0);
-		llvm::createStandardModulePasses(&OurFPM, (vm->llvm_optimizations)?0:0,
+		llvm::createStandardModulePasses(&OurFPM, (vm->llvm_optimizations)?3:0,
 										 false, true,
 										 vm->llvm_optimizations, vm->llvm_optimizations,
 										 true, 0);
