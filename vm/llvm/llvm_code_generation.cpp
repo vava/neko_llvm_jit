@@ -224,12 +224,27 @@ void addPrimitives(llvm::Module * module) {
 	#include "primitives_list.h"
 	#undef PRIMITIVE
 }
+
+void makeThrowFunction(llvm::Module * module) {
+	llvm::FunctionType * FT = llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()),
+													  false);
+	llvm::Function * F = llvm::Function::Create(FT,
+												llvm::Function::ExternalLinkage,
+												"throw",
+												module);
+
+	llvm::BasicBlock * bb = llvm::BasicBlock::Create(module->getContext(), "entry", F);
+
+	llvm::IRBuilder<> builder(bb);
+	builder.CreateUnwind();
+}
 }
 
 llvm::Module * makeLLVMModule(neko::Module const & n_m, neko_module * m) {
 	llvm::Module * module = new ::llvm::Module("neko module", llvm::getGlobalContext());
 
 	addPrimitives(module);
+	makeThrowFunction(module);
 
 	FunctionGenerator fg(module, m);
 
@@ -246,6 +261,7 @@ llvm::Module * makeLLVMModule(neko::Module const & n_m, neko_module * m) {
 		{
 			fg.makeFunction(*it);
 		}
+
 
 	return module;
 }

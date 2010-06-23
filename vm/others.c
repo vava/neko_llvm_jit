@@ -31,6 +31,7 @@ extern objtable *neko_fields;
 extern field id_compare;
 extern field id_string;
 extern char *jit_handle_trap;
+extern char *llvm_handle_trap;
 typedef void (*jit_handle)( neko_vm * );
 
 static INLINE int icmp( int a, int b ) {
@@ -465,6 +466,8 @@ EXTERN void val_throw( value v ) {
 	vm->vthis = v;
 	if( *(char**)vm->start == jit_handle_trap )
 		((jit_handle)jit_handle_trap)(vm);
+	else if( *(char**)vm->start == llvm_handle_trap )
+		((jit_handle)llvm_handle_trap)(vm);
 	else
 		longjmp(vm->start,1);
 }

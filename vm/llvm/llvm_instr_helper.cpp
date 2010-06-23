@@ -3,7 +3,7 @@
 #include "llvm/Intrinsics.h"
 
 #include <iostream>
-
+#include <stdio.h>
 extern "C" {
 	#include "../opcodes.h"
 	#include "../neko.h"
@@ -146,17 +146,23 @@ void LLVMInstrHelper::makeIntOp(llvm::Value* (llvm::IRBuilder<>::*f)(llvm::Value
 }
 
 void LLVMInstrHelper::makeMemCpyCall(llvm::IRBuilder<> & builder, llvm::Value * dest, llvm::Value * source, llvm::Value * size) const {
-	llvm::Type const * memcpy_type = size->getType();
+	llvm::Type const * memcpy_type [] = { builder.getInt8PtrTy(), builder.getInt8PtrTy(), size->getType() };
 
-	builder.CreateCall4(llvm::Intrinsic::getDeclaration(
+	llvm::Intrinsic::getDeclaration(
 							module,
 							llvm::Intrinsic::memcpy,
-							&memcpy_type,
-							1),
+							memcpy_type,
+							3)->dump();
+	builder.CreateCall5(llvm::Intrinsic::getDeclaration(
+							module,
+							llvm::Intrinsic::memcpy,
+							memcpy_type,
+							3),
 			    builder.CreatePointerCast(dest, builder.getInt8PtrTy()),
 			    builder.CreatePointerCast(source, builder.getInt8PtrTy()),
 			    size,
-			    h.constant_0<int>());
+						h.constant_0<int>(),
+						h.constant(false));
 }
 
 llvm::Value * LLVMInstrHelper::makeNekoArray(std::vector<llvm::Value *> const & array) {
@@ -542,7 +548,7 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 				Block * catchBlock = blocks.getById(param);
 				checkAndCopyStack(stack, catchBlock);
 				llvm::AllocaInst * jmp_buf_backup = llvm::IRBuilder<>(&function->getEntryBlock())
-					.CreateAlloca(h.convert<jmp_buf>(), h.constant_1<int>(), "jmp_buf_backup");
+				 	.CreateAlloca(h.convert<jmp_buf>(), h.constant_1<int>(), "jmp_buf_backup");
 
 				{
 					llvm::IRBuilder<> catch_builder(catchBlock->getLLVMBlock());
@@ -558,42 +564,42 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 						acc);
 
 					//monkey patch receiving block to restore previous exception handler
-					makeMemCpyCall(catch_builder,
-								   catch_builder.CreateConstGEP2_32(
-									   vm,
-									   0, 8, "vm->start"),
-								   jmp_buf_backup,
-								   h.int_n(sizeof(jmp_buf)));
+					// makeMemCpyCall(catch_builder,
+					// 			   catch_builder.CreateConstGEP2_32(
+					// 				   vm,
+					// 				   0, 8, "vm->start"),
+					// 			   jmp_buf_backup,
+					// 			   h.int_n(sizeof(jmp_buf)));
 
 					llvm::Function * P = module->getFunction("neko_process_trap");
 					llvm::CallInst * callInst = catch_builder.CreateCall(P, vm);
 					callInst->setCallingConv(P->getCallingConv());
 				}
 				// backup vm->start
-				makeMemCpyCall(builder,
-							   jmp_buf_backup,
-							   builder.CreateConstGEP2_32(
-								   vm,
-								   0, 8, "vm->start"),
-							   h.int_n(sizeof(jmp_buf)));
+				// makeMemCpyCall(builder,
+				// 			   jmp_buf_backup,
+				// 			   builder.CreateConstGEP2_32(
+				// 				   vm,
+				// 				   0, 8, "vm->start"),
+				// 			   h.int_n(sizeof(jmp_buf)));
 
 				callPrimitive("setup_trap", vm, h.constant(m), h.int_n(param));
 
-				llvm::BasicBlock * normalBlock = llvm::BasicBlock::Create(function->getContext(), "", function);
+				// llvm::BasicBlock * normalBlock = llvm::BasicBlock::Create(function->getContext(), "", function);
 
-				//if (setjmp(vm->start)) catch_block else normal_block;
-				builder.CreateCondBr(builder.CreateICmpNE(
-										 builder.CreateCall(llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::setjmp),
-															builder.CreatePointerCast(
-																builder.CreateConstGEP2_32(
-																	vm,
-																	0, 8, "vm->start"),
-																builder.getInt8PtrTy())),
-										 h.constant_0<int>()),
-									 catchBlock->getLLVMBlock(),
-									 normalBlock);
+				//// if (setjmp(vm->start)) catch_block else normal_block;
+				// builder.CreateCondBr(builder.CreateICmpNE(
+				// 						 builder.CreateCall(llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::setjmp),
+				// 											builder.CreatePointerCast(
+				// 												builder.CreateConstGEP2_32(
+				// 													vm,
+				// 													0, 8, "vm->start"),
+				// 												builder.getInt8PtrTy())),
+				// 						 h.constant_0<int>()),
+				// 					 catchBlock->getLLVMBlock(),
+				// 					 normalBlock);
 
-				builder.SetInsertPoint(normalBlock);
+				// builder.SetInsertPoint(normalBlock);
 
 				//original trap does that, we have to emulate the behaviour to
 				//  keep the stack numeration in sync
@@ -605,13 +611,13 @@ void LLVMInstrHelper::makeOpCode(int_val opcode, int_val param, ptr_val pc) {
 			break;
 		case EndTrap:
 			{
-				llvm::AllocaInst * jmp_buf_backup = stack.trap_back().second;
-				makeMemCpyCall(builder,
-							   builder.CreateConstGEP2_32(
-								   vm,
-								   0, 8, "vm->start"),
-							   jmp_buf_backup,
-							   h.int_n(sizeof(jmp_buf)));
+				// llvm::AllocaInst * jmp_buf_backup = stack.trap_back().second;
+				// makeMemCpyCall(builder,
+				// 			   builder.CreateConstGEP2_32(
+				// 				   vm,
+				// 				   0, 8, "vm->start"),
+				// 			   jmp_buf_backup,
+				// 			   h.int_n(sizeof(jmp_buf)));
 				callPrimitive("end_trap", vm);
 				stack.trap_pop();
 				stack.pop(6);

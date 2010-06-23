@@ -2,6 +2,7 @@
 
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/Target/TargetSelect.h"
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetData.h"
@@ -9,6 +10,7 @@
 // //#include "llvm/ModuleProvider.h"
 //#include "llvm/LinkAllPasses.h"
 #include "llvm/Support/StandardPasses.h"
+#include "llvm/Support/CommandLine.h"
 
 #include "primitives.h"
 #include "llvm_code_generation.h"
@@ -27,7 +29,19 @@ extern "C" {
 	#include "neko_mod.h"
 	extern char *jit_boot_seq;
 
+	namespace {
+		typedef void (* llvm_throw_type)();
+		llvm_throw_type llvm_throw;
+	}
+
+	char *llvm_handle_trap = NULL;
+
+	void llvm_trap_handler(neko_vm * vm) {
+		llvm_throw();
+	}
+
 	void llvm_jit_boot(neko_vm * vm, int_val * code, value, neko_module *) {
+		*(char**)vm->start = llvm_handle_trap;
 		((void (*)(neko_vm *))code)(vm);
 	}
 
@@ -60,6 +74,9 @@ extern "C" {
 		llvm::JITEmitDebugInfo = true;
 		llvm::InitializeNativeTarget();
 
+		// char * options[] = {"-enable-correct-eh-support"};
+		// llvm::cl::ParseCommandLineOptions(sizeof(options)/sizeof(options[0]), options);
+
 		std::string error_string;
 		llvm::ExecutionEngine * ee = llvm::EngineBuilder(module)
 										.setOptLevel((vm->llvm_optimizations)
@@ -89,6 +106,9 @@ extern "C" {
 										 false, true,
 										 vm->llvm_optimizations, vm->llvm_optimizations,
 										 true, 0);
+
+		OurFPM.add(llvm::createLowerInvokePass(0, true));
+
 		OurFPM.run(*module);
 
 		if (vm->dump_llvm) {
@@ -117,6 +137,11 @@ extern "C" {
 		llvm::verifyFunction(*main);
 
 		void *FPtr = ee->getPointerToFunction(main);
+
+		llvm::Function * unwind = module->getFunction("throw");
+		llvm::verifyFunction(*unwind);
+		llvm_throw = (llvm_throw_type)ee->getPointerToFunction(unwind);
+		llvm_handle_trap = (char *)llvm_trap_handler;
 
 		m->jit = FPtr;
 	}
