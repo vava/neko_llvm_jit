@@ -7,7 +7,8 @@
 #include "llvm/Target/TargetData.h"
 #include "llvm/PassManager.h"
 // //#include "llvm/ModuleProvider.h"
-#include "llvm/LinkAllPasses.h"
+//#include "llvm/LinkAllPasses.h"
+#include "llvm/Support/StandardPasses.h"
 
 #include "primitives.h"
 #include "llvm_code_generation.h"
@@ -30,6 +31,22 @@ extern "C" {
 		((void (*)(neko_vm *))code)(vm);
 	}
 
+	namespace {
+		//this is fixed in next llvm version
+		//  but for now it is impossible to call this function with PassManager
+		static inline void createStandardFunctionPasses(llvm::PassManager *PM,
+														unsigned OptimizationLevel) {
+			if (OptimizationLevel > 0) {
+				PM->add(llvm::createCFGSimplificationPass());
+				if (OptimizationLevel == 1)
+					PM->add(llvm::createPromoteMemoryToRegisterPass());
+				else
+					PM->add(llvm::createScalarReplAggregatesPass());
+				PM->add(llvm::createInstructionCombiningPass());
+			}
+		}
+	}
+
 	void llvm_cpp_jit(neko_vm * vm, neko_module * m) {
 		jit_boot_seq = (char *)&llvm_jit_boot;
 
@@ -45,9 +62,15 @@ extern "C" {
 
 		std::string error_string;
 		llvm::ExecutionEngine * ee = llvm::EngineBuilder(module)
+										.setOptLevel((vm->llvm_optimizations)
+													   ?llvm::CodeGenOpt::Aggressive
+													   :llvm::CodeGenOpt::None)
 										.setEngineKind(llvm::EngineKind::JIT)
 										.setErrorStr(&error_string)
 										.create();
+
+		//enable lazy compilation
+		ee->DisableLazyCompilation(false);
 		if (!ee) {
 			std::cerr << "Could not create ExecutionEngine: " << error_string << std::endl;
 		}
@@ -57,38 +80,16 @@ extern "C" {
 		#include "primitives_list.h"
 		#undef PRIMITIVE
 
-		if (vm->llvm_optimizations) {
-			llvm::PassManager OurFPM;
-			// Set up the optimizer pipeline.  Start with registering info about how the
-			// target lays out data structures.
-			OurFPM.add(new llvm::TargetData(*ee->getTargetData()));
-
-			// Promote allocas to registers.
-			//OurFPM.add(llvm::createPromoteMemoryToRegisterPass());
-			// Reassociate expressions.
-			OurFPM.add(llvm::createReassociatePass());
-
-			//selected passes from brainfuck jit compiler
-			//  http://www.remcobloemen.nl/2010/02/brainfuck-using-llvm/
-			//seems to be working good for us but we need more research on optimizations
-			OurFPM.add(llvm::createInstructionCombiningPass()); // Cleanup for scalarrepl.
-			// OurFPM.add(llvm::createLICMPass());                 // Hoist loop invariants
-			OurFPM.add(llvm::createIndVarSimplifyPass());       // Canonicalize indvars
-			OurFPM.add(llvm::createLoopDeletionPass());         // Delete dead loops
-
-			// Simplify code
-			for(int repeat=0; repeat < 3; repeat++)	{
-				// OurFPM.add(llvm::createGVNPass());                  // Remove redundancies
-				OurFPM.add(llvm::createSCCPPass());                 // Constant prop with SCCP
-				OurFPM.add(llvm::createCFGSimplificationPass());    // Merge & remove BBs
-				OurFPM.add(llvm::createInstructionCombiningPass());
-				OurFPM.add(llvm::createAggressiveDCEPass());        // Delete dead instructions
-				OurFPM.add(llvm::createCFGSimplificationPass());    // Merge & remove BBs
-				OurFPM.add(llvm::createDeadStoreEliminationPass()); // Delete dead stores
-			}
-
-			OurFPM.run(*module);
-		}
+		llvm::PassManager OurFPM;
+		// Set up the optimizer pipeline.  Start with registering info about how the
+		// target lays out data structures.
+		OurFPM.add(new llvm::TargetData(*ee->getTargetData()));
+		createStandardFunctionPasses(&OurFPM, (vm->llvm_optimizations)?3:0);
+		llvm::createStandardModulePasses(&OurFPM, (vm->llvm_optimizations)?0:0,
+										 false, true,
+										 vm->llvm_optimizations, vm->llvm_optimizations,
+										 true, 0);
+		OurFPM.run(*module);
 
 		if (vm->dump_llvm) {
 			module->dump();
