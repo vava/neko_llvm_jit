@@ -288,7 +288,7 @@ static value builtin_sblit( value dst, value dp, value src, value sp, value l ) 
 	if( dpp < 0 || spp < 0 || ll < 0 || dpp + ll < 0 || spp + ll  < 0 || dpp + ll > val_strlen(dst) || spp + ll > val_strlen(src) )
 		neko_error();
 	memmove(val_string(dst)+dpp,val_string(src)+spp,ll);
-	return val_null;
+	return val_true;
 }
 
 /**
