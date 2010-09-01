@@ -1,0 +1,12 @@
+/.cvsignore/1.1/Sat Jan  6 23:36:10 2007//
+/libs.sln/1.9/Tue Sep 23 20:18:13 2008//
+D/common////
+D/include////
+D/mod_neko////
+D/mod_tora////
+D/mysql////
+D/regexp////
+D/sqlite////
+D/std////
+D/ui////
+D/zlib////
