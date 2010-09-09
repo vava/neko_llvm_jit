@@ -7,10 +7,7 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetData.h"
 #include "llvm/PassManager.h"
-// //#include "llvm/ModuleProvider.h"
-//#include "llvm/LinkAllPasses.h"
 #include "llvm/Support/StandardPasses.h"
-#include "llvm/Support/CommandLine.h"
 
 #include "primitives.h"
 #include "llvm_code_generation.h"
@@ -51,7 +48,7 @@ extern "C" {
 		static inline void createStandardFunctionPasses(llvm::PassManager *PM,
 														unsigned OptimizationLevel) {
 			if (OptimizationLevel > 0) {
-				PM->add(llvm::createCFGSimplificationPass());
+				//PM->add(llvm::createCFGSimplificationPass());
 				if (OptimizationLevel == 1)
 					PM->add(llvm::createPromoteMemoryToRegisterPass());
 				else
@@ -73,9 +70,6 @@ extern "C" {
 		llvm::GuaranteedTailCallOpt = true;
 		llvm::JITEmitDebugInfo = true;
 		llvm::InitializeNativeTarget();
-
-		// char * options[] = {"-enable-correct-eh-support"};
-		// llvm::cl::ParseCommandLineOptions(sizeof(options)/sizeof(options[0]), options);
 
 		std::string error_string;
 		llvm::ExecutionEngine * ee = llvm::EngineBuilder(module)
@@ -102,10 +96,10 @@ extern "C" {
 		// target lays out data structures.
 		OurFPM.add(new llvm::TargetData(*ee->getTargetData()));
 		createStandardFunctionPasses(&OurFPM, (vm->llvm_optimizations)?3:0);
-		llvm::createStandardModulePasses(&OurFPM, (vm->llvm_optimizations)?3:0,
-										 false, true,
-										 vm->llvm_optimizations, vm->llvm_optimizations,
-										 true, 0);
+		// llvm::createStandardModulePasses(&OurFPM, (vm->llvm_optimizations)?3:0,
+		// 								 false, true,
+		// 								 vm->llvm_optimizations, vm->llvm_optimizations,
+		// 								 true, 0);
 
 		OurFPM.add(llvm::createLowerInvokePass(0, true));
 
