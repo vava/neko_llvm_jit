@@ -65,6 +65,7 @@ extern char *jit_boot_seq;
 extern char *jit_handle_trap;
 typedef void (*jit_handle)( neko_vm * );
 extern int neko_can_jit();
+extern int_val llvm_call(neko_vm * vm, void * f, value * args, int nargs);
 
 value NEKO_TYPEOF[] = {
 	alloc_int(0),
@@ -402,6 +403,18 @@ static int_val jit_run( neko_vm *vm, vfunction *acc ) {
 			if( pc_args == ((vfunction*)acc)->nargs ) { \
 				SetupBeforeCall(this_arg); \
 				acc = jit_run(vm,(vfunction*)acc); \
+				RestoreAfterCall(); \
+			} else \
+				CallFailure(); \
+		} else if( val_tag(acc) == VAL_LLVMJITFUN ) { \
+			if( pc_args == ((vfunction*)acc)->nargs ) { \
+				int_val args[CALL_MAX_ARGS]; \
+				int_val tmp; \
+				SetupBeforeCall(this_arg); \
+				sp += pc_args; \
+				for(tmp=0;tmp<pc_args;tmp++) \
+					args[tmp] = *--sp; \
+				acc = llvm_call(vm,(void *)(((vfunction*)acc)->addr), (value*)(void*)args, (int)pc_args); \
 				RestoreAfterCall(); \
 			} else \
 				CallFailure(); \
