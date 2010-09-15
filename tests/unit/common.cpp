@@ -90,7 +90,15 @@ neko_module * NekoModuleWrapper::make_module(value name) {
 	return module;
 }
 
-extern "C"
+extern "C" {
 int_val * neko_get_ttable() {
 	return NULL;
+}
+
+value neko_alloc_string(const char *) {
+	return NULL;
+}
+
+void neko_val_throw(value exc) {
+}
 }
