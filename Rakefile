@@ -51,7 +51,7 @@ task :unit_test do
 end
 
 def neko_environment
-	"LD_LIBRARY_PATH=bin:/usr/lib/llvm/lib:${LD_LIBRARY_PATH} NEKOPATH=boot:bin"
+	"LD_LIBRARY_PATH=bin:${LD_LIBRARY_PATH} NEKOPATH=boot:bin"
 end
 
 def neko_command(param)
