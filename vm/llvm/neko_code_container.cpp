@@ -35,7 +35,7 @@ namespace {
 		OPCODE get_op(int_val scrambled) {
 			std::map<int_val, OPCODE>::const_iterator it = unscramle_map.find(scrambled);
 			if (it == unscramle_map.end()) {
-				printf("Ups!\n");
+				val_throw(alloc_string("Unscramled failed"));
 				return Last;
 			} else {
 				return it->second;
