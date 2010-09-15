@@ -353,6 +353,7 @@ neko_module *neko_read_module( reader r, readp p, value loader ) {
 	tmp = (char*)malloc(sizeof(char)*(((m->codesize+1)>MAXSIZE)?(m->codesize+1):MAXSIZE));
 	m->jit = NULL;
 	m->jit_gc = NULL;
+	m->llvm_jit = NULL;
 	m->dbgtbl = val_null;
 	m->dbgidxs = NULL;
 	m->globals = (value*)alloc(m->nglobals * sizeof(value));

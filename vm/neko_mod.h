@@ -37,6 +37,7 @@ typedef struct _neko_module {
 	neko_debug *dbgidxs;
 	int_val *code;
 	value jit_gc;
+	value llvm_jit;
 } neko_module;
 
 typedef void *readp;

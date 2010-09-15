@@ -32,7 +32,7 @@ namespace {
 		return (ptr_val) f->addr;
 	}
 
-	std::vector<ptr_val> get_function_addresses(neko_module const * m, std::vector<vfunction *> const & functions) {
+	std::vector<ptr_val> get_function_addresses(NekoCodeChunk const & chunk, std::vector<vfunction *> const & functions) {
 		std::vector<ptr_val> function_addresses;
 		function_addresses.reserve(function_addresses.size() + 1);
 
@@ -41,11 +41,12 @@ namespace {
 					   std::ptr_fun(get_function_address));
 
 		//check special case for main function
-		if (m->codesize > 0 && *m->code == Jump && !function_addresses.empty()) {
-			function_addresses.push_back(*(m->code + 1));
+		neko_code_container::const_iterator first_opcode = chunk.begin();
+		if (first_opcode != chunk.end() && first_opcode->second.first == Jump && !function_addresses.empty()) {
+			function_addresses.push_back(first_opcode->second.second);
 		} else {
 			//no jumps in front means main functions have started right away
-			function_addresses.push_back((ptr_val)m->code);
+			function_addresses.push_back(first_opcode->first);
 		}
 
 		return function_addresses;
@@ -59,7 +60,7 @@ namespace {
 
 	neko::Module::functions_container get_functions(neko_module const * m, NekoCodeChunk const & chunk) {
 		std::vector<vfunction *> const & functions = collect_functions(m);
-		std::vector<ptr_val> const & function_addresses = get_function_addresses(m, functions);
+		std::vector<ptr_val> const & function_addresses = get_function_addresses(chunk, functions);
 		std::vector<NekoCodeChunk> const & chunks = chunk.splitByAddresses(function_addresses);
 
 		std::vector<NekoCodeChunk>::const_iterator begin = chunks.begin();
@@ -67,9 +68,8 @@ namespace {
 			//chunks size > 1 means we have more than one function
 			//  this also means that the first opcode in the program was a Jump to main function
 			//  There's no point making a standalone function for that Jump, so we can just remove it.
-			assert(*m->code == Jump);
-			assert((int_val *)begin->getToAddress() - (int_val *)begin->getFromAddress() == 2
-					 && *(int_val *)begin->getFromAddress() == Jump);
+			assert(chunk.begin()->second.first == Jump);
+			assert((int_val *)begin->getToAddress() - (int_val *)begin->getFromAddress() == 2);
 			++begin;
 		}
 

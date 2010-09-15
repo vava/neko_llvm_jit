@@ -89,3 +89,8 @@ neko_module * NekoModuleWrapper::make_module(value name) {
 
 	return module;
 }
+
+extern "C"
+int_val * neko_get_ttable() {
+	return NULL;
+}

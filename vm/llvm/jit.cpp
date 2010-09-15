@@ -56,9 +56,23 @@ extern "C" {
 				PM->add(llvm::createInstructionCombiningPass());
 			}
 		}
+
+		void free_execution_engine(value wrapper) {
+			delete (llvm::ExecutionEngine *)val_data(wrapper);
+		}
+
+		bool is_jitted(neko_module * m) {
+			return (m->jit_gc != NULL || m->llvm_jit != NULL);
+		}
 	}
 
 	void llvm_cpp_jit(neko_vm * vm, neko_module * m) {
+		if (is_jitted(m)) {
+			//exports were already mangled beyond repair,
+			//  better to abort
+			return;
+		}
+
 		jit_boot_seq = (char *)&llvm_jit_boot;
 
 		neko::Module code_base(m);
@@ -79,6 +93,10 @@ extern "C" {
 										.setEngineKind(llvm::EngineKind::JIT)
 										.setErrorStr(&error_string)
 										.create();
+
+		//store engine in module and make sure it'll be properly deleted
+		m->llvm_jit = alloc_abstract(NULL, ee);
+		val_gc(m->llvm_jit, free_execution_engine);
 
 		//enable lazy compilation
 		ee->DisableLazyCompilation(false);

@@ -14,7 +14,11 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
+#include <stdio.h>
 #include <neko_vm.h>
+#include "vm.h"
+#include "neko_mod.h"
+extern void llvm_cpp_jit( neko_vm * vm, neko_module const * m );
 
 /**
 	<doc>
@@ -211,6 +215,19 @@ static value same_closure( value _f1, value _f2 ) {
 	return val_true;
 }
 
+/**
+ **/
+static value run_llvm_jit(value mv) {
+	neko_module *m;
+	val_check_kind(mv,neko_kind_module);
+	m = (neko_module*)val_data(mv);
+	neko_vm * vm = neko_vm_current();
+	if( vm->fstats ) vm->fstats(vm,"neko_read_module_jit",1);
+	llvm_cpp_jit(vm, m);
+	if( vm->fstats ) vm->fstats(vm,"neko_read_module_jit",0);
+	return val_null;
+}
+
 DEFINE_PRIM(float_bytes,2);
 DEFINE_PRIM(double_bytes,2);
 DEFINE_PRIM(float_of_bytes,2);
@@ -222,5 +239,6 @@ DEFINE_PRIM(test,0);
 DEFINE_PRIM(print_redirect,1);
 DEFINE_PRIM(set_trusted,1);
 DEFINE_PRIM(same_closure,2);
+DEFINE_PRIM(run_llvm_jit,1);
 
 /* ************************************************************************ */
