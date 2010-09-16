@@ -121,6 +121,7 @@ EXTERN neko_vm *neko_vm_alloc( void *custom ) {
 	vm->jit_val = NULL;
 	vm->run_jit = 1;
 	vm->llvm_jit = 1;
+	vm->llvm_optimizations = 1;
 	vm->resolver = NULL;
 	vm->trusted_code = 0;
 	vm->fstats = NULL;
