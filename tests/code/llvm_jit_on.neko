@@ -1,0 +1,8 @@
+var t = function() {
+   $print("Hello");
+}
+
+var f = $loader.loadprim(("std" + "@") + "run_llvm_jit",1);
+f($exports.__module);
+t();
+
