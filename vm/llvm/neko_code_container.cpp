@@ -60,7 +60,7 @@ NekoCodeContainer::NekoCodeContainer(neko_module const * m_): m(m_) {
 		 instruction_address += parameter_table[op] + 1 )
 		{
 			op = (OPCODE)*instruction_address;
-			if (op > Last) {
+			if ((ptr_val) op > (ptr_val) Last) {
 				//we're looking at scrambled by NEKO_DIRECT_THREADING opcode,
 				//  unscramble it
 				op = unscramble(op);
