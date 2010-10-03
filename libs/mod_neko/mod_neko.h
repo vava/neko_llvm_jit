@@ -38,6 +38,8 @@ typedef struct {
 typedef struct {
 	int hits;
 	int use_jit;
+	int llvm_jit;
+	int llvm_optimizations;
 	int use_stats;
 	int use_prim_stats;
 	int use_cache;

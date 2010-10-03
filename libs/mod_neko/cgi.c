@@ -507,6 +507,8 @@ static value cgi_get_config() {
 	mconfig *c = mod_neko_get_config();
 	FSET(hits,int);
 	FSET(use_jit,bool);
+	FSET(llvm_jit,bool);
+	FSET(llvm_optimizations,bool);
 	FSET(use_stats,bool);
 	FSET(use_prim_stats,bool);
 	FSET(use_cache,bool);
@@ -527,7 +529,9 @@ static value cgi_set_config( value v ) {
 	val_check(v,object);
 	FGET(hits,int);
 	FGET(use_jit,bool);
-	FGET(use_stats,bool);
+	FGET(llvm_jit,bool);
+	FGET(llvm_optimizations,bool);
+ 	FGET(use_stats,bool);
 	FGET(use_prim_stats,bool);
 	FGET(use_cache,bool);
 	FGET(exceptions,int);

@@ -410,6 +410,8 @@ static const char *mod_neko_config( cmd_parms *cmd, MCONFIG mconfig, const char 
 	else if( strcmp(code,"STATS") == 0 ) config.use_stats = value;
 	else if( strcmp(code,"PRIM_STATS") == 0 ) config.use_prim_stats = value;
 	else if( strcmp(code,"PRELOAD") == 0 ) preload_module(args,cmd->server);
+	else if( strcmp(code,"USE_LLVM") == 0 ) config.llvm_jit = value;
+	else if( strcmp(code,"USE_LLVM_OPT") == 0 ) config.llvm_optimizations = value;
 	else ap_log_error(__FILE__,__LINE__,APLOG_WARNING,LOG_SUCCESS cmd->server,"Unknown ModNeko configuration command '%s'",code);
 	free(code);
 	return NULL;
