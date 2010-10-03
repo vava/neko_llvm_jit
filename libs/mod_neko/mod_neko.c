@@ -228,6 +228,8 @@ static int neko_handler_rec( request_rec *r ) {
 	if( config.use_stats ) neko_vm_set_stats(vm,neko_stats_measure,config.use_prim_stats?neko_stats_measure:NULL);
 
 	neko_vm_set_custom(vm,k_mod_neko,&ctx);
+	neko_vm_llvm_jit(vm, config.llvm_jit);
+	neko_vm_llvm_optimizations(vm, config.llvm_optimizations);
 	if( config.use_jit && !neko_vm_jit(vm,1) ) {
 		send_headers(&ctx);
 		apache_error(APLOG_WARNING,r,"JIT required by env. var but not enabled in NekoVM");
@@ -347,6 +349,8 @@ static void preload_module( const char *name, server_rec *serv ) {
 	value m, read_path, exec;
 	time_t time = 0;
 	neko_vm_select(vm);
+	neko_vm_llvm_jit(vm, config.llvm_jit);
+	neko_vm_llvm_optimizations(vm, config.llvm_optimizations);
 	if( config.use_jit ) neko_vm_jit(vm,1);
 	if( !exc ) {
 		value args[] = { alloc_string("std@module_read_path"), alloc_int(3) };
