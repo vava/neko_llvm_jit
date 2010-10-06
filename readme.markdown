@@ -88,16 +88,16 @@ It's all very simple. Just write neko or haxe source file, put it in tests/code/
     $ rake
 
 You can run individual tests with a little magic provided by rake. Assuming you have neko_test.neko and haxe_test.hx:  
-    $ rake run_neko_test  
-    $ rake run_haxe_test.hx  
+    $ rake run_neko_test
+    $ rake run_haxe_test.hx
 
-    running with optimizations enabled:  
-    $ rake run_opt_neko_test  
-    $ rake run_opt_haxe_test.hx  
+    running with optimizations enabled:
+    $ rake run_opt_neko_test
+    $ rake run_opt_haxe_test.hx
 
-    running under gdb and making stack trace on fault:  
-    $ rake trace_opt_neko_test  
-    $ rake trace_opt_haxe_test.hx  
+    running under gdb and making stack trace on fault:
+    $ rake trace_opt_neko_test
+    $ rake trace_opt_haxe_test.hx
 
 Cleaning up
 -------------------------------
@@ -105,3 +105,26 @@ Cleaning up
     $ rake clean
 
 This will clean up absolutely everything
+
+Jitting on the fly
+------------------------------
+
+Sometimes (like when testing under mod_neko) you want only some scripts to be jitted. To achieve that you can use JIT on the fly primitive.
+
+Just call `run_llvm_jit` primitive.
+
+    var f = $loader.loadprim(("std" + "@") + "run_llvm_jit",1);
+    f($exports.__module);
+
+See tests/code/llvm_jit_on.neko for working code.
+
+Note that function where you call that primitive and all functions up the execution stack from it will still be interpreted, but every function you call after this primitive is run will use JIT.
+
+If by any chance neko own JIT is enabled, LLVM JIT won't happen.
+
+Notes about mod_neko
+-----------------------------
+
+So far the only method enabling LLVM JIT on mod_neko is by using `run_llvm_jit` primitive. You might want to cache the result of jitting with `neko.Web.cacheModule`.
+
+Note that mod_neko runs number of different threads and for each thread jitting is done separately. So don't be alarmed if you see jitting happening more than once, it'll stop when every thread will have it's own cached version of jitted code.
