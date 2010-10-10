@@ -125,6 +125,6 @@ If by any chance neko own JIT is enabled, LLVM JIT won't happen.
 Notes about mod_neko
 -----------------------------
 
-So far the only method enabling LLVM JIT on mod_neko is by using `run_llvm_jit` primitive. You might want to cache the result of jitting with `neko.Web.cacheModule`.
+To enable LLVM JIT on mod_neko you have two choices, you can either use `run_llvm_jit` primitive or put `ModNeko USE_LLVM 1` somewhere in your apache config. You might want to consider putting `ModNeko USE_LLVM_OPT 1` there as well, otherwise it will be slow. You might also want to cache the result of jitting with `neko.Web.cacheModule`.
 
 Note that mod_neko runs number of different threads and for each thread jitting is done separately. So don't be alarmed if you see jitting happening more than once, it'll stop when every thread will have it's own cached version of jitted code.
