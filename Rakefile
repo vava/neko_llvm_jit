@@ -96,13 +96,76 @@ TEST_SOURCE.each { |f|
 	end
 }
 
-def table_header
-	puts <<EOF
-+---------------+-------------+-------------+-------------+-------------+------+
-|      test name|       interp|      x86 jit|     llvm jit|     llvm jit|status|
-|               |             |             |       no opt|     with opt|      |
-+---------------+-------------+-------------+-------------+-------------+------+
-EOF
+class Table
+	def initialize(headers)
+		@headers = headers
+		draw_hr
+		line do |l|
+			@headers.each do |h|
+				l << h[:name]
+			end
+		end
+	end
+
+	def line(&block)
+		current = []
+		left_lines = 0
+		column_num = 0
+		draw = proc {|*args| draw_cell(*args)}
+		new_class = Class.new do
+			define_method(:<<) do |*args|
+				c = args.shift
+				cell_lines = c.split("\n")
+				first_line = cell_lines.shift
+				current << cell_lines
+				draw.call(column_num, first_line)
+				column_num += 1
+				left_lines = [left_lines, cell_lines.length].max
+			end
+		end
+
+		yield new_class.new
+
+		print "|\n"
+
+		left_lines.times do
+			current.each_with_index do |v, i|
+				s = v.shift
+				draw_cell(i, s || '')
+			end
+			print "|\n"
+		end
+		draw_hr
+	end
+private
+	def align_left(s, width)
+		stripped = strip_escape_symbols(s)
+		return s + ' ' * [(width - stripped.length), 0].max
+	end
+
+	def align_right(s, width)
+		stripped = strip_escape_symbols(s)
+		return ' ' * [(width - stripped.length), 0].max + s
+	end
+
+	def strip_escape_symbols(s)
+		s.gsub(/\e\[[0-9;]*[A-Za-z]/, '')
+	end
+
+
+	def draw_cell(i, s)
+		print "|"
+		width = @headers[i][:width]
+		stripped = strip_escape_symbols(s)
+		print (( stripped =~ /^-?[0-9]/) ? align_right(s, width) : align_left(s, width))
+	end
+
+	def draw_hr
+		@headers.each do |h|
+			print "+", "-" * h[:width]
+		end
+		print "+\n"
+	end
 end
 
 def one_neko_test(speeds, param, file)
@@ -118,33 +181,57 @@ end
 task :neko_test => TEST_BINARIES do |t|
 	all_test_passed = true
 
-	table_header
-	column_sizes = [15, 13, 13, 13, 13, 6]
-	columns = ["--no-jit", "--jit --no-llvm-jit", "--jit --llvm-jit --no-llvm-optimizations", "--jit --llvm-jit --llvm-optimizations"];
+	headers = [
+			   {
+				   :name => "test name",
+				   :width => 15,
+			   },
+			   {
+				   :name => "interp",
+				   :width => 13,
+				   :options => "--no-jit"
+			   },
+			   {
+				   :name => "x86 jit",
+				   :width => 13,
+				   :options => "--jit --no-llvm-jit"
+			   },
+			   {
+				   :name => "llvm jit\nno opt",
+				   :width => 13,
+				   :options => "--jit --llvm-jit --no-llvm-optimizations"
+			   },
+			   {
+				   :name => "llvm jit\nwith opt",
+				   :width => 13,
+				   :options => "--jit --llvm-jit --llvm-optimizations"
+			   },
+			   {
+				   :name => "status",
+				   :width => 6,
+			   },
+			  ]
+
+	table = Table.new(headers)
+
 	t.prerequisites.each {|f|
-		#results
-		printf "|%#{column_sizes[0]}s|", File.basename(f)
-		speeds = []
-		results = []
-		columns.each_with_index {|param, i|
-			result = one_neko_test(speeds, param, f)
-			printf "%#{column_sizes[i+1]}s|", result
-			results << result
+		table.line {|l|
+			l << File.basename(f)
+			results = []
+			headers.each {|h|
+				if (h[:options])
+					ms = Benchmark.realtime {
+						Open3.popen3(neko_command("#{h[:options]} #{f}")) { |stdin, stdout, stderr, wait_thr|
+							results << stdout.readlines.join("\n");
+						}
+					}
+					l << (results[-1] + "\n" + (ms * 1000).to_i.to_s + 'ms')
+				end
+			}
+			passed = (results.uniq.length == 1)
+			l << ((passed) ? "OK" : "Error")
+			all_test_passed = all_test_passed && passed
 		}
-		printf "%#{column_sizes[-1]}s|", (results.uniq.length == 1) ? "OK" : "Error"
-		all_test_passed = all_test_passed && (results.uniq.length == 1)
-		print "\n"
-
-		#speeds
-		printf "|%#{column_sizes[0]}s|", ""
-		speeds.each_with_index{|s, q|
-			printf "%#{column_sizes[q+1]-2}dms|", (s * 1000).to_i
-		}
-		printf "%#{column_sizes[-1]}s|", ""
-		print "\n"
-
-		#closing line
-		puts "+---------------+-------------+-------------+-------------+-------------+------+"
 	}
 
 	raise "Some tests has failed" if !all_test_passed
