@@ -1,6 +1,7 @@
 require 'rake'
 require 'open3'
 require 'benchmark'
+require 'json'
 
 task :default => [:compile, :test]
 
@@ -178,6 +179,49 @@ def one_neko_test(speeds, param, file)
 	result
 end
 
+class TimeComparison
+	def initialize(headers)
+		@headers = headers
+		if (File.exist?('master.measurements'))
+			@master = JSON.load(File.new('master.measurements', 'r'));
+		else
+			@master = Hash.new { |hash, key| hash[key] = {} }
+		end
+		@measurements = Hash.new { |hash, key| hash[key] = {} }
+	end
+
+	def save
+		branch_name = `cat .git/HEAD | cut -d / -f 3`.chomp
+		JSON.dump(@measurements, File.new(branch_name + '.measurements', 'w'));
+	end
+
+	def register(file, options, time)
+		@measurements[file][options] = time;
+	end
+
+	def delta(file, options)
+		master_time = @master[file][options] || 0;
+		current_time = @measurements[file][options] || 0;
+		delta = current_time - master_time;
+		formatted_delta = delta.to_s + 'ms'
+		if (delta > current_time * 0.2)
+			red(formatted_delta)
+		elsif (delta < -current_time * 0.2)
+			green(formatted_delta)
+		else
+			formatted_delta
+		end
+	end
+private
+	def red(s)
+		"\e[00;31m" + s + "\e[0m"
+	end
+
+	def green(s)
+		"\e[00;32m" + s + "\e[0m"
+	end
+end
+
 task :neko_test => TEST_BINARIES do |t|
 	all_test_passed = true
 
@@ -213,6 +257,7 @@ task :neko_test => TEST_BINARIES do |t|
 			  ]
 
 	table = Table.new(headers)
+	measurements = TimeComparison.new(headers);
 
 	t.prerequisites.each {|f|
 		table.line {|l|
@@ -225,7 +270,8 @@ task :neko_test => TEST_BINARIES do |t|
 							results << stdout.readlines.join("\n");
 						}
 					}
-					l << (results[-1] + "\n" + (ms * 1000).to_i.to_s + 'ms')
+					measurements.register(f, h[:options], (ms * 1000).to_i)
+					l << (results[-1] + "\n" + (ms * 1000).to_i.to_s + 'ms') + "\n" + measurements.delta(f, h[:options])
 				end
 			}
 			passed = (results.uniq.length == 1)
@@ -233,6 +279,8 @@ task :neko_test => TEST_BINARIES do |t|
 			all_test_passed = all_test_passed && passed
 		}
 	}
+
+	measurements.save
 
 	raise "Some tests has failed" if !all_test_passed
 end
