@@ -16,3 +16,4 @@ bin/nekoc
 bin/nekotools
 bin/nekoml
 bin/test.n
+*.measurements
