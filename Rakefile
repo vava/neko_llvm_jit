@@ -171,11 +171,11 @@ end
 
 def one_neko_test(speeds, param, file)
 	result = "";
-	speeds << Benchmark.realtime {
+	speeds << (Benchmark.measure {
 		Open3.popen3(neko_command("#{param} #{file}")) { |stdin, stdout, stderr, wait_thr|
 			result = stdout.readlines.join('\n');
 		}
-	}
+	}).total
 	result
 end
 
@@ -265,11 +265,11 @@ task :neko_test => TEST_BINARIES do |t|
 			results = []
 			headers.each {|h|
 				if (h[:options])
-					ms = Benchmark.realtime {
+					ms = (Benchmark.measure {
 						Open3.popen3(neko_command("#{h[:options]} #{f}")) { |stdin, stdout, stderr, wait_thr|
 							results << stdout.readlines.join("\n");
 						}
-					}
+					}).total
 					measurements.register(f, h[:options], (ms * 1000).to_i)
 					l << (results[-1] + "\n" + (ms * 1000).to_i.to_s + 'ms') + "\n" + measurements.delta(f, h[:options])
 				end
