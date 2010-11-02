@@ -138,7 +138,7 @@ extern "C" {
 				if (F) {
 					llvm::verifyFunction(*F);
 
-					void *FPtr = ee->getPointerToFunction(F);
+					void *FPtr = ee->getPointerToFunctionOrStub(F);
 					f->addr = FPtr;
 					f->t = VAL_LLVMJITFUN;
 				}
